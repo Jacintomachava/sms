@@ -1,0 +1,15 @@
+/**=====================
+    3.38 Sweet-alert CSS Start
+==========================**/
+.swal-modal {
+    .swal-title {
+        font-size: calc(20px + (22 - 20) * ((100vw - 320px) / (1920 - 320)));
+        font-weight: 600;
+    }
+    .swal-text {
+        font-size: calc(14px + (18 - 14) * ((100vw - 320px) / (1920 - 320)));
+    }
+}
+/**=====================
+    3.38 Sweet-alert CSS ends
+==========================**/

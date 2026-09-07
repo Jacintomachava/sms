@@ -1,0 +1,167 @@
+- var theme_customizer      = true;
+- var range_slider          = true;
+- var page_range_slider     = true;
+- var sidebar               = true;
+- var slick                 = true;
+- var header_slider         = true;
+- var animate               = true;
+- var script2               = true;
+- var scrollbar             = true;
+
+//- mixin
+include ../../mixins/mixin
+
+doctype html
+html(lang='en')
+  include ../../components/header-files
+  body
+    include ../../components/loader
+    include ../../components/taptop
+    // page-wrapper Start
+    #pageWrapper.page-wrapper.compact-wrapper
+      .page-header.row
+        include ../../components/header
+        +left-header
+        +breadcrumb(['Bonus UI','Range Slider'],'Range Slider')
+        +right-header
+      // Page Body Start
+      .page-body-wrapper
+        include ../../components/sidebar
+        .page-body
+          // Container-fluid starts
+          .container-fluid
+            .row
+              .col-lg-6
+                .card.title-line
+                  .card-header
+                    h2 Default Range Slider
+                    p.f-m-light.mt-1  
+                      | Use the 
+                      code .range-slider 
+                      |  class. and yuri used Ion range slider.
+                      code [http://ionden.com/a/plugins/ion.rangeSlider]
+                  .card-body
+                    form.theme-form.form-label-align-right.range-slider
+                      .form-group.row
+                        .col-md-10
+                          input#u-range-01(type='text')
+              .col-lg-6
+                .card.title-line
+                  .card-header
+                    h2 Min Max Value
+                    p.f-m-light.mt-1  
+                      | Use the 
+                      code .range-slider 
+                      |  class. and yuri used Ion range slider.
+                      code [http://ionden.com/a/plugins/ion.rangeSlider]
+                  .card-body
+                      .form-group.row
+                        .col-md-10
+                          input#u-range-02(type='text')
+              .col-lg-6
+                .card.title-line
+                  .card-header
+                    h2 Prefix
+                    p.f-m-light.mt-1  
+                      | Use the 
+                      code .range-slider 
+                      |  class. and yuri used Ion range slider.
+                      code [http://ionden.com/a/plugins/ion.rangeSlider]
+                  .card-body
+                      .form-group.row
+                        .col-md-10
+                          input#u-range-03(type='text')
+              .col-lg-6
+                .card.title-line
+                  .card-header
+                    h2 Negative Value
+                    p.f-m-light.mt-1  
+                      | Use the 
+                      code .range-slider 
+                      |  class. and yuri used Ion range slider.
+                      code [http://ionden.com/a/plugins/ion.rangeSlider]
+                  .card-body
+                      .form-group.row
+                        .col-md-10
+                          input#u-range-04(type='text')
+              .col-lg-6
+                .card.title-line
+                  .card-header
+                    h2 Steps Range Slider
+                    p.f-m-light.mt-1  
+                      | Use the 
+                      code .range-slider 
+                      |  class. and yuri used Ion range slider.
+                      code [http://ionden.com/a/plugins/ion.rangeSlider]
+                  .card-body
+                      .form-group.row
+                        .col-md-10
+                          input#u-range-05(type='text')
+              .col-lg-6
+                .card.title-line
+                  .card-header
+                    h2 Custom Values
+                    p.f-m-light.mt-1  
+                      | Use the 
+                      code .range-slider 
+                      |  class. and yuri used Ion range slider.
+                      code [http://ionden.com/a/plugins/ion.rangeSlider]
+                  .card-body
+                      .form-group.row
+                        .col-md-10
+                          input#u-range-06(type='text')
+              .col-lg-6
+                .card.title-line
+                  .card-header
+                    h2 Prettify Numbers
+                    p.f-m-light.mt-1  
+                      | Use the 
+                      code .range-slider 
+                      |  class. and yuri used Ion range slider.
+                      code [http://ionden.com/a/plugins/ion.rangeSlider]
+                  .card-body
+                      .form-group.row
+                        .col-md-10
+                          input#u-range-07(type='text')
+              .col-lg-6
+                .card.title-line
+                  .card-header
+                    h2 Disabled
+                    p.f-m-light.mt-1  
+                      | Use the 
+                      code .range-slider 
+                      |  class. and yuri used Ion range slider.
+                      code [http://ionden.com/a/plugins/ion.rangeSlider]
+                  .card-body
+                      .form-group.row
+                        .col-md-10
+                          input#u-range-08(type='text')
+              .col-lg-6
+                .card.title-line
+                  .card-header
+                    h2 Manipulating UI
+                    p.f-m-light.mt-1  
+                      | Use the 
+                      code .range-slider 
+                      |  class. and yuri used Ion range slider.
+                      code [http://ionden.com/a/plugins/ion.rangeSlider]
+                  .card-body
+                      .form-group.row
+                        .col-md-10
+                          input#u-range-09(type='text')
+              .col-lg-6
+                .card.title-line
+                  .card-header
+                    h2 Core UI Text
+                    p.f-m-light.mt-1  
+                      | Use the 
+                      code .range-slider 
+                      |  class. and yuri used Ion range slider.
+                      code [http://ionden.com/a/plugins/ion.rangeSlider]
+                  .card-body
+                      .form-group.row
+                        .col-md-10
+                          input#u-range-10(type='text')
+          // Container-fluid Ends
+        include ../../components/footer
+    include ../../components/footer-files

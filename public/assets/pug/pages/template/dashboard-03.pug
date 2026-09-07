@@ -1,0 +1,723 @@
+- var theme_customizer      = true;
+- var sidebar               = true;
+- var apexmoment            = true;
+- var touchspin_2           = true;
+- var datatable_2           = true;
+- var animate               = true;
+- var scrollbar             = true;
+- var swiper                = true;
+- var apex                  = true;
+- var dashboard_3           = true;
+- var script2               = true;
+- var touchspin_2           = true;
+
+//- mixin
+include ../../mixins/mixin
+
+doctype html
+html(lang='en')
+  include ../../components/header-files
+  body
+    include ../../components/loader
+    include ../../components/taptop
+    // page-wrapper Start
+    #pageWrapper.page-wrapper.compact-wrapper
+      .page-header.row
+        include ../../components/header
+        +left-header
+        +breadcrumb(['Dashboard','Project'],'Project')
+        +right-header
+      // Page Body Start
+      .page-body-wrapper
+        include ../../components/sidebar
+        .page-body.main-project
+          // Container-fluid starts
+          .container-fluid
+            .row
+              .col-xl-3.col-sm-6
+                .card.welcome-card 
+                  .card-body 
+                    h4.f-light.f-w-500.mb-1 Have you tried
+                    h2.mb-3 Upgrade Your Plan
+                    a(href="pricing.html").btn.btn-primary.btn-hover-effect Upgrade Plan
+                  .welcome-image 
+                    img.img-fluid(src="../assets/images/dashboard-3/1.png", alt="upgrade")
+              .col-xl-3.col-sm-6
+                .card.project-widget.widget-1.title-line
+                  .card-header.card-no-border.pb-0 
+                    .header-top
+                      div 
+                        h3.f-w-600 Active Projects
+                        span.f-12.f-light.f-w-500 Projects this month
+                      .card-header-right-icon
+                        .dropdown.icon-dropdown.d-xxl-none1
+                          button#active-project.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                            svg
+                              use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                          .dropdown-menu.dropdown-menu-end(aria-labelledby='active-project')
+                            a.dropdown-item(href='#') Today
+                            a.dropdown-item(href='#') Tomorrow
+                            a.dropdown-item(href='#') Yesterday
+                    .widget-middle-content
+                      .d-flex.align-items-center 
+                        h2 106
+                        span.f-w-500.txt-warning.f-12 
+                          i.me-1(data-feather="trending-up")
+                          span +50%
+                  .card-body.widget-bottom-content
+                    .progress-details
+                      ul 
+                        li.bg-secondary
+                          svg
+                            use(href='../assets/svg/icon-sprite.svg#car-white')
+                        li.bg-success 
+                          svg
+                            use(href='../assets/svg/icon-sprite.svg#game')
+                        li.bg-primary
+                          svg
+                            use(href='../assets/svg/icon-sprite.svg#home-white')
+                      h6.txt-success.f-w-600 56%
+                    .progress(style='height: 5px;')
+                      .progress-bar.bg-success(role='progressbar', style='width: 56%', aria-valuenow='50', aria-valuemin='0', aria-valuemax='100')
+              .col-xl-3.col-sm-6
+                .card.project-widget.widget-1.title-line
+                  .card-header.card-no-border.pb-0 
+                    .header-top
+                      div 
+                        h3.f-w-600 Projects Earnings
+                        span.f-12.f-light.f-w-500 From last Week
+                      .card-header-right-icon.d-xxl-none
+                        .dropdown.icon-dropdown
+                          button#earning-project.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                            svg
+                              use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                          .dropdown-menu.dropdown-menu-end(aria-labelledby='earning-project')
+                            a.dropdown-item(href='#') Today
+                            a.dropdown-item(href='#') Tomorrow
+                            a.dropdown-item(href='#') Yesterday
+                    .widget-middle-content
+                      .d-flex.align-items-center 
+                        h2 $202
+                        span.f-w-500.txt-warning.f-12 
+                          i.me-1(data-feather="trending-up")
+                          span +60%
+                  .card-body.pt-0
+                    .earning-chart-container.tooltip-small
+                      #earnings-chart
+              .col-xl-3.col-sm-6
+                .card.project-widget.overflow-hidden.widget-1.title-line
+                  .card-header.card-no-border.pb-0 
+                    .header-top
+                      div 
+                        h3.f-w-600 Total Clients
+                        span.f-12.f-light.f-w-500 Compare to last month
+                      .card-header-right-icon
+                        .dropdown.icon-dropdown
+                          button#client-project.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                            svg
+                              use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                          .dropdown-menu.dropdown-menu-end(aria-labelledby='client-project')
+                            a.dropdown-item(href='#') Today
+                            a.dropdown-item(href='#') Tomorrow
+                            a.dropdown-item(href='#') Yesterday
+                    .widget-middle-content
+                      .d-flex.align-items-center 
+                        h2 930
+                        span.f-w-500.txt-warning.f-12 
+                          i.me-1(data-feather="trending-up")
+                          span +20%
+                  .card-body.p-0
+                    .client-chart-container.tooltip-small
+                      #total-client 
+              .col-xxl-7.col-xl-6.col-lg-6.col-md-6.box-col-6
+                .card.height-equal.title-line
+                  .card-header.card-no-border
+                    .header-top
+                      h2 Projects Overview
+                      .card-header-right-icon.right-xl-dropdown
+                        .dropdown
+                          button#overviewButton.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                            | Monthly
+                          .dropdown-menu.dropdown-menu-end(aria-labelledby='overviewButton')
+                            a.dropdown-item(href='#') Monthly
+                            a.dropdown-item(href='#') weekly
+                            a.dropdown-item(href='#') yearly
+                  .card-body.pt-0 
+                    .project-overview-wrapper
+                      #project-overview
+                      .project-back-bar
+                        #project-bar
+              .col-xxl-5.col-xl-6.col-lg-6.col-md-6.box-col-6
+                .card.height-equal.title-line
+                  .card-header.card-no-border
+                    .header-top
+                      h2 Calendar
+                      .card-header-right-icon
+                        a.link-with-icon(href="#!")
+                          | Report
+                          svg
+                            use(href='../assets/svg/icon-sprite.svg#arrow-two-tone')
+                  .card-body.pt-0 
+                    .calendar-wrapper
+                      ul.calendar-date-list.custom-scrollbar
+                        li 
+                          span.f-12.f-light Mon
+                          h4.f-w-500 14
+                        li 
+                          span.f-12.f-light Tue
+                          h4.f-w-500 15
+                        li 
+                          span.f-12.f-light Wed
+                          h4.f-w-500 16
+                        li 
+                          span.f-12.f-light Thu
+                          h4.f-w-500 17
+                        li 
+                          span.f-12.f-light Fri
+                          h4.f-w-500 18
+                        li.today-date 
+                          span.f-12.f-light Sat
+                          h4.f-w-500 19
+                        li 
+                          span.f-12.f-light Sun
+                          h4.f-w-500 20
+                        li 
+                          span.f-12.f-light Mon
+                          h4.f-w-500 21
+                        li 
+                          span.f-12.f-light Tue
+                          h4.f-w-500 22
+                        li 
+                          span.f-12.f-light Wed
+                          h4.f-w-500 23
+                        li 
+                          span.f-12.f-light Thu
+                          h4.f-w-500 24
+                      .table-responsive.custom-scrollbar
+                        table.table.client-content
+                          tbody 
+                            tr 
+                              td 
+                                img.img-fluid(src="../assets/images/dashboard-3/client/1.png", alt="client")
+                              td 
+                                h4.mb-1 Meeting with Client
+                                ul.client-sub-content
+                                  li.d-flex 
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#video')
+                                    span.f-12.f-light.f-w-500 Zoom Meeting
+                                  li.d-flex 
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#dashboard-clock')
+                                    span.f-12.f-light.f-w-500 09 am
+                                  li.d-flex.f-12.f-light.f-w-500 Lead by 
+                                    span.txt-warning Jaskion Raio
+                              td
+                                a(href="#!").btn.btn-light.f-12.f-w-500 View
+                            tr 
+                              td 
+                                img.img-fluid(src="../assets/images/dashboard-3/client/2.png", alt="client")
+                              td 
+                                h4.mb-1 Deal with New Client
+                                ul.client-sub-content
+                                  li.d-flex 
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#video')
+                                    span.f-12.f-light.f-w-500 Zoom Meeting
+                                  li.d-flex 
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#dashboard-clock')
+                                    span.f-12.f-light.f-w-500 09 am
+                                  li.d-flex.f-12.f-light.f-w-500 Lead by 
+                                    span.txt-warning Ashkista Jain
+                              td 
+                                a(href="#!").btn.btn-light.f-12.f-w-500 View
+              .col-xl-7 
+                .card.height-equal.title-line
+                  .card-header.card-no-border
+                    .header-top
+                      h2 Projects Status
+                      .card-header-right-icon
+                        a.link-with-icon(href="#!")
+                          | View all
+                          svg
+                            use(href='../assets/svg/icon-sprite.svg#arrow-two-tone')
+                  .card-body.project-datatable.p-0 
+                    table#project-status.table
+                      thead 
+                        tr 
+                          th 
+                            span.f-light.f-w-600 Project
+                          th 
+                            span.f-light.f-w-600 Team
+                          th 
+                            span.f-light.f-w-600 Start Date
+                          th 
+                            span.f-light.f-w-600 Due Date
+                          th 
+                            span.f-light.f-w-600 Progress
+                          th 
+                            span.f-light.f-w-600 Status
+                          th 
+                            span.f-light.f-w-600 Action
+                      tbody 
+                        tr 
+                          td
+                            a(href="user-profile.html") Development
+                          td
+                            .customers
+                              ul 
+                                li.d-inline-block
+                                  img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/1.png", alt="user")
+                                li.d-inline-block
+                                  img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/2.png", alt="user")
+                                li.d-inline-block
+                                  img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/3.png", alt="user")
+                                li.d-inline-block
+                                  .light-card
+                                    span.f-w-500.f-light.f-12 +3 
+                          td  
+                            span.f-light 12 Jan 2024
+                          td  
+                            span.f-light 15 Jan 2024           
+                          td 
+                            div.d-flex 
+                              .progress.progress-stripe-primary(style="height: 5px")
+                                .progress-bar-animated.progress-bar-striped( role="progressbar" style="width: 70%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100")
+                              span.f-12.f-light 40%
+                          td
+                            span.badge.btn-lighten-primary In Progress      
+                          td
+                            .dropdown.icon-dropdown.text-center
+                              button#tableButton1.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                              .dropdown-menu.dropdown-menu-end(aria-labelledby='tableButton1')
+                                a.dropdown-item(href='#') Edit
+                                a.dropdown-item(href='#') Delete
+                        tr 
+                          td
+                            a(href="user-profile.html") Web Landing 
+                          td
+                            .customers
+                              ul 
+                                li.d-inline-block
+                                  img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/4.png", alt="user")
+                                li.d-inline-block
+                                  img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/5.png", alt="user")
+                                li.d-inline-block
+                                  .light-card
+                                    span.f-w-500.f-light.f-12 +9
+                          td  
+                            span.f-light 5 Feb 2024
+                          td  
+                            span.f-light 25 Feb 2024           
+                          td 
+                            div.d-flex 
+                              .progress.progress-stripe-warning(style="height: 5px")
+                                .progress-bar-animated.progress-bar-striped( role="progressbar" style="width: 25%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100")
+                              span.f-12.f-light 25%
+                          td
+                            span.badge.badge-light-warning Pending
+                          td
+                            .dropdown.icon-dropdown.text-center
+                              button#tableButton2.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                              .dropdown-menu.dropdown-menu-end(aria-labelledby='tableButton2')
+                                a.dropdown-item(href='#') Edit
+                                a.dropdown-item(href='#') Delete
+                        tr 
+                          td
+                            a(href="user-profile.html") Development 
+                          td
+                            .customers
+                              ul 
+                                li.d-inline-block
+                                  img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/6.png", alt="user")
+                                li.d-inline-block
+                                  img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/7.png", alt="user")
+                                li.d-inline-block
+                                  img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/8.png", alt="user")
+                                li.d-inline-block
+                                  .light-card
+                                    span.f-w-500.f-light.f-12 +3
+                          td  
+                            span.f-light 12 Feb 2024
+                          td  
+                            span.f-light 1 Mar 2024           
+                          td 
+                            div.d-flex 
+                              .progress.progress-stripe-success(style="height: 5px")
+                                .progress-bar-animated.progress-bar-striped( role="progressbar" style="width: 100%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100")
+                              span.f-12.f-light 100%
+                          td
+                            span.badge.badge-light-success Done
+                          td
+                            .dropdown.icon-dropdown.text-center
+                              button#tableButton3.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                              .dropdown-menu.dropdown-menu-end(aria-labelledby='tableButton3')
+                                a.dropdown-item(href='#') Edit
+                                a.dropdown-item(href='#') Delete
+                        tr 
+                          td
+                            a(href="user-profile.html") Marketing 
+                          td
+                            .customers
+                              ul 
+                                li.d-inline-block
+                                  img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/9.png", alt="user")
+                                li.d-inline-block
+                                  img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/10.png", alt="user")
+                                li.d-inline-block
+                                  img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/11.png", alt="user")
+                                li.d-inline-block
+                                  .light-card
+                                    span.f-w-500.f-light.f-12 +4
+                          td  
+                            span.f-light 25 Feb 2024
+                          td  
+                            span.f-light 10 Mar 2024           
+                          td 
+                            div.d-flex 
+                              .progress.progress-stripe-warning(style="height: 5px")
+                                .progress-bar-animated.progress-bar-striped( role="progressbar" style="width: 40%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100")
+                              span.f-12.f-light 40%
+                          td
+                            span.badge.badge-light-warning Pending
+                          td
+                            .dropdown.icon-dropdown.text-center
+                              button#tableButton4.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                              .dropdown-menu.dropdown-menu-end(aria-labelledby='tableButton4')
+                                a.dropdown-item(href='#') Edit
+                                a.dropdown-item(href='#') Delete
+              .col-xl-5 
+                .card.height-equal.title-line
+                  .row 
+                    .col-xxl-6.col-xl-12.col-sm-6.box-col-12.col-xxl-100
+                      .card-header.card-no-border
+                        h2 Chat Application
+                        span.f-w-500 Live Chart
+                      .card-body.pt-0.chat-app-wrapper
+                        .project-details
+                          .d-flex.gap-2
+                            img(src="../assets/images/dashboard-3/user/13.png", alt="user")
+                            div 
+                              h4.f-w-500 Brooklyn Simmons
+                              span.f-12.f-light.f-w-500 Web Manager
+                          p.f-w-500.f-light Bring your teams, work, and apps together from anywhere in one tool with github. Customize Workflows.
+                          ul.light-card.budget-details
+                            li 
+                              h3.f-w-600 21 Oct
+                              span.f-12.f-w-500.f-light Due Date
+                            li 
+                              h3.f-w-600 $78,320
+                              span.f-12.f-w-500.f-light Budget
+                          .d-flex.gap-sm-2.gap-1
+                            a.btn.btn-lighten-primary.link-with-icon(href="#!") View Project
+                              svg
+                                use(href='../assets/svg/icon-sprite.svg#arrow-two-tone')
+                            .customers
+                              ul
+                                li.d-inline-block
+                                  img.img-30.rounded-circle(src='../assets/images/dashboard-3/user/1.png' alt='user')
+                                li.d-inline-block
+                                  img.img-30.rounded-circle(src='../assets/images/dashboard-3/user/2.png' alt='user')
+                                li.d-inline-block
+                                  img.img-30.rounded-circle(src='../assets/images/dashboard-3/user/3.png' alt='user')
+                    .col-xxl-6.col-sm-6.box-col-none.d-xxl-none2
+                      .project-banner.card-body
+                        img.img-fluid(src="../assets/images/dashboard-3/banner.png", alt="banner")
+              .col-xl-5.box-col-5
+                .card.title-line
+                  .card-header.card-no-border
+                    h2 Recent Project Update
+                  .card-body.pt-0 
+                    .recent-update
+                      .swiper.recent-slider
+                        .swiper-wrapper
+                          .swiper-slide 
+                            .light-card-2.recent-project-wrapper 
+                              .recent-icon.primary
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#game-icon')
+                              div.recent-content
+                                div.d-flex
+                                  div 
+                                    h6 Marketing 
+                                    span.f-12.f-w-500.f-light Design
+                                  .customers
+                                    ul 
+                                      li.d-inline-block
+                                        img.img-30.rounded-circle(src="../assets/images/avtar/4.jpg", alt="user")
+                                      li.d-inline-block
+                                        img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/12.png", alt="user")
+                                      li.d-inline-block
+                                        .light-card
+                                          span.f-w-500.f-light.f-12 +2
+                                .recent-progress
+                                  .d-flex.justify-content-between.align-items-center
+                                    span.f-light.f-w-500.f-12 Progress
+                                    span.f-light.f-w-500.f-12 45%
+                                  .progress.progress-stripe-primary.with-light-background(style="height: 5px")
+                                    .progress-bar-animated.progress-bar-striped( role="progressbar" style="width: 45%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100")
+                          .swiper-slide 
+                            .light-card-2.recent-project-wrapper 
+                              .recent-icon.success
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#pen-scale')
+                              div.recent-content
+                                div.d-flex
+                                  div 
+                                    h6 NFT Design
+                                    span.f-12.f-w-500.f-light Design
+                                  .customers
+                                    ul 
+                                      li.d-inline-block
+                                        img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/14.png", alt="user")
+                                      li.d-inline-block
+                                        img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/15.png", alt="user")
+                                      li.d-inline-block
+                                        .light-card
+                                          span.f-w-500.f-light.f-12 +6
+                                .recent-progress
+                                  .d-flex.justify-content-between.align-items-center
+                                    span.f-light.f-w-500.f-12 Progress
+                                    span.f-light.f-w-500.f-12 70%
+                                  .progress.progress-stripe-success.with-light-background(style="height: 5px")
+                                    .progress-bar-animated.progress-bar-striped( role="progressbar" style="width: 70%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100")
+                          .swiper-slide
+                            .light-card-2.recent-project-wrapper 
+                              .recent-icon.secondary
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#programming')
+                              div.recent-content
+                                div.d-flex
+                                  div 
+                                    h6 Development
+                                    span.f-12.f-w-500.f-light Design
+                                  .customers
+                                    ul 
+                                      li.d-inline-block
+                                        img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/16.png", alt="user")
+                                      li.d-inline-block
+                                        img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/17.png", alt="user")
+                                      li.d-inline-block
+                                        .light-card
+                                          span.f-w-500.f-light.f-12 +1
+                                .recent-progress
+                                  .d-flex.justify-content-between.align-items-center
+                                    span.f-light.f-w-500.f-12 Progress
+                                    span.f-light.f-w-500.f-12 80%
+                                  .progress.progress-stripe-secondary.with-light-background(style="height: 5px")
+                                    .progress-bar-animated.progress-bar-striped( role="progressbar" style="width: 80%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100")
+                          .swiper-slide
+                            .light-card-2.recent-project-wrapper 
+                              .recent-icon.warning
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#apple-ios')
+                              div.recent-content
+                                div.d-flex
+                                  div 
+                                    h6 iOS App UI
+                                    span.f-12.f-w-500.f-light Design
+                                  .customers
+                                    ul 
+                                      li.d-inline-block
+                                        img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/18.png", alt="user")
+                                      li.d-inline-block
+                                        img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/19.png", alt="user")
+                                      li.d-inline-block
+                                        .light-card
+                                          span.f-w-500.f-light.f-12 +1
+                                .recent-progress
+                                  .d-flex.justify-content-between.align-items-center
+                                    span.f-light.f-w-500.f-12 Progress
+                                    span.f-light.f-w-500.f-12 30%
+                                  .progress.progress-stripe-warning.with-light-background(style="height: 5px")
+                                    .progress-bar-animated.progress-bar-striped( role="progressbar" style="width: 30%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100")
+                          .swiper-slide 
+                            .light-card-2.recent-project-wrapper 
+                              .recent-icon.secondary
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#programming')
+                              div.recent-content
+                                div.d-flex
+                                  div 
+                                    h6 Development
+                                    span.f-12.f-w-500.f-light Design
+                                  .customers
+                                    ul 
+                                      li.d-inline-block
+                                        img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/16.png", alt="user")
+                                      li.d-inline-block
+                                        img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/17.png", alt="user")
+                                      li.d-inline-block
+                                        .light-card
+                                          span.f-w-500.f-light.f-12 +1
+                                .recent-progress
+                                  .d-flex.justify-content-between.align-items-center
+                                    span.f-light.f-w-500.f-12 Progress
+                                    span.f-light.f-w-500.f-12 80%
+                                  .progress.progress-stripe-secondary.with-light-background(style="height: 5px")
+                                    .progress-bar-animated.progress-bar-striped( role="progressbar" style="width: 80%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100")
+                          .swiper-slide 
+                            .light-card-2.recent-project-wrapper 
+                              .recent-icon.primary
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#game-icon')
+                              div.recent-content
+                                div.d-flex
+                                  div 
+                                    h6 Marketing 
+                                    span.f-12.f-w-500.f-light Design
+                                  .customers
+                                    ul 
+                                      li.d-inline-block
+                                        img.img-30.rounded-circle(src="../assets/images/avtar/4.jpg", alt="user")
+                                      li.d-inline-block
+                                        img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/12.png", alt="user")
+                                      li.d-inline-block
+                                        .light-card
+                                          span.f-w-500.f-light.f-12 +2
+                                .recent-progress
+                                  .d-flex.justify-content-between.align-items-center
+                                    span.f-light.f-w-500.f-12 Progress
+                                    span.f-light.f-w-500.f-12 45%
+                                  .progress.progress-stripe-primary.with-light-background(style="height: 5px")
+                                    .progress-bar-animated.progress-bar-striped( role="progressbar" style="width: 45%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100")
+                          .swiper-slide
+                            .light-card-2.recent-project-wrapper 
+                              .recent-icon.secondary
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#programming')
+                              div.recent-content
+                                div.d-flex
+                                  div 
+                                    h6 Development
+                                    span.f-12.f-w-500.f-light Design
+                                  .customers
+                                    ul 
+                                      li.d-inline-block
+                                        img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/16.png", alt="user")
+                                      li.d-inline-block
+                                        img.img-30.rounded-circle(src="../assets/images/dashboard-3/user/17.png", alt="user")
+                                      li.d-inline-block
+                                        .light-card
+                                          span.f-w-500.f-light.f-12 +1
+                                .recent-progress
+                                  .d-flex.justify-content-between.align-items-center
+                                    span.f-light.f-w-500.f-12 Progress
+                                    span.f-light.f-w-500.f-12 80%
+                                  .progress.progress-stripe-secondary.with-light-background(style="height: 5px")
+                                    .progress-bar-animated.progress-bar-striped( role="progressbar" style="width: 80%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100")
+                      .arrow-group
+                        .prev
+                          svg
+                            use(href='../assets/svg/icon-sprite.svg#swiper-prev-arrow')
+                        .next
+                          svg
+                            use(href='../assets/svg/icon-sprite.svg#swiper-next-arrow')
+              .col-xl-4.col-md-6.box-col-4
+                .card.title-line.earning-tread
+                  .card-header.card-no-border
+                    .header-top
+                      div 
+                        h2 Avg. Earnings
+                      .card-header-right-icon
+                        .dropdown.icon-dropdown
+                          button#earning-avg.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                            svg
+                              use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                          .dropdown-menu.dropdown-menu-end(aria-labelledby='earning-avg')
+                            a.dropdown-item(href='#') Today
+                            a.dropdown-item(href='#') Tomorrow
+                            a.dropdown-item(href='#') Yesterday
+                  .card-body.pt-0 
+                    .row.gy-2
+                      .col-xxl-6.col-md-12.col-sm-6
+                        .earning-left-content
+                          h2 $342,091.56
+                          div
+                            span.f-12.f-w-500.txt-warning 
+                              i.me-1(data-feather="trending-up")
+                              | +20%
+                            span.f-12.f-w-500.f-light.ms-2 Than Last Week
+                      .col-xxl-6.d-xxl-block.d-xl-none.col-md-12.col-sm-6
+                        ul.earning-right-content 
+                          li 
+                            span.f-12.f-w-500.f-light 10:45 PM
+                            span.f-12.f-w-500.txt-success +732.67
+                          li 
+                            span.f-12.f-w-500.f-light 03:20 AM
+                            span.f-12.f-w-500.txt-danger -108.09
+                    ul.earning-buttons
+                      li 
+                        button.btn.btn-light(type="button") 1d
+                      li 
+                        button.btn.btn-light(type="button") 10d
+                      li 
+                        button.btn.btn-light(type="button") 1m
+                      li 
+                        button.btn.btn-light(type="button") 6m
+                      li 
+                        button.btn.btn-light(type="button") 1y
+                    .avg-earning-chart-container
+                      #earning-average
+              .col-xl-3.col-md-6.box-col-3
+                .card.title-line
+                  .card-header.card-no-border
+                    .header-top
+                      div 
+                        h2 Daily Task
+                      .card-header-right-icon
+                        .dropdown.icon-dropdown
+                          button#daily-task.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                            svg
+                              use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                          .dropdown-menu.dropdown-menu-end(aria-labelledby='daily-task')
+                            a.dropdown-item(href='#') Today
+                            a.dropdown-item(href='#') Tomorrow
+                            a.dropdown-item(href='#') Yesterday
+                  .card-body.notification.daily-task.pt-0
+                    ul 
+                      li.d-flex.align-items-center
+                        .activity-dot-primary
+                        .task-content.ms-2
+                          .d-flex.align-items-center 
+                            div 
+                              h6 iOS App UI/UX Meet..
+                              span.f-light.f-w-500.f-12 
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#clock-2')
+                                span 9:00 am
+                            a(href="to-do.html").btn.btn-lighten-primary Remind Me
+                      li.d-flex.align-items-center 
+                        .activity-dot-warning
+                        .task-content.ms-2
+                          .d-flex.align-items-center 
+                            div 
+                              h6 Start Web developing..
+                              span.f-light.f-w-500.f-12 
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#clock-2')
+                                span 10:00 am
+                            a(href="to-do.html").btn.btn-lighten-primary Remind Me
+                      li.d-flex.align-items-center 
+                        .activity-dot-success
+                        .task-content.ms-2
+                          .d-flex.align-items-center 
+                            div 
+                              h6 IOS App ui
+                              span.f-light.f-w-500.f-12 
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#clock-2')
+                                span 10:00 am
+                            a(href="to-do.html").btn.btn-lighten-primary Remind Me
+          // Container-fluid Ends
+        include ../../components/footer
+    include ../../components/footer-files

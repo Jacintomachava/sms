@@ -1,0 +1,178 @@
+/**=====================
+    3.41 User-profile CSS start
+==========================**/
+.user-profile {
+  .border-right {
+    border-right: 1px solid var(--slate-color);
+    padding-right: 8px;
+    margin-right: 0;
+  }
+  hr {
+    margin: 22px 0;
+  }
+  .hovercard {
+    .cardheader {
+      background: url(../images/other-images/bg-profile.png);
+      background-size: cover;
+      background-position: 10%;
+      height: 470px;
+    }
+    .user-image {
+      position: relative;
+      height: 0;
+      .avatar {
+        margin-top: -80px;
+        img {
+          width: 100px;
+          height: 100px;
+          max-width: 155px;
+          max-height: 155px;
+          border-radius: 50%;
+          border: 7px solid $white;
+        }
+      }
+      .icon-wrapper {
+        position: absolute;
+        bottom: -20px;
+        left: 51%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 32px;
+        width: 32px;
+        border-radius: 50%;
+        background-color: $white;
+        cursor: pointer;
+        overflow: hidden;
+        margin: 0 auto;
+        font-size: 17px;
+        box-shadow: 0 0 6px 3px rgba(68, 102, 242, 0.1);
+        @media (max-width:992px) {
+          i {
+            font-size: 14px;
+          }
+        }
+        @media (max-width:992px) {
+          i {
+            font-size: 14px;
+          }
+        }
+      }
+    }
+    .info {
+      padding: 20px;
+      .title {
+        margin-bottom: 4px;
+        font-size: 24px;
+        line-height: 1;
+        color: $dark-color;
+        vertical-align: middle;
+        a {
+          color: $theme-font-color;
+          font-size: 20px;
+          text-transform: uppercase;
+          font-weight: 500;
+        }
+      }
+      .desc {
+        overflow: hidden;
+        font-size: 14px;
+        line-height: 20px;
+        color: $semi-dark;
+        text-overflow: ellipsis;
+        text-transform: uppercase;
+      }
+    }
+  }
+  .follow {
+    margin-top: 10px;
+    .follow-num {
+      font-size: 20px;
+      color: $theme-font-color;
+      font-family: $font-inter, $font-serif;
+      font-weight: 500;
+    }
+    span {
+      color: $semi-dark;
+    }
+  }
+  .profile-img-style {
+    padding: 20px;
+    .d-flex {
+      img {
+        width: 50px;
+      }
+    }
+    .img-container {
+      margin-top: 20px;
+    }
+    .user-name {
+      color: $theme-font-color;
+      margin: 0;
+      font-weight: 600;
+    }
+    p {
+      line-height: 30px;
+      font-size: 14px;
+      color: $dark-gray;
+      margin-bottom: 0;
+    }
+    .d-flex {
+      img {
+        width: 50px;
+      }
+    }
+  }
+  .like-comment {
+    li {
+      a {
+        color: $dark-gray;
+      }
+      &:first-child {
+        a {
+          &:hover,
+          &:active {
+            color: $danger-color;
+          }
+        }
+      }
+    }
+    span {
+      font-family: $font-inter, $font-serif;
+    }
+  }
+  .social-media {
+    a {
+      padding: 0 15px;
+      color: $semi-dark;
+      font-size: 24px;
+      cursor: pointer;
+      &:hover {
+        color: var(--theme-default);
+      }
+    }
+  }
+}
+//Edit profile //
+.edit-profile {
+  .profile-title {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 16px;
+    @media (max-width:1200px) {
+      margin-bottom: 6px;
+    }
+  }
+  textarea {
+    &.form-control {
+      font-size: 14px;
+      @media (max-width:992px) {
+        font-size: 13px;
+      }
+    }
+  }
+}
+/**=====================
+    3.41 User-profile CSS Ends
+==========================**/

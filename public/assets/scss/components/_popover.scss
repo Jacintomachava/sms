@@ -1,0 +1,32 @@
+/**=====================
+  2.23 Popover CSS Start
+==========================**/
+.popover-main {
+  .btn-showcase {
+    a {
+      color: $white;
+    }
+    button {
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+  }
+}
+.popover {
+  background-color: $white;
+  border: none;
+  -webkit-box-shadow: 0 0 20px rgba($primary-color, 0.1);
+  box-shadow: 0 0 20px rgba($primary-color, 0.1);
+  .popover-header {
+    background-color: $light-primary;
+    color: var(--theme-default);
+    border-bottom: none;
+  }
+  .popover-body {
+    color: rgba(43, 43, 43, 0.7);
+  }
+}
+/**=====================
+  2.23 Popover CSS Ends
+==========================**/

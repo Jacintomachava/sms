@@ -1,0 +1,186 @@
+.visitor-wrapper .average-Visitors {
+  gap: 6px;
+}
+@media (min-width: 1200px) and (max-width: 1268px) {
+  .visitor-wrapper .average-Visitors {
+    gap: 0;
+  }
+}
+.visitor-wrapper .weekly-visitor {
+  margin-block: -20px;
+}
+@media (min-width: 320px) and (max-width: 1199px) {
+  .visitor-wrapper .weekly-visitor {
+    margin-block: unset;
+    margin-top: -40px;
+  }
+}
+
+@media (min-width: 576px) and (max-width: 650px) {
+  .pipeline-chart1 .card-header h2 {
+    text-overflow: ellipsis;
+    word-break: break-word;
+    overflow: hidden;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    white-space: nowrap;
+    max-width: 130px;
+  }
+}
+@media (min-width: 1200px) and (max-width: 1262px) {
+  .pipeline-chart1 .card-header > span {
+    display: none;
+  }
+}
+@media (min-width: 576px) and (max-width: 758px) {
+  .pipeline-chart1 .card-header > span {
+    text-overflow: ellipsis;
+    word-break: break-word;
+    overflow: hidden;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    white-space: nowrap;
+    max-width: 130px;
+  }
+}
+.pipeline-chart1 .apexcharts-datalabels-group {
+  transform: translate(0px, -10px);
+}
+.pipeline-chart1 .apexcharts-datalabels-group .apexcharts-text.apexcharts-datalabel-value {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) and (max-width: 1204px) {
+  .project-widget-1 .card-header h3 {
+    text-overflow: ellipsis;
+    word-break: break-word;
+    overflow: hidden;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    white-space: nowrap;
+    max-width: 155px;
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1212px) {
+  .revenue-wrapper .card-header h2 {
+    text-overflow: ellipsis;
+    word-break: break-word;
+    overflow: hidden;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    white-space: nowrap;
+    max-width: 155px;
+  }
+}
+@media (min-width: 1200px) and (max-width: 1672px) {
+  .revenue-wrapper .card-header span {
+    text-overflow: ellipsis;
+    word-break: break-word;
+    overflow: hidden;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    white-space: nowrap;
+    max-width: 155px;
+  }
+}
+@media (min-width: 1200px) and (max-width: 1370px) {
+  .revenue-wrapper .card-body .revenue-chart-container > div {
+    margin-bottom: -38px;
+  }
+}
+
+@media (min-width: 1213px) and (max-width: 1458px) {
+  .widget-acitivity .card-body .activity-details {
+    height: auto;
+  }
+}
+@media (min-width: 1200px) and (max-width: 1212px) {
+  .widget-acitivity .card-body .activity-details {
+    height: auto;
+    height: 378px;
+  }
+}
+@media (min-width: 1221px) and (max-width: 1365px) {
+  .widget-acitivity .card-body .activity-details li {
+    padding-bottom: 28px;
+  }
+}
+@media (min-width: 1200px) and (max-width: 1220px) {
+  .widget-acitivity .card-body .activity-details li {
+    padding-bottom: 32px;
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1420px) {
+  .delivery-card-1 .card-header .dropdown {
+    display: none;
+  }
+}
+@media (min-width: 576px) and (max-width: 781px) {
+  .delivery-card-1 .card-header .dropdown {
+    display: none;
+  }
+}
+@media (min-width: 320px) and (max-width: 395px) {
+  .delivery-card-1 .card-header .dropdown {
+    display: none;
+  }
+}
+@media (min-width: 1200px) and (max-width: 1420px) {
+  .delivery-card-1 .card-body .order-list {
+    height: auto;
+  }
+}
+
+@media (min-width: 320px) and (max-width: 1199px) {
+  .widget-visitor .card-header {
+    padding-bottom: 0;
+  }
+}
+@media (min-width: 576px) and (max-width: 735px) {
+  .widget-visitor .card-header .square-legend {
+    gap: 10px;
+  }
+}
+@media (min-width: 576px) and (max-width: 735px) {
+  .widget-visitor .card-header .square-legend > div {
+    gap: 8px;
+  }
+}
+@media (min-width: 576px) and (max-width: 700px) {
+  .widget-visitor .card-header .square-legend .dropdown {
+    display: none;
+  }
+}
+
+@media (min-width: 320px) and (max-width: 1199px) {
+  .main-widget .order-md-i {
+    order: 1;
+  }
+  .main-widget .order-md-ii {
+    order: 2;
+  }
+  .main-widget .order-md-iii {
+    order: 3;
+  }
+  .main-widget .order-md-iv {
+    order: 4;
+  }
+  .main-widget .order-md-v {
+    order: 5;
+  }
+  .main-widget .order-md-vi {
+    order: 6;
+  }
+  .main-widget .order-md-vii {
+    order: 7;
+  }
+  .main-widget .order-md-viii {
+    order: 8;
+  }
+  .main-widget .order-md-ix {
+    order: 9;
+  }
+}
+/*# sourceMappingURL=general_widget.css.map */

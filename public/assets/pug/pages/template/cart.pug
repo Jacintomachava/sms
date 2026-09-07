@@ -1,0 +1,110 @@
+- var theme_customizer      = true;
+- var script2               = true;
+- var touchspin             = true;
+- var sidebar               = true;
+- var slick                 = true;
+- var header_slider         = true;
+- var animate               = true;
+- var scrollbar             = true;
+
+//- mixin
+include ../../mixins/mixin
+
+doctype html
+html(lang='en')
+  include ../../components/header-files
+  body
+    include ../../components/loader
+    include ../../components/taptop
+    // page-wrapper Start
+    #pageWrapper.page-wrapper.compact-wrapper
+      .page-header.row
+        include ../../components/header
+        +left-header
+        +breadcrumb(['ECommerce','Cart'],'Cart')
+        +right-header
+      // Page Body Start
+      .page-body-wrapper
+        include ../../components/sidebar
+        .page-body
+          // Container-fluid starts
+          .container-fluid
+            .row
+              .col-sm-12
+                .card
+                  .card-header
+                    h2 Cart
+                  .card-body
+                    .row
+                      .order-history.table-responsive.wishlist
+                        table.table.table-bordered
+                          thead
+                            tr
+                              th Product
+                              th Product Name
+                              th Price
+                              th Quantity
+                              th Action
+                              th Total
+                          tbody
+                            tr
+                              td
+                                img.img-fluid.img-40(src='../assets/images/product/1.png' alt='#')
+                              td
+                                .product-name
+                                  a(href='#!') Long top
+                              td $21
+                              td
+                                fieldset.qty-box
+                                  .input-group
+                                    input.touchspin.text-center(type='text' value='5')
+                              td
+                                i(data-feather='x-circle')
+                              td $8686.6
+                            tr
+                              td
+                                img.img-fluid.img-40(src='../assets/images/product/13.png' alt='#')
+                              td
+                                .product-name
+                                  a(href='#!') Fancy watch
+                              td $50
+                              td
+                                fieldset.qty-box
+                                  .input-group
+                                    input.touchspin.text-center(type='text' value='5')
+                              td
+                                i(data-feather='x-circle')
+                              td $20682.4
+                            tr
+                              td
+                                img.img-fluid.img-40(src='../assets/images/product/4.png' alt='#')
+                              td
+                                .product-name
+                                  a(href='#!') Man shoes
+                              td $11
+                              td
+                                fieldset.qty-box
+                                  .input-group
+                                    input.touchspin.text-center(type='text' value='5')
+                              td
+                                i(data-feather='x-circle')
+                              td $4550.1
+                            tr
+                              td(colspan='4')                                            
+                                .input-group
+                                  input.form-control.me-2(type='text' placeholder='Enter coupan code')
+                                  a.btn.btn-primary(href='#!') Apply
+                              td.total-amount
+                                h6.m-0.text-end
+                                  span.f-w-600.f-16 Total Price :
+                              td
+                                span $33919.1
+                            tr
+                              td.text-end(colspan='5')
+                                a.btn.btn-warning.cart-btn-transform(href='product.html') Continue Shopping
+                              td
+                                a.btn.btn-success(href="checkout.html").cart-btn-transform Check Out
+
+                  // Container-fluid Ends
+        include ../../components/footer
+    include ../../components/footer-files

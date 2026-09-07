@@ -1,0 +1,49 @@
+/**=====================
+    5.1 Footer CSS Start
+==========================**/
+.footer {
+  background-color: $footer_bg_color;
+  box-shadow: $footer_box_shadow;
+  padding: 15px;
+  bottom: 0;
+  left: 0;
+  margin-left: $sidebar-compact-width;
+  transition: 0.5s;
+  @media (max-width: 576px) {
+    padding: 15px 10px;
+  }
+  .d-flex {
+    align-items: center;
+    gap: 16px;
+    justify-content: flex-end;
+    @media (max-width:767px) {
+      justify-content: center;
+    }
+    @media (max-width: 360px) {
+      font-size: 12px;
+    }
+  }
+  .lang-title {
+    svg {
+      width: 16px;
+      height: 16px;
+      vertical-align: -2px;
+    }
+  }
+  &.footer-dark {
+    background-color: $footer_dark_color;
+    p {
+      color: $white;
+    }
+  }
+}
+.footer-fix {
+  width: calc(100% - $sidebar-compact-width);
+  position: fixed;
+}
+.footer-language {
+  text-align: right;
+}
+/**=====================
+    5.1 Footer CSS Ends
+==========================**/

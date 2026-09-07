@@ -1,0 +1,729 @@
+- var theme_customizer      = true;
+- var touchspin_2           = true;
+- var apex                  = true;
+- var apexmoment            = true;
+- var swiper                = true;
+- var datatable_2           = true;
+- var dashboard_default     = true;
+- var notify                = true;
+- var animate               = true;
+- var script2               = true;
+- var typeahead             = true;
+- var typeahead_search      = true;
+- var sidebar               = true;
+- var scrollbar             = true;
+- var wow                   = true; 
+
+//- mixin
+include ../../mixins/mixin
+
+doctype html
+html(lang='en')
+  include ../../components/header-files
+  body
+    include ../../components/loader
+    include ../../components/taptop
+    // page-wrapper Start
+    #pageWrapper.page-wrapper.compact-wrapper
+      .page-header.row
+        include ../../components/header
+        +left-header
+        +breadcrumb(['Dashboard','Default'],'Default')
+        +right-header
+      // Page Body Start
+      .page-body-wrapper
+        include ../../components/sidebar
+        .page-body
+          // Container-fluid starts
+          .container-fluid.default-dashboard
+            .row.size-column
+              .col-xl-9.col-xl-100.box-col-12
+                .row 
+                  .col-xl-6.box-col-6
+                    .card.title-line.upgrade-card.overflow-hidden
+                      .row.align-items-end 
+                        .col-sm-8.col-11 
+                          .card-header 
+                            h2 Hi, Welcome back 
+                              span.txt-primary Wade! 
+                            p.mt-2.f-light Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. 
+                            a.btn.btn-primary.btn-hover-effect.btn-sm.f-w-500(href="pricing.html") Upgrade Plan
+                              svg.svg-sprite
+                                use(href='../assets/svg/icon-sprite.svg#logout') 
+                      .cartoon-image 
+                        img.img-fluid(src="../assets/images/dashboard/welcome.png", alt="vector")
+                      img.img-fluid.pattern-image(src="../assets/images/dashboard/bg-1.png", alt="vector pattern")
+                  .col-xl-6.box-col-6
+                    .row.tread-cards
+                      .col-xl-6.col-sm-6 
+                        .card.widget-1
+                          .card-body.common-box
+                            .widget-icon.primary.widget-round
+                              svg
+                                use(href='../assets/svg/icon-sprite.svg#crown') 
+                            div 
+                              h3.f-w-600 User Profile
+                              span.f-w-500.f-light.f-12 Consectetur adipiscing 
+                      .col-xl-6.col-sm-6  
+                        .card.widget-1
+                          .card-body.common-box
+                            .widget-icon.success.widget-round
+                              svg
+                                use(href='../assets/svg/icon-sprite.svg#flash') 
+                            div 
+                              h3.f-w-600 Latest Trends
+                              span.f-w-500.f-light.f-12 Minim veniam
+                      .col-xl-6.col-sm-6 
+                        .card.widget-1 
+                          .card-body.common-box
+                            .widget-icon.warning.widget-round
+                              svg
+                                use(href='../assets/svg/icon-sprite.svg#blend-2') 
+                            div 
+                              h3.f-w-600 New Arrivals
+                              span.f-w-500.f-light.f-12 Excepteur sint
+                      .col-xl-6.col-sm-6 
+                        .card.widget-1
+                          .card-body.common-box
+                            .widget-icon.secondary.widget-round
+                              svg
+                                use(href='../assets/svg/icon-sprite.svg#color-filter') 
+                            div 
+                              h3.f-w-600 Best Referrals
+                              span.f-w-500.f-light.f-12 Quis nostrud exercitation
+                  .col-xl-6
+                    .row.small-charts
+                      .col-xl-6.col-sm-6 
+                        .card.title-line.widget-1
+                          .card-header.card-no-border 
+                            h2 Revenue
+                            span.f-w-500.f-12.f-light.mt-0 Today Revenue 
+                              span.txt-primary 30% OFF
+                          .card-body.pt-0
+                            .revenue-chart-container 
+                              #revenue-chart
+                      .col-xl-6.col-sm-6
+                        .card.title-line.widget-1.sales-pipeline
+                          .card-header.card-no-border
+                            h2 Sales Pipeline
+                            span.f-w-500.f-12.f-light.mt-0 Special Discount 
+                              span.txt-primary 60% OFF
+                          .card-body.pt-0
+                            .pipeline-chart-container 
+                              #pipeline-chart
+                      .col-xl-6.col-sm-6.rate-column 
+                        .card.title-line.widget-1
+                          .card-header.card-no-border 
+                            h2 Satisfaction Rate
+                          .card-body.pt-0
+                            .light-card.satisfaction-box.common-box
+                              .widget-icon.primary.widget-round
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#like-shape')
+                              div 
+                                h2 89,786(82%)
+                                span.f-light.f-w-500.f-12 Vote by Consumer
+                      .col-xl-6.col-sm-6.revenue-column.col-xxl-100.box-col-12
+                        .card.title-line.widget-1
+                          .card-header.card-no-border 
+                            h2 Revenue by Industry
+                          .card-body.pt-0
+                            .revenue-slider-wrapper 
+                              .swiper.revenue-swiper
+                                .swiper-wrapper
+                                  .swiper-slide 
+                                    .light-card.satisfaction-box.progrees-widget
+                                      .d-flex.justify-content-between.align-items-center
+                                        span.social-content
+                                          i.txt-primary.fa.fa-facebook-square.me-1
+                                          span.f-w-500.f-light Facebook
+                                        span.f-12.f-w-500.f-light 45%
+                                      .progress.progress-stripe-primary.with-light-background.mt-2(style='height: 5px')
+                                        .progress-bar-animated.progress-bar-striped(role='progressbar' style='width: 45%' aria-valuenow='10' aria-valuemin='0' aria-valuemax='100')
+                                  .swiper-slide 
+                                    .light-card.satisfaction-box.progrees-widget
+                                      .d-flex.justify-content-between.align-items-center
+                                        span.social-content
+                                          i.txt-secondary.fa.fa-instagram.me-1
+                                          span.f-w-500.f-light Instagram
+                                        span.f-12.f-w-500.f-light 70%
+                                      .progress.progress-stripe-secondary.with-light-background.mt-2(style='height: 5px')
+                                        .progress-bar-animated.progress-bar-striped(role='progressbar' style='width: 70%' aria-valuenow='10' aria-valuemin='0' aria-valuemax='100')
+                                  .swiper-slide 
+                                    .light-card.satisfaction-box.progrees-widget
+                                      .d-flex.justify-content-between.align-items-center
+                                        span.social-content
+                                          i.txt-success.fa.fa-twitter.me-1
+                                          span.f-w-500.f-light Twitter 
+                                        span.f-12.f-w-500.f-light 30%
+                                      .progress.progress-stripe-success.with-light-background.mt-2(style='height: 5px')
+                                        .progress-bar-animated.progress-bar-striped(role='progressbar' style='width: 30%' aria-valuenow='10' aria-valuemin='0' aria-valuemax='100')
+                                .swiper-pagination
+                  .col-xl-6.col-md-6
+                    .card.height-equal.title-line
+                      .card-header.card-no-border
+                        .header-top
+                          h2 Total Profit
+                            span.f-light.f-12.d-block.f-w-500 Special Discount 
+                              span.txt-primary 60% OFF
+                          .card-header-right-icon
+                            .dropdown
+                              button#overviewButton.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                | Weekly
+                              .dropdown-menu.dropdown-menu-end(aria-labelledby='overviewButton')
+                                a.dropdown-item(href='#') Monthly
+                                a.dropdown-item(href='#') weekly
+                                a.dropdown-item(href='#') yearly
+                      .card-body.pt-0 
+                        .profit-data 
+                          h2 $15,087
+                            span.f-light.f-w-500.f-12 (Another 
+                              span.txt-primary.me-1 $35,098  
+                              | to Goal) 
+                        .profit-chart-container 
+                          #profit_chart 
+                  .col-md-6 
+                    .card.title-line
+                      .card-header.card-no-border
+                        .header-top
+                          div 
+                            h2 Earning Reports
+                              span.d-block.f-w-500.f-light.f-12 Weekly Earning Overview
+                          .card-header-right-icon
+                            .dropdown.icon-dropdown
+                              button#earning-avg.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                              .dropdown-menu.dropdown-menu-end(aria-labelledby='earning-avg')
+                                a.dropdown-item(href='#') Today
+                                a.dropdown-item(href='#') Tomorrow
+                                a.dropdown-item(href='#') Yesterday
+                      .card-body.pt-0
+                        .report-chart-container 
+                          #earning-chart 
+                        ul.report-list 
+                          li 
+                            .light-card.report-icon 
+                              svg
+                                use(href='../assets/svg/icon-sprite.svg#status-up')
+                            div 
+                              span.f-12.f-w-500.f-light Profit
+                              h4.mt-1.f-w-600 $98.50
+                                span.badge.badge-light-primary.ms-1
+                                  i.me-1(data-feather="trending-up")
+                                  | 13.5%
+                          li 
+                            .light-card.report-icon 
+                              svg
+                                use(href='../assets/svg/icon-sprite.svg#expense')
+                            div 
+                              span.f-12.f-w-500.f-light Expense
+                              h4.mt-1.f-w-600 $109.90
+                                span.badge.badge-light-warning.ms-1
+                                  i.me-1(data-feather="trending-down")
+                                  | 1.05%
+                  .col-md-6.order-md-i
+                    .card.title-line
+                      .card-header.card-no-border.transaction-header
+                        .header-top
+                          h2 Upcoming Transaction
+                            span.f-light.f-12.d-block.f-w-500 Special Discount 
+                              span.txt-primary 60% OFF
+                          .card-header-right-icon
+                            .dropdown
+                              button#overviewButton1.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                | Weekly
+                              .dropdown-menu.dropdown-menu-end(aria-labelledby='overviewButton1')
+                                a.dropdown-item(href='#') Monthly
+                                a.dropdown-item(href='#') weekly
+                                a.dropdown-item(href='#') yearly
+                      .card-body.pt-0.transaction-list
+                        ul 
+                          li.transaction-title 
+                            span.f-w-500.f-light.f-12 Today
+                          li 
+                            .transaction-content 
+                              .transaction-icon.bg-light-primary 
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#bill')
+                              .transaction-right-content  
+                                div 
+                                  a(href="list-wish.html") 
+                                    h6 Water Bill
+                                  span.f-light.f-w-400 Unsuccessfully
+                                span.txt-danger.f-w-500 -$120
+                          li.transaction-title 
+                            span.f-w-500.f-light.f-12 Tomorrow
+                          li 
+                            .transaction-content 
+                              .transaction-icon.bg-light-success 
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#payment')
+                              .transaction-right-content  
+                                div 
+                                  a(href="list-wish.html")
+                                    h6 Income : Salary Oct
+                                  span.f-light.f-w-400 Successfully
+                                span.f-w-500 +$1200
+                          li 
+                            .transaction-content 
+                              .transaction-icon.bg-light-warning
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#invoice')
+                              .transaction-right-content  
+                                div 
+                                  a(href="list-wish.html")
+                                    h6 Electric Bill
+                                  span.f-light.f-w-400 Successfully
+                                span.f-w-500.txt-danger -$191
+                          li 
+                            .transaction-content 
+                              .transaction-icon.bg-light-secondary
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#transfer')
+                              .transaction-right-content.pb-0
+                                div 
+                                  a(href="list-wish.html")
+                                    h6 Income : Jane transfers
+                                  span.f-light.f-w-400 Successfully
+                                span.f-w-500 +$540
+                  .col-xl-6.order-md-iii
+                    .card.title-line.overflow-hidden.member-wrapper
+                      .card-header.card-no-border
+                        .header-top
+                          h2 Members Statistics
+                            span.f-12.f-w-500.f-light.d-block Over 10k members
+                          .card-header-right-icon
+                            a.link-with-icon(href="#!")
+                              | + Add New Member
+                      .ard-body.member-datatable.p-0 
+                        table#member-table.table
+                          thead 
+                            tr 
+                              th
+                              th 
+                                span.f-light.f-w-600 Authors
+                              th 
+                                span.f-light.f-w-600 Company
+                              th 
+                                span.f-light.f-w-600 Progress
+                              th 
+                                span.f-light.f-w-600 Action
+                          tbody 
+                            tr 
+                              td 
+                                .checkbox-checked
+                                  .form-check
+                                    input#checkbox-2.form-check-input(type='checkbox' value='')  
+                              td 
+                                .d-flex.gap-2 
+                                  img(src="../assets/images/dashboard/user/2.jpg", alt="user")
+                                  div
+                                    a(href="user-profile.html")  
+                                      h6.f-w-500 Jerome Bell
+                                    span.f-light.f-12.f-w-500 UX designer
+                              td 
+                                a(href="user-profile.html")
+                                  h6.f-w-500 Louis
+                                span.f-light.f-12.f-w-500 UX designer
+                              td 
+                                span.f-w-500.f-12.f-light 70%
+                                .progress.progress-stripe-primary.mt-2(style='height: 5px')
+                                  .progress-bar-animated.progress-bar-striped(role='progressbar' style='width: 70%' aria-valuenow='10' aria-valuemin='0' aria-valuemax='100')
+                              td
+                                .d-flex.action-buttons
+                                  a(href="#!").light-card 
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#edit-2')
+                                  a(href="#!").light-card 
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#trash-fill')
+                            tr 
+                              td 
+                                .checkbox-checked
+                                  .form-check
+                                    input#checkbox-3.form-check-input(type='checkbox' value='')  
+                              td 
+                                .d-flex.gap-2 
+                                  img(src="../assets/images/dashboard/user/4.jpg", alt="user")
+                                  div 
+                                    a(href="user-profile.html")
+                                      h6.f-w-500 Ralph Edwa
+                                    span.f-light.f-12.f-w-500 Web, Laravel
+                              td 
+                                a(href="user-profile.html")
+                                  h6.f-w-500 IBM
+                                span.f-light.f-12.f-w-500 Development
+                              td 
+                                span.f-w-500.f-12.f-light 50%
+                                .progress.progress-stripe-success.mt-2(style='height: 5px')
+                                  .progress-bar-animated.progress-bar-striped(role='progressbar' style='width: 50%' aria-valuenow='10' aria-valuemin='0' aria-valuemax='100')
+                              td
+                                .d-flex.action-buttons
+                                  a(href="#!").light-card 
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#edit-2')
+                                  a(href="#!").light-card 
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#trash-fill')
+                            tr 
+                              td 
+                                .checkbox-checked
+                                  .form-check
+                                    input#checkbox-4.form-check-input(type='checkbox' value='')  
+                              td 
+                                .d-flex.gap-2 
+                                  img(src="../assets/images/dashboard/user/5.jpg", alt="user")
+                                  div 
+                                    a(href="user-profile.html")
+                                      h6.f-w-500 Esther Kit
+                                    span.f-light.f-12.f-w-500 Laravel
+                              td 
+                                a(href="user-profile.html")
+                                  h6.f-w-500 Johnson
+                                span.f-light.f-12.f-w-500 Unity Game
+                              td 
+                                span.f-w-500.f-12.f-light 83%
+                                .progress.progress-stripe-secondary.mt-2(style='height: 5px')
+                                  .progress-bar-animated.progress-bar-striped(role='progressbar' style='width: 83%' aria-valuenow='10' aria-valuemin='0' aria-valuemax='100')
+                              td
+                                .d-flex.action-buttons
+                                  a(href="#!").light-card 
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#edit-2')
+                                  a(href="#!").light-card 
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#trash-fill')
+                            tr 
+                              td 
+                                .checkbox-checked
+                                  .form-check
+                                    input#checkbox-5.form-check-input(type='checkbox' value='')  
+                              td 
+                                .d-flex.gap-2 
+                                  img(src="../assets/images/dashboard/user/1.png", alt="user")
+                                  div 
+                                    a(href="user-profile.html")
+                                      h6.f-w-500 Leslie Jolly
+                                    span.f-light.f-12.f-w-500 Designer
+                              td 
+                                a(href="user-profile.html")
+                                  h6.f-w-500 Card
+                                span.f-light.f-12.f-w-500 Marketing 
+                              td 
+                                span.f-w-500.f-12.f-light 79%
+                                .progress.progress-stripe-warning.mt-2(style='height: 5px')
+                                  .progress-bar-animated.progress-bar-striped(role='progressbar' style='width: 79%' aria-valuenow='10' aria-valuemin='0' aria-valuemax='100')
+                              td
+                                .d-flex.action-buttons
+                                  a(href="#!").light-card 
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#edit-2')
+                                  a(href="#!").light-card 
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#trash-fill')
+                  .col-xl-6.col-md-6.order-md-ii
+                    .card.title-line
+                      .card-header.card-no-border.report-option
+                        .header-top
+                          h2 Top Referrals Pages
+                            span.f-light.f-12.d-block.f-w-500 Up to $100 per referral
+                          .card-header-right-icon
+                            .dropdown
+                              button#referralButton.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                | Generate Report
+                              .dropdown-menu.dropdown-menu-end(aria-labelledby='referralButton')
+                                a.dropdown-item(href='#') Monthly
+                                a.dropdown-item(href='#') weekly
+                                a.dropdown-item(href='#') yearly
+                      .card-body.pt-0 
+                        .referral-content 
+                          .referral-left-details 
+                            .d-flex.gap-1 
+                              h2 129,900
+                              span.badge.badge-light-warning 
+                                i.me-1(data-feather="trending-up")
+                                | 4.5%
+                            span.f-light.f-12.f-w-500 vs. previous month
+                          .referral-image 
+                            img(src="../assets/images/dashboard/1.png", alt="vector")
+                        .progress-stacked.referral-progress
+                          .progress(role='progressbar' aria-label='Segment one' aria-valuenow='40' aria-valuemin='0' aria-valuemax='100' style='width: 30%')
+                            .progress-bar.bg-primary
+                          .progress(role='progressbar' aria-label='Segment two' aria-valuenow='20' aria-valuemin='0' aria-valuemax='100' style='width: 20%')
+                            .progress-bar.bg-success
+                          .progress(role='progressbar' aria-label='Segment three' aria-valuenow='10' aria-valuemin='0' aria-valuemax='100' style='width: 15%')
+                            .progress-bar.bg-warning
+                          .progress(role='progressbar' aria-label='Segment three' aria-valuenow='10' aria-valuemin='0' aria-valuemax='100' style='width: 15%')
+                            .progress-bar.bg-secondary
+                          .progress(role='progressbar' aria-label='Segment three' aria-valuenow='20' aria-valuemin='0' aria-valuemax='100' style='width: 20%')
+                            .progress-bar.bg-info
+                        ul.referral-list
+                          li 
+                            .activity-dot-primary
+                            a(href="search.html").f-light.f-w-500 www.google.com
+                            span.f-12.f-w-500 35.89%
+                          li 
+                            .activity-dot-success
+                            a(href="search.html").f-light.f-w-500 www.youtube.com
+                            span.f-12.f-w-500 19.12%
+                          li 
+                            .activity-dot-warning
+                            a(href="search.html").f-light.f-w-500 www.media.com
+                            span.f-12.f-w-500 14.75%
+                          li 
+                            .activity-dot-secondary
+                            a(href="search.html").f-light.f-w-500 www.pixelstrap.com
+                            span.f-12.f-w-500 19.76%
+                          li 
+                            .activity-dot-secondary
+                            a(href="search.html").f-light.f-w-500 www.facebook.com
+                            span.f-12.f-w-500 18.98%
+              .col-xl-3.col-xl-100
+                .card
+                  .row
+                    .col-xl-12.col-xl-40.col-sm-6.order-xl-ii.discount-report
+                      .card-header.card-no-border
+                        .header-top
+                          div 
+                            h2 Total Transactions
+                              span.d-block.f-w-500.f-light.f-12 Special Discount 
+                                span.txt-primary 60% OFF
+                          .card-header-right-icon
+                            .dropdown.icon-dropdown
+                              button#earning-avg1.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                              .dropdown-menu.dropdown-menu-end(aria-labelledby='earning-avg1')
+                                a.dropdown-item(href='#') Today
+                                a.dropdown-item(href='#') Tomorrow
+                                a.dropdown-item(href='#') Yesterday
+                      .card-body.transaction-report
+                        .total-transaction-wrapper 
+                          #total-transaction-chart
+                        .report-content
+                          h5 Report
+                          ul 
+                            li 
+                              span.f-12.f-light.f-w-500 This Week
+                              h6 +78.32 %
+                              .progress.progress-stripe-primary.with-light-background(style='height: 5px')
+                                .progress-bar-animated.progress-bar-striped(role='progressbar' style='width: 70%' aria-valuenow='10' aria-valuemin='0' aria-valuemax='100')
+                            li 
+                              span.f-12.f-light.f-w-500 This Week
+                              h6 -34.52 %
+                              .progress.progress-stripe-success.with-light-background(style='height: 5px')
+                                .progress-bar-animated.progress-bar-striped(role='progressbar' style='width: 70%' aria-valuenow='10' aria-valuemin='0' aria-valuemax='100')
+                        .report-button 
+                          div 
+                            h5.f-w-600 +95.62 % 
+                              span.f-light.f-12.f-w-500 Performance
+                          a.btn.btn-primary.f-w-500.f-12(href="#!") New report 
+                            svg.svg-sprite
+                              use(href='../assets/svg/icon-sprite.svg#logout')
+                    .col-xl-12.col-xl-30.col-sm-6.order-xl-ii.customer-order
+                      .card-header.card-no-border
+                        .header-top.order-lists
+                          div 
+                            h2 Recent Orders
+                              span.d-block.f-w-500.f-light.f-12 80 Orders in a December
+                          .card-header-right-icon
+                            .dropdown
+                              button#recent-button.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                | All Orders
+                              .dropdown-menu.dropdown-menu-end(aria-labelledby='recent-button')
+                                a.dropdown-item(href='#') Pending
+                                a.dropdown-item(href='#') Success
+                                a.dropdown-item(href='#') Deliver
+                      .card-body.transaction-list.recent-orders
+                        ul.order-list.mb-0
+                          li
+                            .light-card 
+                              img(src="../assets/images/dashboard/product/1.png", alt="TV")
+                            .order-content
+                              div
+                                a(href="order-history.html")  
+                                  h6.mb-1  Apple PC
+                                span 
+                                  span.badge.badge-light-primary #10988
+                                  span.f-light.f-w-500.f-12.ms-2 3 Item
+                              div.text-end 
+                                .dropdown.icon-dropdown
+                                  button#order-1.btn.dropdown-toggle(type='button' data-bs-toggle='dropdown' aria-expanded='false')
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                                  .dropdown-menu.dropdown-menu-end(aria-labelledby='order-1')
+                                    a.dropdown-item(href='cart.html') Add to cart
+                                    a.dropdown-item(href='#') Cancel
+                                span.f-light.f-w-500.f-12 $5,098
+                          li
+                            .light-card 
+                              img(src="../assets/images/dashboard/product/2.png", alt="T-shirt")
+                            .order-content
+                              div 
+                                a(href="order-history.html")
+                                  h6.mb-1 T-Shirts
+                                span 
+                                  span.badge.badge-light-primary #10980
+                                  span.f-light.f-w-500.f-12.ms-2 2 Item
+                              div.text-end 
+                                .dropdown.icon-dropdown
+                                  button#order-2.btn.dropdown-toggle(type='button' data-bs-toggle='dropdown' aria-expanded='false')
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                                  .dropdown-menu.dropdown-menu-end(aria-labelledby='order-2')
+                                    a.dropdown-item(href='cart.html') Add to cart
+                                    a.dropdown-item(href='#') Cancel
+                                span.f-light.f-w-500.f-12 $6,010
+                          li
+                            .light-card 
+                              img(src="../assets/images/dashboard/product/3.png", alt="Macbook air M2")
+                            .order-content
+                              div 
+                                a(href="order-history.html")
+                                  h6.mb-1 Macbook
+                                span 
+                                  span.badge.badge-light-primary #101098
+                                  span.f-light.f-w-500.f-12.ms-2 5 Item
+                              div.text-end 
+                                .dropdown.icon-dropdown
+                                  button#order-3.btn.dropdown-toggle(type='button' data-bs-toggle='dropdown' aria-expanded='false')
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                                  .dropdown-menu.dropdown-menu-end(aria-labelledby='order-3')
+                                    a.dropdown-item(href='cart.html') Add to cart
+                                    a.dropdown-item(href='#') Cancel
+                                span.f-light.f-w-500.f-12 $12,000
+                          li
+                            .light-card 
+                              img(src="../assets/images/dashboard/product/4.png", alt="Shoes")
+                            .order-content
+                              div 
+                                a(href="order-history.html")
+                                  h6.mb-1 Shoes
+                                span 
+                                  span.badge.badge-light-primary #101098
+                                  span.f-light.f-w-500.f-12.ms-2 3 Item
+                              div.text-end 
+                                .dropdown.icon-dropdown
+                                  button#order-4.btn.dropdown-toggle(type='button' data-bs-toggle='dropdown' aria-expanded='false')
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                                  .dropdown-menu.dropdown-menu-end(aria-labelledby='order-4')
+                                    a.dropdown-item(href='cart.html') Add to cart
+                                    a.dropdown-item(href='#') Cancel
+                                span.f-light.f-w-500.f-12 $2,000
+                          li
+                            .light-card 
+                              img(src="../assets/images/dashboard/product/5.png", alt="watch")
+                            .order-content
+                              div 
+                                a(href="order-history.html")
+                                  h6.mb-1 Wall Watch
+                                span 
+                                  span.badge.badge-light-primary #101098
+                                  span.f-light.f-w-500.f-12.ms-2 1 Item
+                              div.text-end 
+                                .dropdown.icon-dropdown
+                                  button#order-5.btn.dropdown-toggle(type='button' data-bs-toggle='dropdown' aria-expanded='false')
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                                  .dropdown-menu.dropdown-menu-end(aria-labelledby='order-5')
+                                    a.dropdown-item(href='cart.html') Add to cart
+                                    a.dropdown-item(href='#') Cancel
+                                span.f-light.f-w-500.f-12 $2,000
+                    .col-12.col-xl-100.order-xl-i
+                      .offer-banner
+                        .offer-content 
+                          h2 20% Off Themes
+                          p.f-w-500.f-12 Get all the latest wordpress theme and plugin coupon in this board.
+                        img.img-fluid(src="../assets/images/dashboard/banner.png", alt="vector")
+                    .col-12.col-xl-30.order-xl-ii.todo-wrapper
+                      .card-header.card-no-border.order-lists
+                        .header-top
+                          h2 To do List
+                            span.f-light.f-12.d-block.f-w-500 80 Orders in a December
+                          .card-header-right-icon
+                            a.link-with-icon(href='#') + Create
+                      .card-body.notification.to-do-list
+                        ul.custom-scrollbar
+                          li.d-flex.align-items-center
+                            .activity-dot-primary
+                            .d-flex.w-100.align-items-center 
+                              .checkbox-checked
+                                .form-check
+                                  input#list-1.form-check-input(type='checkbox' value='')
+                              div 
+                                h6 Products
+                                span.f-w-500.f-12.f-light Today 2:00pm Clock
+                              span.badge.badge-light-primary.ms-auto In Progress
+                          li.d-flex.align-items-center
+                            .activity-dot-warning
+                            .d-flex.w-100.align-items-center 
+                              .checkbox-checked
+                                .form-check
+                                  input#list-2.form-check-input(type='checkbox' value='')
+                              div 
+                                h6 Web developing..
+                                span.f-w-500.f-12.f-light Due in 4 Days
+                              span.badge.badge-light-warning.ms-auto Pending
+                          li.d-flex.align-items-center
+                            .activity-dot-success
+                            .d-flex.w-100.align-items-center 
+                              .checkbox-checked
+                                .form-check
+                                  input#list-3.form-check-input(type='checkbox' value='')
+                              div 
+                                h6 UI/UX Design
+                                span.f-w-500.f-12.f-light Due in 3 Days
+                              span.badge.badge-light-success.ms-auto Completed
+                          li.d-flex.align-items-center
+                            .activity-dot-primary
+                            .d-flex.w-100.align-items-center 
+                              .checkbox-checked
+                                .form-check
+                                  input#list-4.form-check-input(type='checkbox' value='')
+                              div 
+                                h6 Client Meeting ..
+                                span.f-w-500.f-12.f-light Today 1:00pm Clock
+                              span.badge.badge-light-primary.ms-auto In Progress
+                          li.d-flex.align-items-center
+                            .activity-dot-success
+                            .d-flex.w-100.align-items-center 
+                              .checkbox-checked
+                                .form-check
+                                  input#list-5.form-check-input(type='checkbox' value='')
+                              div 
+                                h6 Wed layout
+                                span.f-w-500.f-12.f-light Due in 10 Days
+                              span.badge.badge-light-success.ms-auto Completed
+                          li.d-flex.align-items-center
+                            .activity-dot-warning
+                            .d-flex.w-100.align-items-center 
+                              .checkbox-checked
+                                .form-check
+                                  input#list-6.form-check-input(type='checkbox' value='')
+                              div 
+                                h6 Web developing..
+                                span.f-w-500.f-12.f-light Due in 4 Days
+                              span.badge.badge-light-warning.ms-auto Pending
+                          li.d-flex.align-items-center
+                            .activity-dot-success
+                            .d-flex.w-100.align-items-center 
+                              .checkbox-checked
+                                .form-check
+                                  input#list-7.form-check-input(type='checkbox' value='')
+                              div 
+                                h6 UI/UX Design
+                                span.f-w-500.f-12.f-light Due in 3 Days
+                              span.badge.badge-light-success.ms-auto Completed
+          // Container-fluid Ends
+        include ../../components/footer        
+    include ../../components/footer-files
+    script.
+      const datatable = new simpleDatatables.DataTable("#member-table", {
+        paging: false,
+        tabIndex: 1,
+      });
+    script. 
+      new WOW().init();

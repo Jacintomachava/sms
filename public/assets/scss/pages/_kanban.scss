@@ -1,0 +1,211 @@
+/**=====================
+  3.24 Kanban CSS start
+==========================**/
+.jkanban-container {
+  .note {
+    a {
+      display: contents;
+    }
+  }
+}
+.kanban-board-header {
+  height: auto;
+  width: auto;
+  line-height: unset;
+  background: $body-color;
+  border-bottom: 1px solid var(--lighter-border);
+  padding: 20px;
+  .kanban-title-board {
+    font-weight: 600 !important;
+  }
+  &.bg-primary {
+    &~.kanban-drag {
+      background-color: rgba($primary-color, 0.3) !important;
+    }
+  }
+  &.bg-warning {
+    &~.kanban-drag {
+      background-color: rgba($warning-color, 0.3) !important;
+    }
+  }
+  &.bg-success {
+    &~.kanban-drag {
+      background-color: rgba($success-color, 0.3) !important;
+    }
+  }
+}
+.kanban-container {
+  display: contents;
+}
+.kanban-board {
+  transition: all 0.3s ease;
+  letter-spacing: 0.5px;
+  border-radius: 8px;
+  box-shadow: 1px 5px 24px 0 rgba(68, 102, 242, 0.05);
+  overflow: hidden;
+  width: calc(100% / 3 - 30px) !important;
+  .kanban-drag {
+    background: $body-color;
+    @media (max-width:1399px) {
+      .kanban-box {
+        .img-30 {
+          width: 24px !important;
+        }
+      }
+    }
+  }
+}
+.kanban-item {
+  background: transparent;
+  padding: 0;
+  margin-bottom: 20px;
+  .kanban-box {
+    .badge {
+      line-height: 13px;
+    }
+  }
+  p {
+    opacity: 0.7;
+    line-height: 1.3;
+    @media (max-width:1400px) {
+      font-size: 13px;
+    }
+  }
+  &:last-child {
+    margin-bottom: 0;
+  }
+  .list {
+    display: inline-block;
+    opacity: 0.4;
+    li {
+      display: inline-block;
+      font-size: 12px;
+      &:nth-child(1) {
+        margin-right: 6px;
+        i {
+          margin-right: 5px;
+        }
+      }
+      &:nth-child(2) {
+        margin-right: 6px;
+        i {
+          margin-right: 5px;
+        }
+      }
+    }
+  }
+  .kanban-box {
+    border: 1px solid #efefef;
+    border-radius: 5px;
+    padding: 20px;
+    position: relative;
+    display: block;
+    color: inherit;
+    background-color: $white;
+    &:hover {
+      color: inherit;
+    }
+    &+.kanban-box {
+      margin-top: 20px;
+    }
+    .badge {
+      font-weight: 400;
+    }
+    h6 {
+      font-size: 15px;
+      margin-top: 8px;
+      font-weight: 600;
+    }
+    .dropdown {
+      display: inline-block;
+      right: 10px;
+      position: absolute;
+      top: 20px;
+      .dropdown-item {
+        font-size: 13px;
+        font-weight: 500;
+        padding: 5px 10px;
+        text-align: left;
+      }
+      svg {
+        height: 14px;
+      }
+    }
+    .d-flex {
+      justify-content: space-between;
+      padding-top: 6px;
+      align-items: center;
+    }
+    .dropdown-toggle {
+      &:after {
+        content: none;
+      }
+    }
+    .customers ul li+li {
+      margin-left: -16px;
+    }
+    .date {
+      font-size: 12px;
+      opacity: 0.6;
+    }
+  }
+}
+footer {
+  margin: 0;
+  padding: 0;
+}
+@media only screen and (max-width: 1199px) {
+  .kanban-container {
+    .kanban-board {
+      width: 320px !important;
+      &:nth-child(3) {
+        margin-top: 20px;
+      }
+    }
+  }
+}
+@media (max-width:1069px) {
+  .kanban-container {
+    .kanban-board {
+      &:nth-child(2) {
+        margin-top: 20px;
+      }
+    }
+  }
+}
+@media only screen and (max-width: 600px) {
+  .kanban-board .kanban-drag,
+  .kanban-container .kanban-item .kanban-box {
+    padding: 10px 15px;
+  }
+}
+@media only screen and (max-width: 480px) {
+  .jkanban-container {
+    .card-body {
+      padding: 20px !important;
+    }
+  }
+  .kanban-board .kanban-drag,
+  .kanban-container .kanban-item .kanban-box {
+    padding: 10px 15px;
+  }
+  .kanban-container .kanban-board {
+    width: 270px !important;
+  }
+}
+.kanban-buttons {
+  margin-top: 16px;
+  @media (max-width:715px) {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  @media (max-width:575px) {
+    .btn {
+      padding: 6px 12px;
+    }
+  }
+}
+/**=====================
+   3.24 Kanban CSS ends
+==========================**/

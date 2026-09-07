@@ -1,0 +1,44 @@
+- var theme_customizer      = true;
+- var tooltip               = true;
+- var sidebar               = true;
+- var touchspin_2           = true;
+- var slick                 = true;
+- var header_slider         = true;
+- var animate               = true;
+- var scrollbar             = true;
+- var script2               = true;
+
+//- mixin
+include ../../mixins/mixin
+
+doctype html
+html(lang='en')
+  include ../../components/header-files
+  body
+    include ../../components/loader
+    include ../../components/taptop
+    // page-wrapper Start
+    #pageWrapper.page-wrapper.compact-wrapper
+      .page-header.row
+        include ../../components/header
+        +left-header
+        +breadcrumb(['Page Layout','Footer Light'],'Footer Light')
+        +right-header
+      // Page Body Start
+      .page-body-wrapper
+        include ../../components/sidebar
+        .page-body
+          // Container-fluid starts
+          .container-fluid
+            .row
+              .col-sm-12
+                .card.title-line
+                  .card-header
+                    h2 Sample Card
+                    p.f-m-light.mt-1 A sample card of the yuri theme.
+                  .card-body
+                    p
+                      | A practitioner with expertise in building attractive and useful websites is known as a web designer. Their primary objective is to create responsive websites, which can adjust to and show properly on various platforms including PCs, tablets, and mobile phones. A web designer gives considerable thought to a website's style, navigation, and general user experience to make sure the target audience will find it easy to use and visually appealing.
+          // Container-fluid Ends
+        include ../../components/footer
+    include ../../components/footer-files

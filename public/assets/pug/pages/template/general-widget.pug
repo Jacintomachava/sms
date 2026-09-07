@@ -1,0 +1,479 @@
+- var theme_customizer      = true;
+- var height_equal          = true;
+- var apex                  = true;
+- var touchspin_2           = true;
+- var general_widget        = true;
+- var sidebar               = true;
+- var swiper                = true;
+- var header_slider         = true;
+- var animate               = true;
+- var scrollbar             = true;
+- var script2               = true;
+
+//- mixin
+include ../../mixins/mixin
+
+doctype html
+html(lang='en')
+  include ../../components/header-files
+  body
+    include ../../components/loader
+    include ../../components/taptop
+    // page-wrapper Start
+    #pageWrapper.page-wrapper.compact-wrapper
+      .page-header.row
+        include ../../components/header
+        +left-header
+        +breadcrumb(['Widgets','General'],'General')
+        +right-header
+      // Page Body Start
+      .page-body-wrapper
+        include ../../components/sidebar
+        .page-body
+          // Container-fluid starts
+          .container-fluid.main-widget
+            .row
+              .col-xl-3.col-md-4.col-sm-6
+                .card.project-widget.widget-1.title-line
+                  .card-header.card-no-border.pb-0 
+                    .header-top
+                      div 
+                        h3.f-w-600 Active Projects
+                        span.f-12.f-light.f-w-500 Projects this month
+                      .card-header-right-icon
+                        .dropdown.icon-dropdown.d-xxl-none1
+                          button#active-project.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                            svg
+                              use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                          .dropdown-menu.dropdown-menu-end(aria-labelledby='active-project')
+                            a.dropdown-item(href='#') Today
+                            a.dropdown-item(href='#') Tomorrow
+                            a.dropdown-item(href='#') Yesterday
+                    .widget-middle-content
+                      .d-flex.align-items-center 
+                        h2 106
+                        span.f-w-500.txt-warning.f-12 
+                          i.me-1(data-feather="trending-up")
+                          span +50%
+                  .card-body.widget-bottom-content
+                    .progress-details
+                      ul 
+                        li.bg-secondary
+                          svg
+                            use(href='../assets/svg/icon-sprite.svg#car-white')
+                        li.bg-success 
+                          svg
+                            use(href='../assets/svg/icon-sprite.svg#game')
+                        li.bg-primary
+                          svg
+                            use(href='../assets/svg/icon-sprite.svg#home-white')
+                      h6.txt-success.f-w-600 56%
+                    .progress(style='height: 5px;')
+                      .progress-bar.bg-success(role='progressbar', style='width: 56%', aria-valuenow='50', aria-valuemin='0', aria-valuemax='100')
+
+              .col-xl-3.col-md-4.col-sm-6
+                .card.project-widget.widget-1.title-line.project-widget-1
+                  .card-header.card-no-border.pb-0 
+                    .header-top
+                      div 
+                        h3.f-w-600 Projects Earnings
+                        span.f-12.f-light.f-w-500 From last Week
+                      .card-header-right-icon.d-xxl-none
+                        .dropdown.icon-dropdown
+                          button#earning-project.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                            svg
+                              use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                          .dropdown-menu.dropdown-menu-end(aria-labelledby='earning-project')
+                            a.dropdown-item(href='#') Today
+                            a.dropdown-item(href='#') Tomorrow
+                            a.dropdown-item(href='#') Yesterday
+                    .widget-middle-content
+                      .d-flex.align-items-center 
+                        h2 $202
+                        span.f-w-500.txt-warning.f-12 
+                          i.me-1(data-feather="trending-up")
+                          span +60%
+                  .card-body.pt-0
+                    .earning-chart-container.tooltip-small
+                      #earnings-chart1
+              .col-xl-3.col-md-4.col-sm-6
+                .card.project-widget.overflow-hidden.widget-1.title-line
+                  .card-header.card-no-border.pb-0 
+                    .header-top
+                      div 
+                        h3.f-w-600 Total Clients
+                        span.f-12.f-light.f-w-500 Compare to last month
+                      .card-header-right-icon
+                        .dropdown.icon-dropdown
+                          button#client-project.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                            svg
+                              use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                          .dropdown-menu.dropdown-menu-end(aria-labelledby='client-project')
+                            a.dropdown-item(href='#') Today
+                            a.dropdown-item(href='#') Tomorrow
+                            a.dropdown-item(href='#') Yesterday
+                    .widget-middle-content
+                      .d-flex.align-items-center 
+                        h2 930
+                        span.f-w-500.txt-warning.f-12 
+                          i.me-1(data-feather="trending-up")
+                          span +20%
+                  .card-body.p-0
+                    .client-chart-container.tooltip-small
+                      #total-client1
+              .col-xl-3.col-md-5.col-sm-4.order-md-v
+                .card.title-line.widget-1.sales-pipeline.pipeline-chart1
+                  .card-header.card-no-border
+                    h2 Sales Pipeline
+                    span.f-w-500.f-12.f-light.mt-0 Special Discount 
+                      span.txt-primary 60% OFF
+                  .card-body.pt-0
+                    .pipeline-chart-container
+                      #pipeline-chart1
+              .col-xl-2.col-sm-6.col-md-3.order-md-i
+                .card.title-line.widget-1.revenue-wrapper
+                  .card-header.card-no-border 
+                    h2 Revenue
+                    span.f-w-500.f-12.f-light.mt-0 Today Revenue 
+                      span.txt-primary 30% OFF
+                  .card-body.pt-0
+                    .revenue-chart-container 
+                      #revenue-chart1
+
+              .col-xl-6.box-col-6.col-md-9.order-md-ii
+                .row.tread-cards
+                  .col-xl-6.col-sm-6 
+                    .card.widget-1
+                      .card-body.common-box
+                        .widget-icon.primary.widget-round
+                          svg
+                            use(href='../assets/svg/icon-sprite.svg#crown') 
+                        div 
+                          h3.f-w-600 User Profile
+                          span.f-w-500.f-light.f-12 Consectetur adipiscing 
+                  .col-xl-6.col-sm-6  
+                    .card.widget-1
+                      .card-body.common-box
+                        .widget-icon.success.widget-round
+                          svg
+                            use(href='../assets/svg/icon-sprite.svg#flash') 
+                        div 
+                          h3.f-w-600 Latest Trends
+                          span.f-w-500.f-light.f-12 Minim veniam
+                  .col-xl-6.col-sm-6 
+                    .card.widget-1
+                      .card-body.common-box
+                        .widget-icon.warning.widget-round
+                          svg
+                            use(href='../assets/svg/icon-sprite.svg#blend-2') 
+                        div 
+                          h3.f-w-600 New Arrivals
+                          span.f-w-500.f-light.f-12 Excepteur sint
+                  .col-xl-6.col-sm-6 
+                    .card.widget-1
+                      .card-body.common-box
+                        .widget-icon.secondary.widget-round
+                          svg
+                            use(href='../assets/svg/icon-sprite.svg#color-filter') 
+                        div 
+                          h3.f-w-600 Best Referrals
+                          span.f-w-500.f-light.f-12 Quis nostrud exercitation
+              .col-xl-4.order-xl-vi.col-xl-100.col-md-7.col-sm-8.order-md-vi
+                .row 
+                  .col-12
+                    .card.visitor-customer.title-line.widget-visitor
+                      .card-header.card-no-border
+                        .header-top
+                          h2 Weekly Visitors
+                          .card-header-right-icon.square-legend
+                            div
+                              .legend-box
+                                div.bg-primary
+                                span.f-light.f-12.f-w-500 Male
+                              .legend-box
+                                div.bg-success
+                                span.f-light.f-12.f-w-500 Female
+                            .dropdown
+                              button#overviewButton2.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                | Report
+                              .dropdown-menu.dropdown-menu-end(aria-labelledby='overviewButton2')
+                                a.dropdown-item(href='#') Monthly
+                                a.dropdown-item(href='#') weekly
+                                a.dropdown-item(href='#') yearly
+                      .card-body.visitor-wrapper
+                        .row 
+                          .col-xl-7.col-sm-7
+                            #weekly-visitor1.weekly-visitor
+                          .col-xl-5.d-xl-none1.col-sm-5
+                            .average-Visitors 
+                              div 
+                                span.f-12.f-light.f-w-500 Average Male Visitors
+                                .order-content
+                                  div 
+                                    span.txt-success.f-12.f-w-600
+                                      i.stroke-success(data-feather="trending-up")
+                                      | -27%
+                              div 
+                                span.f-12.f-light.f-w-500 Average Female Visitors
+                                .order-content
+                                  div 
+                                    span.txt-danger.f-12.f-w-600
+                                      i.stroke-danger(data-feather="trending-down")
+                                      | -0.10%
+              
+              .col-md-6.order-md-iii
+                .card.title-line
+                  .card-header.card-no-border
+                    .header-top
+                      div 
+                        h2 Earning Reports
+                          span.d-block.f-w-500.f-light.f-12 Weekly Earning Overview
+                      .card-header-right-icon
+                        .dropdown.icon-dropdown
+                          button#earning-avg.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                            svg
+                              use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                          .dropdown-menu.dropdown-menu-end(aria-labelledby='earning-avg')
+                            a.dropdown-item(href='#') Today
+                            a.dropdown-item(href='#') Tomorrow
+                            a.dropdown-item(href='#') Yesterday
+                  .card-body.pt-0
+                    .report-chart-container 
+                      #earning-chart1
+                    ul.report-list 
+                      li 
+                        .light-card.report-icon 
+                          svg
+                            use(href='../assets/svg/icon-sprite.svg#status-up')
+                        div 
+                          span.f-12.f-w-500.f-light Profit
+                          h4.mt-1.f-w-600 $98.50
+                            span.badge.badge-light-primary.ms-1
+                              i.me-1(data-feather="trending-up")
+                              | 13.5%
+                      li 
+                        .light-card.report-icon 
+                          svg
+                            use(href='../assets/svg/icon-sprite.svg#expense')
+                        div 
+                          span.f-12.f-w-500.f-light Expense
+                          h4.mt-1.f-w-600 $109.90
+                            span.badge.badge-light-warning.ms-1
+                              i.me-1(data-feather="trending-down")
+                              | 1.05%
+              .col-xl-6.box-col-6.order-md-vii
+                .card.title-line
+                  .card-header.card-no-border
+                    .header-top
+                      h2 Projects Overview
+                      .card-header-right-icon.right-xl-dropdown
+                        .dropdown
+                          button#overviewButton3.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                            | Monthly
+                          .dropdown-menu.dropdown-menu-end(aria-labelledby='overviewButton3')
+                            a.dropdown-item(href='#') Monthly
+                            a.dropdown-item(href='#') weekly
+                            a.dropdown-item(href='#') yearly
+                  .card-body.pt-0 
+                    .project-overview-wrapper
+                      #project-overview1
+                      .project-back-bar
+                        #project-bar1
+
+              .col-xl-4.col-md-6.order-md-viii
+                .card.title-line.widget-acitivity
+                  .card-header.card-no-border
+                    .header-top
+                      h2 Activities
+                        span.f-12.f-w-500.f-light.d-block 780,765 Sales
+                      .card-header-right-icon.detail-option
+                        .dropdown
+                          button#OrderDetailsButtons.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                            | Order Details
+                          .dropdown-menu.dropdown-menu-start(aria-labelledby='OrderDetailsButtons')
+                            a.dropdown-item(href='#') Web designer
+                            a.dropdown-item(href='#') Development
+                            a.dropdown-item(href='#') Marketing
+                  .card-body.pt-0.notification.to-do-list.activities-wrapper
+                    ul.activity-details.custom-scrollbar
+                      li.d-flex.align-items-center
+                        .activity-dot-primary
+                        .d-flex.w-100.align-items-center 
+                          div 
+                            span.f-w-500.f-12.f-light Optimize resource allocation for cost savings.
+                          span.badge.ms-auto.f-light 00:32 
+                      li.d-flex.align-items-center
+                        .activity-dot-warning
+                        .d-flex.w-100.align-items-center 
+                          div 
+                            h6 Products Meetings
+                          span.badge.ms-auto.f-light 12:34
+                      li.d-flex.align-items-center
+                        .activity-dot-success
+                        .d-flex.w-100.align-items-center 
+                          div 
+                            h6 New Order placed 
+                              a(href="#!") #xl-9087
+                          span.badge.ms-auto.f-light 13:59
+                      li.d-flex.align-items-center
+                        .activity-dot-secondary
+                        .d-flex.w-100.align-items-center 
+                          div 
+                            span.f-w-500.f-12.f-light Enhance productivity with advanced features
+                          span.badge.ms-auto.f-light 17:34
+                      li.d-flex.align-items-center
+                        .activity-dot-primary
+                        .d-flex.w-100.align-items-center 
+                          div 
+                            h6 New Order placed 
+                              a(href="#!") #xl-9090
+                          span.badge.ms-auto.f-light 19:40
+                      li.d-flex.align-items-center
+                        .activity-dot-secondary
+                        .d-flex.w-100.align-items-center 
+                          div 
+                            h6 All Order delivered 
+                              a(href="#!") #xl-7801
+                          span.badge.ms-auto.f-light 22:05
+                      li.d-flex.align-items-center
+                        .activity-dot-success
+                        .d-flex.w-100.align-items-center 
+                          div 
+                            span.f-w-500.f-12.f-light Increase sales and revenue with targeted marketing.
+                          span.badge.ms-auto.f-light 02:24
+                      li.d-flex.align-items-center
+                        .activity-dot-primary
+                        .d-flex.w-100.align-items-center 
+                          div 
+                            h6 New Order placed 
+                              a(href="#!") #xl-9088
+                          span.badge.ms-auto.f-light 15:35
+              .col-xl-4.col-md-6.order-md-ix
+                .card.title-line.delivery-card-1
+                  .card-header.card-no-border
+                    .header-top
+                      h2 Product Delivery
+                        span.f-12.f-w-500.f-light.d-block Total 10,987 Items Delivery
+                      .card-header-right-icon
+                        .dropdown
+                          button#OrderDetailsButtons1.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                            | Order Details
+                          .dropdown-menu.dropdown-menu-start(aria-labelledby='OrderDetailsButtons1')
+                            a.dropdown-item(href='#') Web designer
+                            a.dropdown-item(href='#') Development
+                            a.dropdown-item(href='#') Marketing
+                  .card-body.delivery-content.pt-0
+                    ul.order-list.mb-0.custom-scrollbar
+                      li
+                        .light-card 
+                          img.img-fluid(src="../assets/images/dashboard/product/2.png", alt="T-shirt")
+                        .order-content
+                          div 
+                            h6.mb-1 Branded T-Shirts
+                            span 
+                              span.f-light.f-w-500.f-12 To : Jaksion Raio
+                          div.text-end 
+                            .dropdown.icon-dropdown
+                              button#order-2.btn.dropdown-toggle.mb-1(type='button' data-bs-toggle='dropdown' aria-expanded='false')
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                              .dropdown-menu.dropdown-menu-end(aria-labelledby='order-2')
+                                a.dropdown-item(href='cart.html') Add to cart
+                                a.dropdown-item(href='#') Cancel
+                            span.badge.badge-light-primary.f-12 Delivered
+                      li
+                        .light-card 
+                          img.img-fluid(src="../assets/images/dashboard-2/product/helmet.png", alt="Helmet")
+                        .order-content
+                          div 
+                            h6.mb-1 Stillbirth Helmet
+                            span 
+                              span.f-light.f-w-500.f-12 To : Jaksion Jawade
+                          div.text-end 
+                            .dropdown.icon-dropdown
+                              button#order-03.btn.dropdown-toggle.mb-1(type='button' data-bs-toggle='dropdown' aria-expanded='false')
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                              .dropdown-menu.dropdown-menu-end(aria-labelledby='order-03')
+                                a.dropdown-item(href='cart.html') Add to cart
+                                a.dropdown-item(href='#') Cancel
+                            span.badge.badge-light-success.f-12 Shipping
+                      li
+                        .light-card 
+                          img.img-fluid(src="../assets/images/dashboard-2/product/chair.png", alt="wood chair")
+                        .order-content
+                          div 
+                            h6.mb-1 Bentwood Chair
+                            span 
+                              span.f-light.f-w-500.f-12 To : Trushita Rai
+                          div.text-end 
+                            .dropdown.icon-dropdown
+                              button#order-04.btn.dropdown-toggle.mb-1(type='button' data-bs-toggle='dropdown' aria-expanded='false')
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                              .dropdown-menu.dropdown-menu-end(aria-labelledby='order-04')
+                                a.dropdown-item(href='cart.html') Add to cart
+                                a.dropdown-item(href='#') Cancel
+                            span.badge.badge-light-primary.f-12 Delivered
+                      li
+                        .light-card 
+                          img.img-fluid(src="../assets/images/dashboard-2/product/headphone.png", alt="Headphone")
+                        .order-content
+                          div 
+                            h6.mb-1 Wireless Headphone
+                            span 
+                              span.f-light.f-w-500.f-12 To : Jushkita Shrama
+                          div.text-end 
+                            .dropdown.icon-dropdown
+                              button#order-05.btn.dropdown-toggle.mb-1(type='button' data-bs-toggle='dropdown' aria-expanded='false')
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                              .dropdown-menu.dropdown-menu-end(aria-labelledby='order-05')
+                                a.dropdown-item(href='cart.html') Add to cart
+                                a.dropdown-item(href='#') Cancel
+                            span.badge.badge-light-warning.f-12 Confirmed
+                      li
+                        .light-card 
+                          img.img-fluid(src="../assets/images/dashboard-2/product/tube.png", alt="Makeup tube")
+                        .order-content
+                          div 
+                            h6.mb-1 Makeup Tube 
+                            span 
+                              span.f-light.f-w-500.f-12 To : Sheezan Mahmed
+                          div.text-end 
+                            .dropdown.icon-dropdown
+                              button#order-06.btn.dropdown-toggle.mb-1(type='button' data-bs-toggle='dropdown' aria-expanded='false')
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                              .dropdown-menu.dropdown-menu-end(aria-labelledby='order-06')
+                                a.dropdown-item(href='cart.html') Add to cart
+                                a.dropdown-item(href='#') Cancel
+                            span.badge.badge-light-primary.f-12 Delivered
+
+              .col-xl-4.col-md-6.order-md-iv
+                .card.title-line
+                  .card-header.card-no-border
+                    .header-top
+                      h2 Total Profit
+                        span.f-light.f-12.d-block.f-w-500 Special Discount 
+                          span.txt-primary 60% OFF
+                      .card-header-right-icon
+                        .dropdown
+                          button#overviewButton4.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                            | Weekly
+                          .dropdown-menu.dropdown-menu-end(aria-labelledby='overviewButton4')
+                            a.dropdown-item(href='#') Monthly
+                            a.dropdown-item(href='#') weekly
+                            a.dropdown-item(href='#') yearly
+                  .card-body.pt-0 
+                    .profit-data 
+                      h2 $15,087
+                        span.f-light.f-w-500.f-12 (Another 
+                          span.txt-primary.me-1 $35,098  
+                          | to Goal) 
+                    .profit-chart-container 
+                      #profit_chart1
+
+            // Container-fluid Ends
+        include ../../components/footer
+    include ../../components/footer-files

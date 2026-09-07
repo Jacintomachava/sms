@@ -1,0 +1,367 @@
+- var theme_customizer      = true;
+- var photo_swipe           = true;
+- var counter               = true;
+- var sidebar               = true;
+- var slick                 = true;
+- var header_slider         = true;
+- var script2               = true;
+- var animate               = true;
+- var scrollbar             = true;
+
+//- mixin
+include ../../mixins/mixin
+
+doctype html
+html(lang='en')
+  include ../../components/header-files
+  body
+    include ../../components/loader
+    include ../../components/taptop
+    // page-wrapper Start
+    #pageWrapper.page-wrapper.compact-wrapper
+      .page-header.row
+        include ../../components/header
+        +left-header
+        +breadcrumb(['Users','User Profile'],'User Profile')
+        +right-header
+      // Page Body Start
+      .page-body-wrapper
+        include ../../components/sidebar
+        .page-body
+          // Container-fluid starts
+          .container-fluid
+            .user-profile
+              .row
+                // user profile first-style start
+                .col-sm-12
+                  .card.hovercard.text-center
+                    .cardheader
+                    .user-image
+                      .avatar
+                        img(alt='', src='../assets/images/user/7.jpg')
+                      .icon-wrapper
+                        i.icofont.icofont-pencil-alt-5
+                    .info
+                      .row.g-3
+                        .col-sm-6.col-xl-4.order-sm-1.order-xl-0
+                          .row.g-3
+                            .col-md-6
+                              .tour-email.text-start
+                                h6
+                                  i.fa.fa-envelope
+                                  |    Email
+                                span William@jourrapide.com
+                            .col-md-6
+                              .tour-email.text-start
+                                h6
+                                  i.fa.fa-calendar
+                                  |    BOD
+                                span 02 January 2024
+                        .col-sm-12.col-xl-4.order-sm-0.order-xl-1
+                          .user-designation
+                            .title
+                              a(target='_blank', href='') William C. Jennings
+                            .desc Web Designer
+                        .col-sm-6.col-xl-4.order-sm-2.order-xl-2
+                          .row.g-3
+                            .col-md-6
+                              .tour-email.text-start
+                                h6
+                                  i.fa.fa-phone
+                                  |    Contact Us
+                                span US 310-273-0666
+                            .col-md-6
+                              .tour-email.text-start
+                                h6
+                                  i.fa.fa-location-arrow
+                                  |    Location
+                                span 4377 Libby Street Beverly Hills
+                      hr
+                      .social-media
+                        ul.list-inline
+                          li.list-inline-item
+                            a(href='https://www.facebook.com/' target="_blank")
+                              i.fa.fa-facebook
+                          li.list-inline-item
+                            a(href='https://accounts.google.com/' target="_blank")
+                              i.fa.fa-google-plus
+                          li.list-inline-item
+                            a(href='https://twitter.com/' target="_blank")
+                              i.fa.fa-twitter
+                          li.list-inline-item
+                            a(href='https://www.instagram.com/' target="_blank")
+                              i.fa.fa-instagram
+                          li.list-inline-item
+                            a(href='https://rss.app/' target="_blank")
+                              i.fa.fa-rss
+                      .follow
+                        .row
+                          .col-6.text-md-end.border-right
+                            .follow-num.counter 25869
+                            span Follower
+                          .col-6.text-md-start
+                            .follow-num.counter 659887
+                            span Following
+                // user profile first-style end
+                // user profile second-style start
+                .col-sm-12
+                  .card
+                    .profile-img-style
+                      .row
+                        .col-sm-8
+                          .d-flex
+                            img.img-thumbnail.rounded-circle.me-3(src='../assets/images/user/7.jpg', alt='Generic placeholder image')
+                            .flex-grow-1.align-self-center
+                              h5.mt-0.user-name William C. Jennings
+                              .tour-wrapper
+                                span 26 Jan
+                                i.tour-dot.fa.fa-circle
+                                span.txt-danger 6 min read
+                        .col-sm-4.align-self-center.mt-0.text-end
+                          .social-media.social-tour(data-intro='This is your social details')
+                            ul.list-inline
+                              li.list-inline-item
+                                a(href='https://www.facebook.com/' target="_blank")
+                                  i.fa.fa-facebook
+                              li.list-inline-item
+                                a(href='https://accounts.google.com/' target="_blank")
+                                  i.fa.fa-google-plus
+                              li.list-inline-item
+                                a(href='https://twitter.com/' target="_blank")
+                                  i.fa.fa-twitter
+                              li.list-inline-item
+                                a(href='https://www.instagram.com/' target="_blank")
+                                  i.fa.fa-instagram
+                              li.list-inline-item
+                                a(href='https://rss.app/' target="_blank")
+                                  i.fa.fa-rss
+                          .float-sm-end
+                            small 10 Hours ago
+                      hr
+                      h5.pb-2 Wonderful piece that successfully conveys the magnificence of the mountains and the natural world.
+                      p.block-ellipsis
+                        | English Romantic painter, printer, and watercolourist 
+                        em.txt-danger William C. Jennings
+                        |  Is most renowned for his expressive colorization, creative landscapes, and stormy, sometimes violent maritime works. However, this moody image of the Devil's Bridge in Switzerland, close to the Gotthard Pass, feels incredibly authentic and accurately depicts historical occasions when Russian general Suvorov crossed the Alps and fought not only far larger enemy troops!
+                      .img-container
+                        #aniimated-thumbnials.my-gallery(itemscope='')
+                          figure(itemprop='associatedMedia', itemscope='')
+                            a(href='../assets/images/other-images/profile-style-img3.png', itemprop='contentUrl', data-size='1600x950')
+                              img.img-fluid.rounded(src='../assets/images/other-images/profile-style-img3.png', itemprop='thumbnail', alt='gallery')
+                            figcaption(itemprop='caption description') Image caption  1
+                      .like-comment
+                        ul.list-inline
+                          li.border-right.pe-3.list-inline-item
+                            label.m-0
+                              a(href='#!')
+                                i.fa.fa-heart
+                              |   Like
+                            span.ms-2.counter 2659
+                          li.list-inline-item
+                            label.m-0
+                              a(href='#!')
+                                i.fa.fa-comment
+                              |   Comment
+                            span.ms-2.counter 569
+                // user profile second-style end
+                // user profile third-style start
+                .col-sm-12
+                  .card
+                    .profile-img-style
+                      .row
+                        .col-sm-8
+                          .d-flex
+                            img.img-thumbnail.rounded-circle.me-3(src='../assets/images/user/7.jpg', alt='Generic placeholder image')
+                            .flex-grow-1.align-self-center
+                              h5.mt-0.user-name William C. Jennings
+                              .tour-wrapper
+                                span 22 Feb
+                                i.tour-dot.fa.fa-circle
+                                span.txt-danger 5 min read
+                        .col-sm-4.align-self-center.mt-0.text-end
+                          .social-media.social-tour(data-intro='This is your social details')
+                            ul.list-inline
+                              li.list-inline-item
+                                a(href='https://www.facebook.com/' target="_blank")
+                                  i.fa.fa-facebook
+                              li.list-inline-item
+                                a(href='https://accounts.google.com/' target="_blank")
+                                  i.fa.fa-google-plus
+                              li.list-inline-item
+                                a(href='https://twitter.com/' target="_blank")
+                                  i.fa.fa-twitter
+                              li.list-inline-item
+                                a(href='https://www.instagram.com/' target="_blank")
+                                  i.fa.fa-instagram
+                              li.list-inline-item
+                                a(href='https://rss.app/' target="_blank")
+                                  i.fa.fa-rss
+                          .float-sm-end
+                            small 4 Hours ago
+                      hr
+                      p.block-ellipsis
+                        | A person who interacts with a given system, platform, or gadget in order to carry out a particular activity or obtain specific data is referred to as a user. A user is someone who interacts with software, websites, or electronic gadgets in the context of technology.
+                      #aniimated-thumbnials-2.row.mt-3.pictures.my-gallery(itemscope='')
+                        figure.col-sm-6(itemprop='associatedMedia', itemscope='')
+                          a(href='../assets/images/other-images/profile-style-img3.png', itemprop='contentUrl', data-size='1600x950')
+                            img.img-fluid.rounded(src='../assets/images/other-images/profile-style-img.png', itemprop='thumbnail', alt='gallery')
+                          figcaption(itemprop='caption description') Image caption  1
+                        figure.col-sm-6(itemprop='associatedMedia', itemscope='')
+                          a(href='../assets/images/other-images/profile-style-img3.png', itemprop='contentUrl', data-size='1600x950')
+                            img.img-fluid.rounded(src='../assets/images/other-images/profile-style-img.png', itemprop='thumbnail', alt='gallery')
+                          figcaption(itemprop='caption description') Image caption  2
+                      .like-comment
+                        ul.list-inline
+                          li.border-right.pe-3.list-inline-item
+                            label.m-0
+                              a(href='#!')
+                                i.fa.fa-heart
+                              |   Like
+                            span.ms-2.counter 2659
+                          li.list-inline-item
+                            label.m-0
+                              a(href='#!')
+                                i.fa.fa-comment
+                              |   Comment
+                            span.ms-2.counter 569
+                // user profile third-style end
+                // user profile fourth-style start
+                .col-sm-12
+                  .card
+                    .profile-img-style
+                      .row
+                        .col-sm-8
+                          .d-flex
+                            img.img-thumbnail.rounded-circle.me-3(src='../assets/images/user/7.jpg', alt='Generic placeholder image')
+                            .flex-grow-1.align-self-center
+                              h5.mt-0.user-name William C. Jennings
+                              .tour-wrapper
+                                span 15 Dec
+                                i.tour-dot.fa.fa-circle
+                                span.txt-danger 10 min read
+                        .col-sm-4.align-self-center.mt-0.text-end
+                          .social-media.social-tour(data-intro='This is your social details')
+                            ul.list-inline
+                              li.list-inline-item
+                                a(href='https://www.facebook.com/' target="_blank")
+                                  i.fa.fa-facebook
+                              li.list-inline-item
+                                a(href='https://accounts.google.com/' target="_blank")
+                                  i.fa.fa-google-plus
+                              li.list-inline-item
+                                a(href='https://twitter.com/' target="_blank")
+                                  i.fa.fa-twitter
+                              li.list-inline-item
+                                a(href='https://www.instagram.com/' target="_blank")
+                                  i.fa.fa-instagram
+                              li.list-inline-item
+                                a(href='https://rss.app/' target="_blank")
+                                  i.fa.fa-rss
+                          .float-sm-end
+                            small 2 Month ago
+                      hr
+                      p.block-ellipsis
+                        | Nature has a role in our lives. We are a part of everything since we sprang from a seed and the ground, but we are quickly losing the perception that we are animals much like the rest. Is it possible to feel something when you gaze at, appreciate, and hear a tree? Can you pay attention to the tiny weed, the creeper climbing the wall, the light on the leaves, and the numerous shadows? All of this must be understood, and one must have a feeling of connectedness with the natural world around them. Despite living in a town, there are still a few trees here and there. The next garden's bloom could not be well-kept.
+                      .like-comment.mt-3
+                        ul.list-inline
+                          li.border-right.pe-3.list-inline-item
+                            label.m-0
+                              a(href='#!')
+                                i.fa.fa-heart
+                              |   Like
+                            span.ms-2.counter 2659
+                          li.list-inline-item
+                            label.m-0
+                              a(href='#!')
+                                i.fa.fa-comment
+                              |   Comment
+                            span.ms-2.counter 569
+                // user profile fourth-style end
+                // user profile fifth-style start
+                .col-sm-12
+                  .card
+                    .profile-img-style
+                      .row
+                        .col-sm-8
+                          .d-flex
+                            img.img-thumbnail.rounded-circle.me-3(src='../assets/images/user/7.jpg', alt='Generic placeholder image')
+                            .flex-grow-1.align-self-center
+                              h5.mt-0.user-name William C. Jennings
+                              .tour-wrapper
+                                span 05 Feb
+                                i.tour-dot.fa.fa-circle
+                                span.txt-danger 5 min read
+                        .col-sm-4.align-self-center.mt-0.text-end
+                          .social-media.social-tour(data-intro='This is your social details')
+                            ul.list-inline
+                              li.list-inline-item
+                                a(href='https://www.facebook.com/' target="_blank")
+                                  i.fa.fa-facebook
+                              li.list-inline-item
+                                a(href='https://accounts.google.com/' target="_blank")
+                                  i.fa.fa-google-plus
+                              li.list-inline-item
+                                a(href='https://twitter.com/' target="_blank")
+                                  i.fa.fa-twitter
+                              li.list-inline-item
+                                a(href='https://www.instagram.com/' target="_blank")
+                                  i.fa.fa-instagram
+                              li.list-inline-item
+                                a(href='https://rss.app/' target="_blank")
+                                  i.fa.fa-rss
+                          .float-sm-end
+                            small 10 Hours ago
+                      hr
+                      .row
+                        .col-lg-12.col-xl-4
+                          #aniimated-thumbnials-3.my-gallery(itemscope='')
+                            figure(itemprop='associatedMedia', itemscope='')
+                              a(href='../assets/images/blog/img.png', itemprop='contentUrl', data-size='1600x950')
+                                img.img-fluid.rounded(src='../assets/images/blog/img.png', itemprop='thumbnail', alt='gallery')
+                              figcaption(itemprop='caption description') Image caption  1
+                          .like-comment.mt-3.like-comment-sm-mb
+                            ul.list-inline
+                              li.border-right.pe-3.list-inline-item
+                                label.m-0
+                                  a(href='#!')
+                                    i.fa.fa-heart
+                                  |   Like
+                                span.ms-2.counter 2659
+                              li.list-inline-item
+                                label.m-0
+                                  a(href='#!')
+                                    i.fa.fa-comment
+                                  |   Comment
+                                span.ms-2.counter 569
+                        .col-xl-8
+                          p.block-ellipsis.pt-xl-0.pt-3
+                            | The wind gives life to the planet. This unobservable, enigmatic energy has the power to revitalize a setting. Its absence can cause the world to become serenely motionless. Its strength is scarcely visible on bare mountain summits, but it becomes obvious in woods and on the water. Winds may be violent and even harmful. When we investigate it carefully Nature is not a destination. Home is here. Garry Snyder In a very real sense, our home, or natural environment, is made up of mountains and valleys, the seas and the sky, the sun and the soil, the trees and the flowers. Growing up in the contemporary, civilized environment, it's simple to start believing
+                // user profile fifth-style end
+                .pswp(tabindex='-1', role='dialog', aria-hidden='true')
+                  .pswp__bg
+                  .pswp__scroll-wrap
+                    .pswp__container
+                      .pswp__item
+                      .pswp__item
+                      .pswp__item
+                    .pswp__ui.pswp__ui--hidden
+                      .pswp__top-bar
+                        .pswp__counter
+                        button.pswp__button.pswp__button--close(title='Close (Esc)')
+                        button.pswp__button.pswp__button--share(title='Share')
+                        button.pswp__button.pswp__button--fs(title='Toggle fullscreen')
+                        button.pswp__button.pswp__button--zoom(title='Zoom in/out')
+                        .pswp__preloader
+                          .pswp__preloader__icn
+                            .pswp__preloader__cut
+                              .pswp__preloader__donut
+                      .pswp__share-modal.pswp__share-modal--hidden.pswp__single-tap
+                        .pswp__share-tooltip
+                      button.pswp__button.pswp__button--arrow--left(title='Previous (arrow left)')
+                      button.pswp__button.pswp__button--arrow--right(title='Next (arrow right)')
+                      .pswp__caption
+                        .pswp__caption__center
+
+          // Container-fluid Ends
+        include ../../components/footer
+    include ../../components/footer-files

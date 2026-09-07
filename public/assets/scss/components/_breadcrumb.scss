@@ -1,0 +1,89 @@
+/**=====================
+2.6 Breadcrumb CSS Start
+==========================**/
+.breadcrumb-colored {
+	padding: 12px 16px;
+	border-radius: 4px;
+	li {
+		a {
+			color: $breadcrumb-ancher-color;
+		}
+		&.active {
+			color: $breadcrumb-ancher-color;
+			opacity: 0.7;
+		}
+	}
+	.breadcrumb-item {
+		&:before {
+			color: $breadcrumb-ancher-color;
+		}
+	}
+	.breadcrumb-item.txt-dark {
+		&:before {
+			color: $breadcrumb-ancher-dark-color;
+		}
+	}
+}
+.breadcrumb-icon {
+	--bs-breadcrumb-divider: '>';
+	li {
+		display: inline-block;
+	}
+}
+.breadcrumb-no-divider {
+	--bs-breadcrumb-divider: '';
+}
+.breadcrumb-item {
+	&.active {
+		text-transform: capitalize;
+	}
+}
+.breadcrumb-space {
+	.breadcrumb-item {
+		&::before {
+			padding-right: 0;
+		}
+	}
+}
+.breadcrumb {
+	position: relative;
+	@media (max-width: 360px) {
+		.breadcrumb-item {
+			&:nth-child(2) {
+				text-overflow: ellipsis;
+				white-space: nowrap;
+				word-break: break-word;
+				max-width: calc(50vw - 55px);
+			}
+		}
+	}
+	@media (max-width: 400px) {
+		.breadcrumb-item {
+			&:nth-child(3) {
+				text-overflow: ellipsis;
+				white-space: nowrap;
+				word-break: break-word;
+				max-width: calc(50vw - 25px);
+			}
+		}
+	}
+	.col-auto {
+		&.page-title {
+			@media (max-width:350px) {
+				div {
+					h2 {
+						-webkit-box-orient: vertical;
+						overflow: hidden;
+						text-overflow: ellipsis;
+						-webkit-line-clamp: 1;
+						display: -webkit-box;
+						width: 75px;
+					}
+				}
+			}
+		}
+	}
+}
+/**=====================
+	2.6 Breadcrumb CSS ends
+==========================**/

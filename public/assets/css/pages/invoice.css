@@ -1,0 +1,52 @@
+.invoice h4,
+.invoice h6 {
+  font-weight: 600;
+}
+.invoice p {
+  letter-spacing: 0.6px;
+}
+
+.invoice-1 body {
+  font-family: Inter, sans-serif;
+  display: block;
+  color: #000248;
+}
+.invoice-1 .table-wrapper {
+  margin: 0 auto;
+}
+.invoice-1 h2 {
+  margin: 0;
+  font-weight: 500;
+  font-size: 20px;
+}
+.invoice-1 h6 {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  margin: 0;
+}
+.invoice-1 span {
+  line-height: 1.5;
+  font-weight: 400;
+}
+.invoice-1 .banner-image {
+  margin: 13px 0 10px;
+}
+.invoice-1 .order-details td span {
+  margin-bottom: -4px;
+  display: block;
+}
+
+.invoice-2 .card-body > table {
+  display: block;
+}
+.invoice-2 .card-body > table > tbody {
+  display: block;
+}
+.invoice-2 .card-body > table > tbody > tr {
+  display: block;
+}
+.invoice-2 .card-body > table > tbody > tr > td {
+  display: block;
+}
+/*# sourceMappingURL=invoice.css.map */

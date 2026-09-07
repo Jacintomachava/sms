@@ -1,0 +1,67 @@
+/**=====================
+    2.21 Loader CSS Start
+==========================**/
+.loader-wrapper {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  background-color: $white;
+  z-index: 25;
+  top: 0;
+  .loader {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: var(--theme-default);
+    animation: spin 1.7s linear infinite;
+    &:before {
+      content: "";
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      right: 5px;
+      bottom: 5px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-top-color: $danger-color;
+      animation: spin-reverse .6s linear infinite;
+    }
+    &:after {
+      content: "";
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      right: 15px;
+      bottom: 15px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-top-color: $warning-color;
+      animation: spin 1s linear infinite;
+    }
+  }
+  // Bourbon mixins
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes spin-reverse {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(-360deg);
+    }
+  }
+}
+/**=====================
+    2.21 Loader CSS Ends
+==========================**/

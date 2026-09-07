@@ -1,0 +1,50 @@
+- var theme_customizer      = true;
+- var jquery_ui             = true;
+- var map_js                = true;
+- var sidebar               = true;
+- var slick                 = true;
+- var header_slider         = true;
+- var animate               = true;
+- var script2               = true;
+- var scrollbar             = true;
+
+//- mixin
+include ../../mixins/mixin
+
+doctype html
+html(lang='en')
+  include ../../components/header-files
+  body
+    include ../../components/loader
+    include ../../components/taptop
+    // page-wrapper Start
+    #pageWrapper.page-wrapper.compact-wrapper
+      .page-header.row
+        include ../../components/header
+        +left-header
+        +breadcrumb(['Maps','Map JS'],'Map JS')
+        +right-header
+      // Page Body Start
+      .page-body-wrapper
+        include ../../components/sidebar
+        .page-body
+          // Container-fluid starts
+          .container-fluid
+            .row
+              .col-xl-6
+                .card
+                  .card-header
+                    h2 Map at a Specified Location
+                    p.f-m-light.mt-1 Display a map at a specified location and zoom level.
+                  .card-body.z-1
+                    #weathermap.map-js-height
+              .col-xl-6
+                .card
+                  .card-header
+                    h2 Map Using View Bounds
+                    p.f-m-light.mt-1 Display a map of a given area.
+                  .card-body.z-1
+                    #map2.map-js-height 
+          // Container-fluid Ends
+        include ../../components/footer
+    include ../../components/footer-files

@@ -1,0 +1,189 @@
+/**=====================
+    1.2 Typography CSS start
+==========================**/
+body {
+    font-size: $body-font-size;
+    overflow-x: hidden;
+    font-family: $font-inter, $font-serif;
+    color: $theme-body-font-color;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin: 0;
+}
+h1 {
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+h2 {
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+h3 {
+    font-size: 18px;
+}
+h4 {
+    font-size: 16px;
+}
+h5 {
+    font-size: 15px;
+}
+h6 {
+    font-size: 14px;
+}
+ul {
+    padding-left: $ul-padding-left;
+    list-style-type: none;
+    margin-bottom: 0;
+}
+ol,
+dl {
+    margin: 0;
+}
+* a {
+    color: var(--theme-default);
+    text-decoration: none;
+    letter-spacing: 1px;
+}
+.f-m-light {
+    margin: 0;
+}
+a {
+    font-size: 0.875rem;
+    text-decoration: none;
+    color: var(--theme-default);
+    transition: 0.5s all;
+    &:hover {
+        color: var(--theme-default);
+        transition: all 0.5s all;
+    }
+    &:focus-visible {
+        outline: none;
+    }
+}
+.btn {
+    font-size: 15px;
+}
+*.btn:focus {
+    box-shadow: $btn-focus-box-shadow !important;
+}
+button {
+    &:focus {
+        outline: none !important;
+    }
+}
+p {
+    font-size: $paragraph-font-size;
+    line-height: $paragraph-line-height;
+    letter-spacing: $paragraph-letter-spacing;
+}
+code {
+    color: $code-tag-color !important;
+    border-radius: $code-tag-border-radious;
+}
+span {
+    display: inline-block;
+}
+.d-flex {
+    align-items: flex-start;
+    .flex-grow-1 {
+        flex: 1;
+    }
+}
+blockquote {
+    border-left: $blockquote-border;
+    padding: 18px;
+    &:last-child {
+        &.light-card {
+            margin-bottom: 0;
+        }
+    }
+}
+.figure {
+    &.text-center {
+        blockquote {
+            border: none !important;
+        }
+    }
+    &.text-end {
+        blockquote {
+            border-left: none !important;
+            border-right: $blockquote-border;
+        }
+    }
+}
+.row {
+    >div {
+        position: relative;
+    }
+}
+:focus {
+    outline-color: $all-focus-outline-color;
+}
+.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+svg {
+    vertical-align: baseline;
+}
+input {
+    &:focus {
+        outline-color: $transparent-color;
+    }
+}
+label {
+    margin-bottom: .5rem;
+}
+pre {
+    background-color: $pre-tag-bg-color;
+    padding: $pre-tag-padding;
+}
+table {
+    tbody {
+        tr {
+            vertical-align: middle;
+        }
+    }
+}
+.typography-table {
+    thead {
+        tr {
+            th {
+                font-size: 16px;
+            }
+        }
+    }
+    tbody {
+        tr {
+            td {
+                &:last-child {
+                    min-width: 280px;
+                }
+                &:first-child {
+                    min-width: 100px;
+                }
+            }
+            &:last-child {
+                td {
+                    padding-bottom: 0;
+                }
+            }
+        }
+    }
+}
+/* ===== Scrollbar CSS ===== */
+/* Firefox */
+* {
+    scrollbar-width: 0;
+    scrollbar-color: transparent;
+}
+/**=====================
+    1.2 Typography CSS Ends
+==========================**/

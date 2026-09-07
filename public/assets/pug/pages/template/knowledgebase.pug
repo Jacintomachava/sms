@@ -1,0 +1,555 @@
+- var theme_customizer      = true;
+- var sidebar               = true;
+- var slick                 = true;
+- var header_slider         = true;
+- var animate               = true;
+- var scrollbar             = true;
+- var script2               = true;
+
+//- mixin
+include ../../mixins/mixin
+
+doctype html
+html(lang='en')
+  include ../../components/header-files
+  body
+    include ../../components/loader
+    include ../../components/taptop
+    // page-wrapper Start
+    #pageWrapper.page-wrapper.compact-wrapper
+      .page-header.row
+        include ../../components/header
+        +left-header
+        +breadcrumb(['Knowledgebase','Knowledgebase'],'Knowledgebase')
+        +right-header
+      // Page Body Start
+      .page-body-wrapper
+        include ../../components/sidebar
+        .page-body
+          // Container-fluid starts
+          .container-fluid
+            .row
+              .col-12
+                .knowledgebase-bg
+                  img.bg-img-cover.bg-center(src="../assets/images/knowledgebase/bg_1.jpg" alt="looginpage" )
+                .knowledgebase-search
+                  div
+                    h3 How Can I help you?
+                    form.form-inline(action="#" method="get")
+                      .form-group.w-100
+                        i(data-feather='search')
+                        input.form-control-plaintext.w-100(type="text" placeholder="Type question here" title="")  
+              .col-xl-4.col-sm-6
+                .card.bg-primary
+                  .card-body
+                    .d-flex.faq-widgets
+                      .flex-grow-1
+                        h3.f-w-600.txt-light.mb-2 Articles
+                        p
+                          | The usefulness and usability of a website, not its aesthetic design, define its success or failure. User-centric design has become the norm for effective and financially motivated web design since the visitor to the website is the only one who clicks the mouse and thus determines everything. After all, a feature might as well not exist if people can't utilise it.
+                      i(data-feather='book-open')
+              .col-xl-4.col-sm-6
+                .card.bg-primary
+                  .card-body
+                    .d-flex.faq-widgets
+                      .flex-grow-1
+                        h3.f-w-600.txt-light.mb-2 Knowledgebase
+                        p
+                          | A knowledge base acts as a central repository for knowledge, data, and information pertaining to a certain subject or thing. Its main goal is to make it easier for consumers to obtain information quickly and conveniently so they can solve problems, find solutions, and make wise decisions.
+                      i(data-feather='aperture')
+              .col-xl-4
+                .card.bg-primary
+                  .card-body
+                    .d-flex.faq-widgets
+                      .flex-grow-1
+                        h3.f-w-600.txt-light.mb-2 Support
+                        p
+                          | Email, chat, forums, and a social media interface (and monitoring) are all part of real-time online assistance, which helps in reacting to public complaints and comments. Taking care of returns or repairs may fall under this.
+                      i(data-feather='file-text')
+              .col-sm-12
+                .header-faq
+                  h3.mb-0.f-w-600 Browse articles by category
+                .row
+                  .col-sm-12
+                    .card
+                      .card-header
+                        h2 Browse Articles
+                      .card-body
+                        .row.browse.g-sm-4.g-3.knowledgebase-contents
+                          .col-xl-4.xl-50.col-md-6
+                            .browse-articles
+                              h5
+                                span
+                                  i(data-feather='archive')
+                                | Quick questions are answered
+                              ul
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Dream big, work hard, achieve more.
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Stars require darkness to shine.
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span The key to happiness lies within, not in goods.
+                                    span.badge.badge-primary.pull-right New
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Seek advancement rather than perfection. 
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='arrow-right')
+                                    span See More (40)
+                          .col-xl-4.xl-50.col-md-6
+                            .browse-articles
+                              h5
+                                span
+                                  i(data-feather='archive')
+                                |  Integrating wordPress with your website
+                              ul
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Plugins and tools for seamless WordPress integration
+                                    span.badge.badge-primary.pull-right Review
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span advantages of using WordPress as my website's CMS
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Desktop publishing software like Jully
+                                    span.badge.badge-primary.pull-right Articles
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Making this the first true generator on the Internet.
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='arrow-right')
+                                    span See More (90)
+                          .col-xl-4.xl-50.col-md-6
+                            .browse-articles
+                              h5
+                                span
+                                  i(data-feather='archive')
+                                | WordPress site maintenance
+                              ul
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span WordPress Site Upkeep: Important Best Practises
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Regular Updates: WordPress Security and Stability
+                                    span.badge.badge-primary.pull-right Closed
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Backup Fundamentals: Protecting Your Website Data
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span The Essential Maintenance for a Thriving Website
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='arrow-right')
+                                    span See More (50)
+                          .col-xl-4.xl-50.col-md-6
+                            .browse-articles.browse-bottom
+                              h5
+                                span
+                                  i(data-feather='archive')
+                                  |  Meta tags in wordPress
+                              ul
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span The article WordPress Site Care: A Recipe for Success
+                                    span.badge.badge-primary.pull-right Popular
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Security Scan: Protecting Against Vulnerabilities.
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span SEO and Site Speed: Improving User Experience
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Broken Links: Fixing for Improved Navigation
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='arrow-right')
+                                    span See More (90)
+                          .col-xl-4.xl-50.col-md-6
+                            .browse-articles.browse-bottom
+                              h5
+                                span
+                                  i(data-feather='archive')
+                                | WordPress in your language
+                              ul
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Discover WordPress Themes: Improve Website Design
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Making the Best Decision: WordPress vs. Other CMS
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Using Widgets to Your Advantage: Creating a Custom Website
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Essential WordPress Plugins: Easily enhance
+                                    span.badge.badge-primary.pull-right Closed
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='arrow-right')
+                                    span See More (50)
+                          .col-xl-4.xl-50.col-md-6
+                            .browse-articles.browse-bottom
+                              h5
+                                span
+                                  i(data-feather='archive')
+                                | Know your sources
+                              ul
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span First, get the issue resolved. Write the code after that.
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span It has a more-or-less normal distribution of letters
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span The writing of programmes must be simple
+                                    span.badge.badge-primary.pull-right Article
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Coding involves logic and creativity in addition to merely writing code
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='arrow-right')
+                                    span See More (26)
+                          .col-xl-4.xl-50.col-md-6
+                            .browse-articles.browse-bottom
+                              h5
+                                span
+                                  i(data-feather='archive')
+                                | Validating a website
+                              ul
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Build your website to make users happy
+                                    span.badge.badge-primary.pull-right Review
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Your website is your front door online
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Make sure your website is easy to use and simple 
+                                    span.badge.badge-primary.pull-right Closed
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Update, innovate, and enhance your website 
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='arrow-right')
+                                    span See More (10)
+                          .col-xl-4.xl-50.col-md-6
+                            .browse-articles.browse-bottom
+                              h5
+                                span
+                                  i(data-feather='archive')
+                                | Quick questions are answered
+                              ul
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Coding: turning caffeine into lines of brilliance.
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Code is the poetry of logical expression.
+                                    span.badge.badge-primary.pull-right Popular
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Coding is the art of engineering
+                                    span.badge.badge-primary.pull-right Review
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Every screen size is accommodated with a responsive website
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='arrow-right')
+                                    span See More (25)
+                          .col-xl-4.xl-100
+                            .browse-articles.browse-bottom
+                              h5
+                                span
+                                  i(data-feather='archive')
+                                | Integrating wordPress with your website
+                              ul
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span The core of your online presence is your website
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Your website is a 24/7 marketing tool
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span Build a website that turns users into buyers
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='file-text')
+                                    span User experience determines a website's success
+                                    span.badge.badge-primary.pull-right On hold
+                                li
+                                  a(href='#!')
+                                    span
+                                      i(data-feather='arrow-right')
+                                    span See More (34)
+              .col-lg-12
+                .header-faq
+                  h3.mb-0.f-w-600 Featured Tutorials
+                .row
+                  .col-xl-3.xl-50.col-md-6.box-col-6
+                    .card.features-faq.product-box
+                      .faq-image.product-img
+                        img.img-fluid(src='../assets/images/faq/1.jpg', alt='')
+                        .product-hover
+                          ul
+                            li
+                              i.icon-link
+                            li
+                              i.icon-import
+                      .card-body
+                        h4.f-w-600.pb-1  Web Designer
+                        p
+                          | Setting aside time once every three months to refresh your portfolio is a fantastic idea. Even if you are not submitting any new work, you could still need to provide more context or alter anything based on your continuing learnings and objectives. Compared to months or years later, it is far simpler to update when the information is still fresh in your mind.
+                      .card-footer
+                        span Dec 11, 2024
+                        span.pull-right
+                          i.fa.fa-star.font-primary
+                          i.fa.fa-star.font-primary
+                          i.fa.fa-star.font-primary
+                          i.fa.fa-star.font-primary
+                          i.fa.fa-star.font-primary
+                  .col-xl-3.xl-50.col-md-6.box-col-6
+                    .card.features-faq.product-box
+                      .faq-image.product-img
+                        img.img-fluid(src='../assets/images/faq/2.jpg', alt='')
+                        .product-hover
+                          ul
+                            li
+                              i.icon-link
+                            li
+                              i.icon-import
+                      .card-body
+                        h4.f-w-600.pb-1 Web Development
+                        p
+                          | To display HTML and CSS components on different web browsers, such as Chrome, Safari, and previous versions of Opera, CSS3 uses the Webkit rendering engine. It offers the essential features for generating online content and guaranteeing consistency across many platforms.
+                      .card-footer
+                        span Dec 14, 2024
+                        span.pull-right
+                          i.fa.fa-star.font-primary
+                          i.fa.fa-star.font-primary
+                          i.fa.fa-star.font-primary
+                          i.fa.fa-star.font-primary
+                          i.fa.fa-star-o.font-primary
+                  .col-xl-3.xl-50.col-md-6.box-col-6
+                    .card.features-faq.product-box
+                      .faq-image.product-img
+                        img.img-fluid(src='../assets/images/faq/3.jpg', alt='')
+                        .product-hover
+                          ul
+                            li
+                              i.icon-link
+                            li
+                              i.icon-import
+                      .card-body
+                        h4.f-w-600.pb-1 UI Designer
+                        p
+                          | Seniority does have a significant role in how much influence a UI specialist has at this first stage of the design process. Senior UI designers may take the initiative in coming up with suggestions for which visual components will work best, whereas an entry-level UI designer is more likely to be focused on storyboards, sitemaps, and process flows and not have much influence on the site's appearance.
+                      .card-footer
+                        span Dec 20, 2024
+                        span.pull-right
+                          i.fa.fa-star.font-primary
+                          i.fa.fa-star.font-primary
+                          i.fa.fa-star.font-primary
+                          i.fa.fa-star.font-primary
+                          i.fa.fa-star.font-primary
+                  .col-xl-3.xl-50.col-md-6.box-col-6
+                    .card.features-faq.product-box
+                      .faq-image.product-img
+                        img.img-fluid(src='../assets/images/faq/4.jpg', alt='')
+                        .product-hover
+                          ul
+                            li
+                              i.icon-link
+                            li
+                              i.icon-import
+                      .card-body
+                        h4.f-w-600.pb-1  UX Designer
+                        p
+                          | Information architecture is a discipline that, among other things, organises, arranges, and structures the content of a website or app. Information architects determine how to organise something's components in a way that makes sense.
+                      .card-footer
+                        span Dec 25, 2024
+                        span.pull-right
+                          i.fa.fa-star.font-primary
+                          i.fa.fa-star.font-primary
+                          i.fa.fa-star.font-primary
+                          i.fa.fa-star.font-primary
+                          i.fa.fa-star-half-o.font-primary
+              .col-lg-12
+                .header-faq
+                  h3.mb-0.f-w-600 Latest articles and videos
+                .row.knowledgebase-box
+                  .col-xl-4.col-md-6
+                    .row
+                      .col-sm-12
+                        .card
+                          .card-body
+                            .d-flex.articles-icons
+                              i.m-r-20(data-feather='codepen')
+                              .flex-grow-1
+                                h5.f-w-600.mb-1 Product manager
+                                p A product manager is a specialist in charge of managing the growth, direction.
+                      .col-sm-12
+                        .card
+                          .card-body
+                            .d-flex.articles-icons
+                              i.m-r-20(data-feather='codepen')
+                              .flex-grow-1
+                                h5.f-w-600.mb-1 E-commerce
+                                p Discover the flourishing e-commerce industry and how digital technology has transformed it.
+                      .col-sm-12
+                        .card
+                          .card-body
+                            .d-flex.articles-icons
+                              i.m-r-20(data-feather='codepen')
+                              .flex-grow-1
+                                h5.f-w-600.mb-1  Web-development
+                                p To display HTML and CSS components on different web browsers, such as Chrome, Safari.
+                  .col-xl-4.col-md-6
+                    .row
+                      .col-sm-12
+                        .card
+                          .card-body
+                            .d-flex.articles-icons
+                              i.m-r-20(data-feather='file-text')
+                              .flex-grow-1
+                                h5.f-w-600.mb-1  UX designer
+                                p Seniority does have a significant role in how much influence a UI specialist.
+                      .col-sm-12
+                        .card
+                          .card-body
+                            .d-flex.articles-icons
+                              i.m-r-20(data-feather='file-text')
+                              .flex-grow-1
+                                h5.f-w-600.mb-1  SDLC cycle
+                                p the intricacies of the Software Development Life Cycle a systematic approach to software development
+                      .col-sm-12
+                        .card
+                          .card-body
+                            .d-flex.articles-icons
+                              i.m-r-20(data-feather='file-text')
+                              .flex-grow-1
+                                h5.f-w-600.mb-1 Using Video 
+                                p Information architecture is a discipline that, among other things, arranges, and structures
+                  .col-xl-4
+                    .row
+                      .col-xl-12.col-md-6
+                        .card
+                          .card-body
+                            .d-flex.articles-icons
+                              i.m-r-20(data-feather='youtube')
+                              .flex-grow-1
+                                h5.f-w-600.mb-1  Information gathering
+                                p Explore the critical role of information gathering in effective problem-solving processes.
+                      .col-xl-12.col-md-6
+                        .card
+                          .card-body
+                            .d-flex.articles-icons
+                              i.m-r-20(data-feather='youtube')
+                              .flex-grow-1
+                                h5.f-w-600.mb-1 Effective communication
+                                p It's crucial to communicate! This blog explores the key components of good communication.
+                      .col-xl-12
+                        .card
+                          .card-body
+                            .d-flex.articles-icons
+                              i.m-r-20(data-feather='youtube')
+                              .flex-grow-1
+                                h5.f-w-600.mb-1 Travel adventures
+                                p The spirit is enriched by travel! This site takes you on an exhilarating tour of stunning.
+          // Container-fluid Ends
+        include ../../components/footer
+    include ../../components/footer-files

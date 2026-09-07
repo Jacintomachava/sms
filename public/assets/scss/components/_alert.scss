@@ -1,0 +1,184 @@
+/**=====================
+     2.2 Alert CSS start
+==========================**/
+.notify-alert {
+  .close {
+    color: var(--theme-default);
+    background: unset;
+    border: none;
+    font-size: 25px;
+    [dir="rtl"] & {
+      right: unset !important;
+      left: 10px !important;
+    }
+  }
+  &.alert-light {
+    .close {
+      color: $theme-body-font-color;
+    }
+  }
+}
+.alert {
+  border-radius: $alert-border-radious;
+  padding: 15px;
+  svg {
+    vertical-align: middle;
+  }
+  .progress {
+    margin-top: $alert-padding;
+  }
+  [data-notify='icon'] {
+    margin-right: 10px;
+    line-height: 20px;
+    position: absolute;
+  }
+  [data-notify='message'] {
+    display: inline-block;
+    width: 100%;
+  }
+  i {
+    margin-right: 5px;
+    font-size: $alert-msg-icon-size;
+  }
+  p {
+    margin-bottom: 0;
+  }
+  .close {
+    opacity: 1;
+    span {
+      font-size: 24px;
+      font-weight: 400;
+      display: inline-block;
+      border-radius: 3px;
+      text-shadow: none;
+      padding: 0 5px;
+      padding-right: 0;
+    }
+  }
+}
+.alert-dismissible {
+  padding-right: 2.5rem;
+  [dir="rtl"] & {
+    padding-right: 15px;
+    padding-left: 2.5rem;
+  }
+  .close {
+    padding: 10px 1.25rem;
+    top: 4px;
+    padding-right: 13px;
+    opacity: 0.5;
+    transition: all 0.3s ease;
+    &:hover {
+      transition: all 0.3s ease;
+      opacity: 1;
+      color: inherit;
+    }
+  }
+}
+.card-body {
+  button {
+    &:focus {
+      outline: none;
+    }
+  }
+  .alert {
+    &:last-child {
+      margin-bottom: 0;
+    }
+    svg {
+      width: 14px;
+      height: 14px;
+      margin-right: 4px;
+      position: absolute;
+      top: 18px;
+      &~p {
+        padding-left: 20px;
+      }
+    }
+  }
+}
+strong {
+  display: inline-block;
+  &~p {
+    display: inline-block;
+  }
+}
+.outline-2x {
+  border-width: 2px;
+  padding: 11px 1.25rem;
+}
+.alert-icons {
+  &.outline-2x {
+    padding: 15px;
+  }
+  svg {
+    position: absolute !important;
+    top: 18px !important;
+  }
+}
+.alert-dark,
+.alert-info {
+  .btn-close {
+    filter: none;
+  }
+}
+.border-left-wrapper {
+  border-left: 4px solid $secondary-color;
+}
+$alert-light-name: primary,
+secondary,
+success,
+warning,
+info,
+light,
+danger,
+dark;
+$alert-light-color: $light-primary,
+$light-secondary,
+$light-success,
+$light-warning,
+$light-info,
+$light-white,
+$light-danger,
+$light-dark;
+@each $var in $alert-light-name {
+  $i: index($alert-light-name, $var);
+  .alert-light-#{$var} {
+    background-color: nth($alert-light-color, $i);
+  }
+}
+.alert-arrow {
+  min-width: 55px;
+  height: 55px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  i {
+    margin-right: 0;
+  }
+}
+.ellipsis.content {
+  @media (max-width:576px) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 294px;
+  }
+  @media (max-width:575px) {
+    max-width: 180px;
+  }
+}
+.alert-dismissible {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-close {
+  &:focus {
+    box-shadow: unset;
+  }
+}
+/**=====================
+   2.2 Alert CSS end
+==========================**/

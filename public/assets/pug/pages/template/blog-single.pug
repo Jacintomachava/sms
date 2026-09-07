@@ -1,0 +1,155 @@
+- var theme_customizer      = true;
+- var sidebar               = true;
+- var slick                 = true;
+- var header_slider         = true;
+- var animate               = true;
+- var scrollbar             = true;
+- var script2               = true;
+
+//- mixin
+include ../../mixins/mixin
+
+doctype html
+html(lang='en')
+  include ../../components/header-files
+  body
+    include ../../components/loader
+    include ../../components/taptop
+    // page-wrapper Start
+    #pageWrapper.page-wrapper.compact-wrapper
+      .page-header.row
+        include ../../components/header
+        +left-header
+        +breadcrumb(['Blog','Blog Single'], 'Blog Single')
+        +right-header
+      // Page Body Start
+      .page-body-wrapper
+        include ../../components/sidebar
+        .page-body
+          // Container-fluid starts
+          .container-fluid
+            .row
+              .col-sm-12
+                .card 
+                  .card-body
+                    .blog-single
+                      .blog-box.blog-details
+                        img.img-fluid.w-100(src='../assets/images/blog/blog-single.jpg', alt='blog-main')
+                        .blog-details
+                          ul.blog-social
+                            li 25 July 2024
+                            li
+                              i.icofont.icofont-user
+                              span William C. Jennings 
+                            li
+                              i.icofont.icofont-thumbs-up
+                              | 2
+                              span Hits
+                            li
+                              i.icofont.icofont-ui-chat
+                              | 692 Comments
+                          h4
+                            | Using a camera's lens to record moments in time is the art form known as photography.
+                          .single-blog-content-top
+                            p
+                              | To produce aesthetically striking photos, it entails the deft use of light, composition, and subject matter. Technology breakthroughs have made photography more widely available to the public, enabling people to express their creativity and share their own viewpoints with a global audience.They use meticulous attention to details like colour balance, depth of focus, and framing to produce aesthetically stunning photos that arouse feelings and convey tales.
+                            p
+                              | There are many diverse genres within the area of photography, such as fashion, landscape, portrait, and documentary photography, each needing a unique blend of technical abilities and creative vision. Expert photographers have a thorough grasp of their gear and know how to get the best results by experimenting with different lenses, lighting setups, and post-processing software.
+                            p 
+                              | With the advent of digital technology, photography has become a vital aspect of our daily life. Ad campaigns and social media platforms alike may benefit greatly from the influence that a well-taken photo can have on its audience. It has the power to spread ideas, arouse sentimentality, and even spark societal change. Photography has developed into an effective tool for documenting and storytelling because of its capacity to stop time and retain memories.
+                      section.comment-box
+                        h3.f-w-600 Comment
+                        hr
+                        ul
+                          li
+                            .d-flex.align-self-center
+                              img.align-self-center(src='../assets/images/blog/comment.jpg', alt='Generic placeholder image')
+                              .flex-grow-1
+                                .row
+                                  .col-md-4
+                                    h6.mt-0
+                                      | Nina P. Crosby
+                                      span  ( Designer )
+                                  .col-md-8
+                                    ul.comment-social.float-start.float-md-end
+                                      li
+                                        i.icofont.icofont-thumbs-up
+                                        | 02 Hits
+                                      li
+                                        i.icofont.icofont-ui-chat
+                                        | 692 Comments
+                                p
+                                  | To create aesthetically striking photos, one must have a strong grasp of composition and lighting in addition to technical proficiency and creative vision. A professional photographer has to have an excellent eye for detail and be able to tell stories and convey emotions via their images.
+                          li
+                            ul
+                              li
+                                .d-flex
+                                  img.align-self-center(src='../assets/images/blog/9.jpg', alt='Generic placeholder image')
+                                  .flex-grow-1
+                                    .row
+                                      .col-xl-12
+                                        h6.mt-0
+                                          | Thomas A. Deloach
+                                          span  ( UX Designer )
+                                    p
+                                      | They meticulously plan each shot, considering factors such as lighting, angles, and props to convey the desired message effectively. Commercial photographers are adept at using their technical expertise to highlight the unique features and qualities of their subjects, often manipulating lighting and post-processing techniques to achieve the desired aesthetic.
+                          li
+                            .d-flex
+                              img.align-self-center(src='../assets/images/blog/4.jpg', alt='Generic placeholder image')
+                              .flex-grow-1
+                                .row
+                                  .col-md-4
+                                    h6.mt-0
+                                      | John E. Cammack
+                                      span  ( Designer )
+                                  .col-md-8
+                                    ul.comment-social.float-start.float-md-end
+                                      li
+                                        i.icofont.icofont-thumbs-up
+                                        | 5 Hits
+                                      li
+                                        i.icofont.icofont-ui-chat
+                                        | 400 Comments
+                                p
+                                  | To create aesthetically striking photos, one must have a strong grasp of composition and lighting in addition to technical proficiency and creative vision. A professional photographer has to have an excellent eye for detail and be able to tell stories and convey emotions via their images.
+                          li
+                            .d-flex
+                              img.align-self-center(src='../assets/images/blog/12.png', alt='Generic placeholder image')
+                              .flex-grow-1
+                                .row
+                                  .col-md-4
+                                    h6.mt-0
+                                      | Daniele G. Ferguson
+                                      span  ( Designer )
+                                  .col-md-8
+                                    ul.comment-social.float-start.float-md-end
+                                      li
+                                        i.icofont.icofont-thumbs-up
+                                        | 10 Hits
+                                      li
+                                        i.icofont.icofont-ui-chat
+                                        | 625 Comments
+                                p
+                                  | They meticulously plan each shot, considering factors such as lighting, angles, and props to convey the desired message effectively. Commercial photographers are adept at using their technical expertise to highlight the unique features and qualities of their subjects, often manipulating lighting and post-processing techniques to achieve the desired aesthetic.
+                          li
+                            .d-flex
+                              img.align-self-center(src='../assets/images/blog/14.png', alt='Generic placeholder image')
+                              .flex-grow-1
+                                .row
+                                  .col-md-4
+                                    h6.mt-0
+                                      | Nathan C. Wilson
+                                      span  ( Painter )
+                                  .col-md-8
+                                    ul.comment-social.float-start.float-md-end
+                                      li
+                                        i.icofont.icofont-thumbs-up
+                                        | 02 Hits
+                                      li
+                                        i.icofont.icofont-ui-chat
+                                        | 598 Comments
+                                p
+                                  | They meticulously plan each shot, considering factors such as lighting, angles, and props to convey the desired message effectively. Commercial photographers are adept at using their technical expertise to highlight the unique features and qualities of their subjects, often manipulating lighting and post-processing techniques to achieve the desired aesthetic.
+          // Container-fluid Ends
+        include ../../components/footer
+    include ../../components/footer-files      

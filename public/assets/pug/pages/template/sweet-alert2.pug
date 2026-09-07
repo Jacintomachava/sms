@@ -1,0 +1,133 @@
+- var theme_customizer      = true;
+- var sweetalert2           = true;
+- var page_sweetalert2      = true;
+- var sidebar               = true;
+- var slick                 = true;
+- var header_slider         = true;
+- var animate               = true;
+- var script2               = true;
+- var scrollbar             = true;
+- var height_equal          = true;
+
+//- mixin
+include ../../mixins/mixin
+
+doctype html
+html(lang='en')
+  include ../../components/header-files
+  body
+    include ../../components/loader
+    include ../../components/taptop
+    // page-wrapper Start
+    #pageWrapper.page-wrapper.compact-wrapper
+      .page-header.row
+        include ../../components/header
+        +left-header
+        +breadcrumb(['Bonus UI','Sweet Alert'],'Sweet Alert')
+        +right-header
+      // Page Body Start
+      .page-body-wrapper
+        include ../../components/sidebar
+        .page-body
+          // Container-fluid starts                    
+          .container-fluid
+            .row
+              .col-xxl-3.col-lg-4.col-sm-6.col-12
+                .card.height-equal.title-line
+                  .card-header
+                    h2 Basic example
+                    p.f-m-light.mt-1
+                      | Print the basic message.
+                  .card-body.btn-showcase
+                    button.btn.btn-primary.sweet-1(type='button', onclick="_gaq.push(['_trackEvent', 'example', 'try', 'sweet-1']);") Click it!
+              .col-xxl-3.col-lg-4.col-sm-6.col-12
+                .card.height-equal.title-line
+                  .card-header
+                    h2 Title with a text under
+                    p.f-m-light.mt-1
+                      | Print the title with text.
+                  .card-body.btn-showcase
+                    button.btn.btn-secondary.sweet-2(type='button', onclick="_gaq.push(['_trackEvent', 'example', 'try', 'sweet-2']);") Surprise!
+              .col-xxl-3.col-lg-4.col-sm-6.col-12
+                .card.height-equal.title-line
+                  .card-header
+                    h2 Info alert 
+                    p.f-m-light.mt-1
+                      | Print the informational message.
+                  .card-body.btn-showcase
+                    button.btn.btn-info.sweet-4(type='button', onclick="_gaq.push(['_trackEvent', 'example', 'try', 'sweet-4']);") Informational
+              .col-xxl-3.col-lg-4.col-sm-6.col-12
+                .card.height-equal.title-line
+                  .card-header
+                    h2 Warning alert 
+                    p.f-m-light.mt-1
+                      | Warning for imaginary files.
+                  .card-body.btn-showcase
+                    button.btn.btn-warning.sweet-5(type='button', onclick="_gaq.push(['_trackEvent', 'example', 'try', 'sweet-5']);") Warning
+              .col-xxl-3.col-lg-4.col-sm-6.col-12
+                .card.height-equal.title-line
+                  .card-header
+                    h2 Pikachu alert
+                    p.f-m-light.mt-1
+                      | catch the pokeball.
+                  .card-body.btn-showcase
+                    button.btn.btn-warning.sweet-12(type='button', onclick="_gaq.push(['_trackEvent', 'example', 'try', 'sweet-12']);") Pikachu
+              .col-xxl-3.col-lg-4.col-sm-6.col-12
+                .card.height-equal.title-line
+                  .card-header
+                    h2 Questions alert 
+                    p.f-m-light.mt-1
+                      | Print the questionary and give answers.
+                  .card-body.btn-showcase
+                    button.btn.btn-primary.sweet-11(type='button', onclick="_gaq.push(['_trackEvent', 'example', 'try', 'sweet-11']);") Questions state
+              .col-xxl-3.col-lg-4.col-sm-6.col-12
+                .card.height-equal.title-line
+                  .card-header
+                    h2 Username alert
+                    p.f-m-light.mt-1
+                      | Print the basic sweet-alert.
+                  .card-body.btn-showcase
+                     button.btn.btn-secondary.sweet-13(type='button', onclick="_gaq.push(['_trackEvent', 'example', 'try', 'sweet-13']);") Username
+              .col-xxl-3.col-lg-4.col-sm-6.col-12
+                .card.height-equal.title-line
+                  .card-header
+                    h2 Success message
+                    p.f-m-light.mt-1
+                      | Print the success message.
+                  .card-body.btn-showcase
+                    button.btn.btn-success.sweet-8(type='button', onclick="_gaq.push(['_trackEvent', 'example', 'try', 'sweet-8']);") Login successfully
+              .col-xxl-3.col-lg-4.col-sm-6.col-12
+                .card.height-equal.title-line
+                  .card-header
+                    h2 Danger alert 
+                    p.f-m-light.mt-1
+                      | Print the danger message.
+                  .card-body.btn-showcase
+                    button.btn.btn-danger.sweet-7(type='button', onclick="_gaq.push(['_trackEvent', 'example', 'try', 'sweet-7']);") Danger mode
+              .col-xxl-3.col-lg-4.col-sm-6.col-12
+                .card.height-equal.title-line
+                  .card-header
+                    h2 Warning mode
+                    p.f-m-light.mt-1
+                      | Print the warning message.
+                  .card-body.btn-showcase
+                    button.btn.btn-warning.sweet-6(type='button', onclick="_gaq.push(['_trackEvent', 'example', 'try', 'sweet-6']);") Alert mode
+              .col-xxl-3.col-lg-4.col-sm-6.col-12
+                .card.height-equal.title-line
+                  .card-header
+                    h2 Auto close timer
+                    p.f-m-light.mt-1
+                      | A text message with an automatic timer.
+                  .card-body.btn-showcase
+                    button.btn.btn-primary.sweet-14(type='button', onclick="_gaq.push(['_trackEvent', 'sweet-14']);") Timer
+              .col-xxl-3.col-lg-4.col-sm-6.col-12
+                .card.height-equal.title-line
+                  .card-header
+                    h2 AJAX request movie
+                    p.f-m-light.mt-1
+                      | Give the movie name & return value.
+                  .card-body.btn-showcase
+                    button.btn.btn-secondary.sweet-15(type='button', onclick="_gaq.push(['_trackEvent', 'sweet-15']);") Movie mode
+          // Container-fluid Ends
+        include ../../components/footer
+    include ../../components/footer-files   

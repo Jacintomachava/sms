@@ -1,0 +1,735 @@
+- var theme_customizer      = true;
+- var sidebar               = true;
+- var touchspin_2           = true;
+- var dashboard_2           = true;
+- var animate               = true;
+- var datatable_2           = true;
+- var scrollbar             = true;
+- var swiper                = true;
+- var apex                  = true;
+- var timer_down            = true;
+- var counter               = true;
+- var script2               = true;
+
+//- mixin
+include ../../mixins/mixin
+
+doctype html
+html(lang='en')
+  include ../../components/header-files
+  body
+    include ../../components/loader
+    include ../../components/taptop
+    // page-wrapper Start
+    #pageWrapper.page-wrapper.compact-wrapper
+      .page-header.row
+        include ../../components/header
+        +left-header
+        +breadcrumb(['Dashboard','E-commerce'],'E-commerce')
+        +right-header
+      // Page Body Start
+      .page-body-wrapper
+        include ../../components/sidebar
+        .page-body
+          // Container-fluid starts
+          .container-fluid.dashboard2
+            .row
+              .col-xl-9.col-xl-80
+                .row 
+                  .col-xl-12
+                    .card.title-line.sales-details
+                      .card-header.card-no-border.sales-bg
+                        .header-top
+                          div 
+                            h2 Sales Overview 
+                          .card-header-right-icon
+                            .dropdown.icon-dropdown
+                              button#daily-task.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                svg
+                                  use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                              .dropdown-menu.dropdown-menu-end(aria-labelledby='daily-task')
+                                a.dropdown-item(href='#') Today
+                                a.dropdown-item(href='#') Tomorrow
+                                a.dropdown-item(href='#') Yesterday
+                      .card-body.pt-0.custom-scrollbar
+                        .row.row-cols-4.row-cols-xl-iii.row-cols-md-iii
+                          .col
+                            .sales-overview.widget-1
+                              .common-box
+                                .rounded-circle2.warning
+                                  .sales-icon
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#sales')
+                                div 
+                                  h3.f-w-600 24k USD
+                                  .sale-content
+                                    span.f-w-500.f-light.f-12 Total Sales
+                                    .d-flex.align-items-center.gap-1
+                                      i.stroke-warning(data-feather="trending-up")
+                                      span.txt-warning.f-w-600.f-12 +34%
+                          .col
+                            .sales-overview.widget-1
+                              .common-box
+                                .rounded-circle2.success
+                                  .sales-icon
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#customer')
+                                div 
+                                  h3.f-w-600 9.453k 
+                                  .sale-content
+                                    span.f-w-500.f-light.f-12 Customer
+                                    .d-flex.align-items-center.gap-1
+                                      i.stroke-success(data-feather="trending-up")
+                                      span.txt-success.f-w-600.f-12 +27%           
+                          .col
+                            div.sales-overview.widget-1
+                              .common-box
+                                .rounded-circle2.primary
+                                  .sales-icon
+                                    svg.fill-primary
+                                      use(href='../assets/svg/icon-sprite.svg#orders')
+                                div 
+                                  h3.f-w-600 1.786k 
+                                  .sale-content
+                                    span.f-w-500.f-light.f-12 Orders
+                                    .d-flex.align-items-center.gap-1
+                                      i.stroke-primary(data-feather="trending-up")
+                                      span.txt-primary.f-w-600.f-12 +45%
+                          .col.sales-transaction
+                            div.sales-overview.widget-1
+                              .common-box
+                                .rounded-circle2.secondary
+                                  .sales-icon
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#transaction')
+                                div 
+                                  h3.f-w-600 24k USD
+                                  .sale-content
+                                    span.f-w-500.f-light.f-12 Transaction
+                                    .d-flex.align-items-center.gap-1
+                                      i.stroke-secondary.reverse-icon(data-feather="trending-up")
+                                      span.txt-secondary.f-w-600.f-12 +27%
+                  .col-xl-3.order-xl-iv.col-xl-50.col-md-4.col-sm-6.order-sm-ii
+                    .card.store-card
+                      .card-header.card-no-border
+                        h3.f-w-600 We are working to boost lovely mood
+                        span.f-light.f-w-500.mt-2 Projects this month
+                        a.btn.btn-primary.btn-hover-effect(href="#!") Create a Store
+                      .card-body.pb-1.text-center
+                        .store-image
+                          img.img-fluid(src="../assets/images/dashboard-2/bg3.gif", alt="store")
+                  .col-xl-9.col-xl-100.order-xl-i.col-md-8
+                    .card.title-line.revenue-header
+                      .card-header.card-no-border
+                        .header-top
+                          h2 Revenue vs Order
+                          .card-header-right-icon.square-legend
+                            div
+                              .legend-box
+                                div.bg-primary
+                                span.f-light.f-12.f-w-500 Revenue
+                              .legend-box
+                                div.bg-success
+                                span.f-light.f-12.f-w-500 Order
+                            .dropdown
+                              button#overviewButton.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                | Monthly
+                              .dropdown-menu.dropdown-menu-end(aria-labelledby='overviewButton')
+                                a.dropdown-item(href='#') Monthly
+                                a.dropdown-item(href='#') weekly
+                                a.dropdown-item(href='#') yearly
+                      .card-body 
+                        #revenue-order.revenue-order
+                  .col-xl-3.order-xl-v.col-xl-50.col-md-4.col-sm-6.order-sm-i
+                    .row 
+                      .col-12 
+                        .card.widget-1 
+                          .card-body.common-space.order-card 
+                            div 
+                              span.f-w-500.f-light Today Orders
+                              h2 120k Orders
+                              .order-content
+                                span.f-light.f-12.f-w-500 Last week 
+                                div
+                                  span.txt-danger.f-12.f-w-600
+                                    i.stroke-danger.reverse-icon(data-feather="trending-up")
+                                    | -10%
+                            .delivery-image
+                              img.img-fluid(src="../assets/images/dashboard-2/orders/1.png", alt="order")
+                      .col-12 
+                        .card.widget-1 
+                          .card-body.common-space.order-card 
+                            div.customer-month
+                              span.f-w-500.f-light Delivery Successful
+                              h2 390k
+                              .order-content
+                                span.f-light.f-12.f-w-500 Last week 
+                                div
+                                  span.txt-success.f-12.f-w-600
+                                    i.stroke-success(data-feather="trending-up")
+                                    | -27%
+                            .delivery-image
+                              img.img-fluid(src="../assets/images/dashboard-2/orders/2.png", alt="order")
+                      .col-12 
+                        .card.widget-1 
+                          .card-body.order-card
+                            div.customer-month
+                              span.f-w-500.f-light New Customers this month
+                              h2 10,987
+                              .order-content
+                                span.f-light.f-12.f-w-500 Last week 
+                                div
+                                  span.txt-success.f-12.f-w-600
+                                    i.stroke-success.reverse-icon(data-feather="trending-up")
+                                    | -10%
+                            .customer-profile
+                              span.f-w-500 Today's Heroes
+                              ul.d-inline-block
+                                li.d-inline-block
+                                  .profile-letter.bg-warning
+                                    span.f-w-600.txt-white.f-12 A
+                                li.d-inline-block
+                                  img.img-fluid.rounded-circle(src="../assets/images/dashboard/user/2.jpg", alt="user") 
+                                li.d-inline-block
+                                  img.img-fluid.rounded-circle(src="../assets/images/dashboard/user/3.jpg", alt="user") 
+                                li.d-inline-block
+                                  .profile-letter.bg-success
+                                    span.f-w-600.txt-white.f-12 R
+                                li.d-inline-block
+                                  img.img-fluid.rounded-circle(src="../assets/images/dashboard/user/6.jpg", alt="user") 
+                                li.d-inline-block
+                                  .light-card.profile-letter
+                                    span.f-w-600.f-light.f-12 +80
+                  .col-xl-9.col-xl-100.order-xl-ii.col-md-8
+                    .card.height-equal.title-line
+                      .card-header.card-no-border
+                        .header-top
+                          h2 Recent Orders
+                          .card-header-right-icon.recent-order-header
+                            .dropdown
+                              button#orderButtons.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                | Generate Report
+                              .dropdown-menu.dropdown-menu-start(aria-labelledby='orderButtons')
+                                a.dropdown-item(href='#') Web designer
+                                a.dropdown-item(href='#') Development
+                                a.dropdown-item(href='#') Marketing
+                      .card-body.project-datatable.p-0.order-tables.custom-scrollbar
+                        table#order-status.table
+                          thead 
+                            tr 
+                              th 
+                                span.f-light.f-w-600 Order ID
+                              th 
+                                span.f-light.f-w-600 Customer
+                              th 
+                                span.f-light.f-w-600 Product
+                              th 
+                                span.f-light.f-w-600 Amount
+                              th 
+                                span.f-light.f-w-600 Vendor
+                              th 
+                                span.f-light.f-w-600 Status
+                              th 
+                                span.f-light.f-w-600 Rating
+                          tbody 
+                            tr 
+                              td 
+                                a(href="#!").f-w-500 #0918765
+                              td
+                                .recent-profile
+                                  img.img-30.rounded-circle.img-fluid(src="../assets/images/dashboard/user/1.jpg", alt="user")
+                                  a(href="user-profile.html") 
+                                    span.f-light.f-w-500 Alex Smith
+                              td  
+                                span.f-light Jacket
+                              td  
+                                span.txt-success.f-w-500 $109.00          
+                              td 
+                                span.f-light Shmetic Fashion
+                              td
+                                span.badge.badge-light-primary In Progress      
+                              td
+                                span.f-light.f-w-600 4.9 
+                                  span.f-12.f-w-400 (34 votes)
+                            tr 
+                              td 
+                                 a(href="#!").f-w-500 #109346
+                              td
+                                .recent-profile
+                                  img.img-30.rounded-circle.img-fluid(src="../assets/images/dashboard-3/user/4.png", alt="user")
+                                  a(href="user-profile.html")
+                                    span.f-light.f-w-500 Jansh Brown
+                              td  
+                                span.f-light Clothes
+                              td  
+                                span.txt-success.f-w-500 $178.00     
+                              td 
+                                span.f-light iTech Factory
+                              td
+                                span.badge.badge-light-warning Pending
+                              td
+                                span.f-light.f-w-600 5.0  
+                                  span.f-12.f-w-400 (90 votes)
+                            tr 
+                              td 
+                                 a(href="#!").f-w-500 #209813
+                              td
+                                .recent-profile
+                                  img.img-30.rounded-circle.img-fluid(src="../assets/images/dashboard-3/user/7.png", alt="user")
+                                  a(href="user-profile.html")
+                                    span.f-light.f-w-500 Prezy Mark
+                              td  
+                                span.f-light Wallets & Bag
+                              td  
+                                span.txt-success.f-w-500 $210.00        
+                              td 
+                                span.f-light Micro Design
+                              td
+                                span.badge.badge-light-success Paid
+                              td
+                                span.f-light.f-w-600 4.5 
+                                  span.f-12.f-w-400 (43 votes)
+                            tr 
+                              td 
+                                 a(href="#!").f-w-500 #306754
+                              td
+                                .recent-profile
+                                  img.img-30.rounded-circle.img-fluid(src="../assets/images/dashboard/user/2.jpg", alt="user")
+                                  a(href="user-profile.html")
+                                    span.f-light.f-w-500 Vihan Hudda
+                              td  
+                                span.f-light Furniture
+                              td  
+                                span.txt-success.f-w-500 $330.00
+                              td 
+                                span.f-light Nesta Technology
+                              td
+                                span.badge.badge-light-warning Pending
+                              td
+                                span.f-light.f-w-600 4.6
+                                  span.f-12.f-w-400 (30 votes)
+                            tr 
+                              td 
+                                 a(href="#!").f-w-500 #107654
+                              td
+                                .recent-profile
+                                  img.img-30.rounded-circle.img-fluid(src="../assets/images/avtar/7.jpg", alt="user")
+                                  a(href="user-profile.html")
+                                    span.f-light.f-w-500 Biraj Shah
+                              td  
+                                span.f-light Kitchen Stole
+                              td  
+                                span.txt-success.f-w-500 $187.00
+                              td 
+                                span.f-light Syntcy solutions
+                              td
+                                span.badge.badge-light-primary In Progress
+                              td
+                                span.f-light.f-w-600 4.3
+                                  span.f-12.f-w-400 (87 votes)
+                  .col-xl-7.col-xl-100.order-xl-iii.col-md-6.col-sm-12
+                    .card.height-equal.title-line.overflow-hidden
+                      .card-header.card-no-border
+                        .header-top
+                          h2 Stock Report
+                            span.f-12.f-w-500.f-light.d-block Total 4,998 Items in stock
+                          .card-header-right-icon.stock-report
+                            .dropdown
+                              button#CategoryButtons.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                | Category
+                              .dropdown-menu.dropdown-menu-start(aria-labelledby='CategoryButtons')
+                                a.dropdown-item(href='#') Web designer
+                                a.dropdown-item(href='#') Development
+                                a.dropdown-item(href='#') Marketing
+                            .dropdown
+                              button#stockButtons.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                | View Stock
+                              .dropdown-menu.dropdown-menu-start(aria-labelledby='stockButtons')
+                                a.dropdown-item(href='#') Web designer
+                                a.dropdown-item(href='#') Development
+                                a.dropdown-item(href='#') Marketing
+                      .card-body.project-datatable.p-0.stock-table.custom-scrollbar
+                        table#stock-status.table
+                          thead 
+                            tr 
+                              th 
+                                span.f-light.f-w-600 Item
+                              th 
+                                span.f-light.f-w-600 Id
+                              th 
+                                span.f-light.f-w-600 Amount
+                              th 
+                                span.f-light.f-w-600 Date 
+                              th 
+                                span.f-light.f-w-600 Status
+                              th 
+                                span.f-light.f-w-600 QLT
+                          tbody 
+                            tr 
+                              td 
+                                span.f-light.f-w-500 Laptop
+                              td
+                                a.f-w-500(href="#!") #109346 
+                                 
+                              td  
+                                span.txt-success.f-w-500 $121.00
+                              td  
+                                span.f-light.f-w-500 Feb 21, 2024   
+                              td
+                                span.badge.badge-light-primary.f-w-500 In Stock
+                              td 
+                                span.f-light.f-w-500 1 PCS
+                            tr 
+                              td 
+                                span.f-light.f-w-500 Apple iPod
+                              td
+                                a.f-w-500(href="#!") #905071
+                                 
+                              td  
+                                span.txt-success.f-w-500 $230.00
+                              td  
+                                span.f-light.f-w-500 Feb 19, 2024    
+                              td
+                                span.badge.badge-light-success.f-w-500 Low Stock
+                              td 
+                                span.f-light.f-w-500 90 PCS
+                            tr 
+                              td 
+                                span.f-light.f-w-500 MacBook
+                              td
+                                a.f-w-500(href="#!") #899306
+                                 
+                              td  
+                                span.txt-success.f-w-500 $409.00
+                              td  
+                                span.f-light.f-w-500 Mar 13, 2024
+                              td
+                                span.badge.badge-light-warning.f-w-500 Out of Stock
+                              td 
+                                span.f-light.f-w-500 123 PCS
+                            tr 
+                              td 
+                                span.f-light.f-w-500 Speakers
+                              td
+                                a.f-w-500(href="#!") #509346
+                                 
+                              td  
+                                span.txt-success.f-w-500 $908.00
+                              td  
+                                span.f-light.f-w-500 Jan 11, 2024
+                              td
+                                span.badge.badge-light-primary.f-w-500 In Stock
+                              td 
+                                span.f-light.f-w-500 230 PCS
+                            tr 
+                              td 
+                                span.f-light.f-w-500 Dispatched 
+                              td
+                                a.f-w-500(href="#!") #109346 
+                                 
+                              td  
+                                span.txt-success.f-w-500 $309.00
+                              td  
+                                span.f-light.f-w-500 Aug 18, 2024   
+                              td
+                                span.badge.badge-light-success.f-w-500 Low Stock
+                              td 
+                                span.f-light.f-w-500 309 PCS
+                  .col-xl-5.order-xl-vi.col-xl-100.col-md-6.col-12
+                    .row 
+                      .col-12.col-xl-50
+                        .card.visitor-customer.title-line 
+                          .card-header.card-no-border
+                            .header-top
+                              h2 Weekly Visitors
+                              .card-header-right-icon.square-legend
+                                div
+                                  .legend-box
+                                    div.bg-primary
+                                    span.f-light.f-12.f-w-500 Male
+                                  .legend-box
+                                    div.bg-success
+                                    span.f-light.f-12.f-w-500 Female
+                                .dropdown
+                                  button#overviewButton1.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                    | Report
+                                  .dropdown-menu.dropdown-menu-end(aria-labelledby='overviewButton1')
+                                    a.dropdown-item(href='#') Monthly
+                                    a.dropdown-item(href='#') weekly
+                                    a.dropdown-item(href='#') yearly
+                          .card-body 
+                            .row 
+                              .col-xl-7.col-xl-100.col-md-7.col-sm-8
+                                #weekly-visitor.weekly-visitor
+                              .col-xl-5.d-xl-none1.col-md-5.col-sm-4
+                                .average-Visitors 
+                                  div 
+                                    span.f-12.f-light.f-w-500 Average Male Visitors
+                                    .order-content
+                                      h3.f-w-600 3,908
+                                      div 
+                                        span.txt-success.f-12.f-w-600
+                                          i.stroke-success(data-feather="trending-up")
+                                          | -27%
+                                  div 
+                                    span.f-12.f-light.f-w-500 Average Female Visitors
+                                    .order-content
+                                      h3.f-w-600 1,204
+                                      div 
+                                        span.txt-danger.f-12.f-w-600
+                                          i.stroke-danger(data-feather="trending-down")
+                                          | -0.10%
+
+                      .col-12.col-xl-50
+                        .card.height-equal.title-line
+                          .card-header.card-no-border
+                            .header-top
+                              h2 Customer Rate
+                              .card-header-right-icon.customer-header
+                                a.link-stroke-icon(href="#!") Live view
+                                  svg 
+                                    use(href='../assets/svg/icon-sprite.svg#eye-contact')
+                          .card-body.pt-0
+                            .row 
+                              .col-sm-6 
+                                .customer-rate
+                                  .progress(role='progressbar' aria-label='Basic example' aria-valuenow='76.8' aria-valuemin='0' aria-valuemax='100')
+                                    .progress-bar
+                                  span.f-light.f-12.f-w-500 First time buying
+                                  h3.f-w-600 76.8%
+                              .col-sm-6
+                                .customer-rate
+                                  .progress(role='progressbar' aria-label='Basic example' aria-valuenow='76.8' aria-valuemin='0' aria-valuemax='100')
+                                    .progress-bar.progress_1
+                                  span.f-light.f-12.f-w-500 Returning
+                                  h3.f-w-600 25.4%
+              .col-xl-3.col-xl-40
+                .row 
+                  .col-xl-12.col-sm-6
+                    .card.title-line.deal-card
+                      .card-body.left-line.deal-animation
+                        .row.align-items-center 
+                          .col-12 
+                            .row.g-4
+                              .col-xl-8.col-md-12 
+                                h2 Deal of the day
+                                span.f-light.f-12.f-w-500 Special Discount 
+                                  span.txt-primary.f-12.f-w-500.discount-offer 60% OFF
+                                ul.timer.deal-timer(data-date="Dec 7, 2024 04:15:01")
+                                  li
+                                    h6.f-20.f-w-600.txt-primary.hours
+                                    span.f-12.f-w-500.f-light Hours
+                                  li
+                                    h6.f-20.f-w-600.txt-primary.minutes
+                                    span.f-12.f-w-500.f-light Min
+                                  li 
+                                    h6.f-20.f-w-600.txt-primary.seconds
+                                    span.f-12.f-w-500.f-light Sec
+                              
+                              .col-xl-4.col-md-12
+                                .deal-slider
+                                  .swiper.deal-swiper 
+                                    .swiper-wrapper 
+                                      .swiper-slide 
+                                        img.img-fluid(src="../assets/images/product/product-categories/phone.png", alt="phone")
+                                      .swiper-slide 
+                                        img.img-fluid(src="../assets/images/dashboard-2/product/headphone.png", alt="headphone")
+                                      .swiper-slide 
+                                        img.img-fluid(src="../assets/images/dashboard-2/product/chair.png", alt="chair")
+                            .swiper-pagination
+                  .col-xl-12.col-sm-6
+                    .card.height-equal.title-line.earning-chart-option
+                      .card-header.card-no-border
+                        .header-top
+                          h2 $78,098
+                            span.txt-success.f-12.f-w-600.ms-2
+                              i.stroke-success(data-feather="trending-up")
+                              | -29%
+                            span.f-12.f-w-500.f-light.d-block Expected Earnings
+                          .card-header-right-icon
+                            .dropdown
+                              button#ReportButtons.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                | Report
+                              .dropdown-menu.dropdown-menu-start(aria-labelledby='ReportButtons')
+                                a.dropdown-item(href='#') Web designer
+                                a.dropdown-item(href='#') Development
+                                a.dropdown-item(href='#') Marketing
+                      .card-body 
+                        #polar-area
+                  .col-xl-12.col-md-6
+                    .card.height-equal.title-line
+                      .card-header.card-no-border
+                        .header-top
+                          h2 Activities
+                            span.f-12.f-w-500.f-light.d-block 780,765 Sales
+                          .card-header-right-icon.detail-option
+                            .dropdown
+                              button#OrderDetailsButtons.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                | Order Details
+                              .dropdown-menu.dropdown-menu-start(aria-labelledby='OrderDetailsButtons')
+                                a.dropdown-item(href='#') Web designer
+                                a.dropdown-item(href='#') Development
+                                a.dropdown-item(href='#') Marketing
+                      .card-body.pt-0.notification.to-do-list.activities-wrapper
+                        ul.activity-details.custom-scrollbar
+                          li.d-flex.align-items-center
+                            .activity-dot-primary
+                            .d-flex.w-100.align-items-center 
+                              div 
+                                span.f-w-500.f-12.f-light Optimize resource allocation for cost savings.
+                              span.badge.ms-auto.f-light 00:32 
+                          li.d-flex.align-items-center
+                            .activity-dot-warning
+                            .d-flex.w-100.align-items-center 
+                              div 
+                                h6 Products Meetings
+                              span.badge.ms-auto.f-light 12:34
+                          li.d-flex.align-items-center
+                            .activity-dot-success
+                            .d-flex.w-100.align-items-center 
+                              div 
+                                h6 New Order placed 
+                                  a(href="#!") #xl-9087
+                              span.badge.ms-auto.f-light 13:59
+                          li.d-flex.align-items-center
+                            .activity-dot-secondary
+                            .d-flex.w-100.align-items-center 
+                              div 
+                                span.f-w-500.f-12.f-light Enhance productivity with advanced features
+                              span.badge.ms-auto.f-light 17:34
+                          li.d-flex.align-items-center
+                            .activity-dot-primary
+                            .d-flex.w-100.align-items-center 
+                              div 
+                                h6 New Order placed 
+                                  a(href="#!") #xl-9090
+                              span.badge.ms-auto.f-light 19:40
+                          li.d-flex.align-items-center
+                            .activity-dot-secondary
+                            .d-flex.w-100.align-items-center 
+                              div 
+                                h6 All Order delivered 
+                                  a(href="#!") #xl-7801
+                              span.badge.ms-auto.f-light 22:05
+                          li.d-flex.align-items-center
+                            .activity-dot-success
+                            .d-flex.w-100.align-items-center 
+                              div 
+                                span.f-w-500.f-12.f-light Increase sales and revenue with targeted marketing.
+                              span.badge.ms-auto.f-light 02:24
+                          li.d-flex.align-items-center
+                            .activity-dot-primary
+                            .d-flex.w-100.align-items-center 
+                              div 
+                                h6 New Order placed 
+                                  a(href="#!") #xl-9088
+                              span.badge.ms-auto.f-light 15:35
+                  .col-xl-12.col-md-6
+                    .card.height-equal.title-line.delivery-card
+                      .card-header.card-no-border
+                        .header-top
+                          h2 Product Delivery
+                            span.f-12.f-w-500.f-light.d-block Total 10,987 Items Delivery
+                          .card-header-right-icon
+                            .dropdown
+                              button#OrderDetailsButtons1.btn.dropdown-toggle(type='button', data-bs-toggle='dropdown', aria-expanded='false')
+                                | Order Details
+                              .dropdown-menu.dropdown-menu-start(aria-labelledby='OrderDetailsButtons1')
+                                a.dropdown-item(href='#') Web designer
+                                a.dropdown-item(href='#') Development
+                                a.dropdown-item(href='#') Marketing
+                      .card-body.delivery-content.pt-0
+                        ul.order-list.mb-0.custom-scrollbar
+                          li
+                            .light-card 
+                              img.img-fluid(src="../assets/images/dashboard/product/2.png", alt="T-shirt")
+                            .order-content
+                              div 
+                                a(href="product-page.html") 
+                                  h6.mb-1 Branded T-Shirts
+                                span 
+                                  span.f-light.f-w-500.f-12 To : Jaksion Raio
+                              div.text-end 
+                                .dropdown.icon-dropdown
+                                  button#order-2.btn.dropdown-toggle.mb-1(type='button' data-bs-toggle='dropdown' aria-expanded='false')
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                                  .dropdown-menu.dropdown-menu-end(aria-labelledby='order-2')
+                                    a.dropdown-item(href='cart.html') Add to cart
+                                    a.dropdown-item(href='#') Cancel
+                                span.badge.badge-light-primary.f-12 Delivered
+                          li
+                            .light-card 
+                              img.img-fluid(src="../assets/images/dashboard-2/product/helmet.png", alt="Helmet")
+                            .order-content
+                              div 
+                                a(href="product-page.html")
+                                  h6.mb-1 Stillbirth Helmet
+                                span 
+                                  span.f-light.f-w-500.f-12 To : Jaksion Jawade
+                              div.text-end 
+                                .dropdown.icon-dropdown
+                                  button#order-3.btn.dropdown-toggle.mb-1(type='button' data-bs-toggle='dropdown' aria-expanded='false')
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                                  .dropdown-menu.dropdown-menu-end(aria-labelledby='order-3')
+                                    a.dropdown-item(href='cart.html') Add to cart
+                                    a.dropdown-item(href='#') Cancel
+                                span.badge.badge-light-success.f-12 Shipping
+                          li
+                            .light-card 
+                              img.img-fluid(src="../assets/images/dashboard-2/product/chair.png", alt="wood chair")
+                            .order-content
+                              div 
+                                a(href="product-page.html")
+                                  h6.mb-1 Bentwood Chair
+                                span 
+                                  span.f-light.f-w-500.f-12 To : Trushita Rai
+                              div.text-end 
+                                .dropdown.icon-dropdown
+                                  button#order-4.btn.dropdown-toggle.mb-1(type='button' data-bs-toggle='dropdown' aria-expanded='false')
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                                  .dropdown-menu.dropdown-menu-end(aria-labelledby='order-4')
+                                    a.dropdown-item(href='cart.html') Add to cart
+                                    a.dropdown-item(href='#') Cancel
+                                span.badge.badge-light-primary.f-12 Delivered
+                          li
+                            .light-card 
+                              img.img-fluid(src="../assets/images/dashboard-2/product/headphone.png", alt="Headphone")
+                            .order-content
+                              div 
+                                a(href="product-page.html")
+                                  h6.mb-1 Wireless Headphone
+                                span 
+                                  span.f-light.f-w-500.f-12 To : Jushkita Shrama
+                              div.text-end 
+                                .dropdown.icon-dropdown
+                                  button#order-5.btn.dropdown-toggle.mb-1(type='button' data-bs-toggle='dropdown' aria-expanded='false')
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                                  .dropdown-menu.dropdown-menu-end(aria-labelledby='order-5')
+                                    a.dropdown-item(href='cart.html') Add to cart
+                                    a.dropdown-item(href='#') Cancel
+                                span.badge.badge-light-warning.f-12 Confirmed
+                          li
+                            .light-card 
+                              img.img-fluid(src="../assets/images/dashboard-2/product/tube.png", alt="Makeup tube")
+                            .order-content
+                              div 
+                                a(href="product-page.html")
+                                  h6.mb-1 Makeup Tube
+                                span 
+                                  span.f-light.f-w-500.f-12 To : Sheezan Mahmed
+                              div.text-end 
+                                .dropdown.icon-dropdown
+                                  button#order-6.btn.dropdown-toggle.mb-1(type='button' data-bs-toggle='dropdown' aria-expanded='false')
+                                    svg
+                                      use(href='../assets/svg/icon-sprite.svg#more-horizontal')
+                                  .dropdown-menu.dropdown-menu-end(aria-labelledby='order-6')
+                                    a.dropdown-item(href='cart.html') Add to cart
+                                    a.dropdown-item(href='#') Cancel
+                                span.badge.badge-light-primary.f-12 Delivered
+          // Container-fluid Ends
+        include ../../components/footer
+    include ../../components/footer-files

@@ -1,0 +1,130 @@
+- var theme_customizer      = true;
+- var sidebar               = true;
+- var slick                 = true;
+- var header_slider         = true;
+- var animate               = true;
+- var scrollbar             = true;
+- var script2               = true;
+
+//- mixin
+include ../../mixins/mixin
+
+doctype html
+html(lang='en')
+  include ../../components/header-files
+  body
+    include ../../components/loader
+    include ../../components/taptop
+    // page-wrapper Start
+    #pageWrapper.page-wrapper.compact-wrapper
+      .page-header.row
+        include ../../components/header
+        +left-header
+        +breadcrumb(['Blog','Blog Details'],'Blog Details')
+        +right-header
+      // Page Body Start
+      .page-body-wrapper
+        include ../../components/sidebar
+        .page-body
+          // Container-fluid starts
+          .container-fluid
+            .row
+              .col-xl-6.set-col-12.box-col-12
+                .card
+                  .blog-box.blog-shadow
+                    img.img-fluid(src='../assets/images/blog/blog.jpg', alt='')
+                    .blog-details
+                      p 22 July 2024
+                      h4 Experience lightning-fast load times and keep your visitors engaged.
+                      ul.blog-social
+                        li
+                          i.icofont.icofont-user
+                          | William G. Savard
+                        li
+                          i.icofont.icofont-thumbs-up
+                          | 03 Hits
+                        li
+                          i.icofont.icofont-ui-chat
+                          | 500 Comments
+              .col-xl-6.set-col-12.box-col-12
+                .card
+                  .blog-box.blog-list.row
+                    .col-sm-5
+                      img.img-fluid.sm-100-w(src='../assets/images/blog/blog-2.jpg', alt='')
+                    .col-sm-7
+                      .blog-details
+                        .blog-date
+                          span 11
+                          |  March 2024
+                        h6 Stay ahead of the competition with our data-driven insights and analytics.
+                        .blog-bottom-content
+                          ul.blog-social
+                            li by: Admin
+                            li 0 Hits
+                          hr
+                          p.mt-0
+                            | Discover the hidden gems of our enchanting visiting area, where nature's beauty meets captivating history.
+                .card
+                  .blog-box.blog-list.row
+                    .col-sm-5
+                      img.img-fluid.sm-100-w(src='../assets/images/blog/blog-3.jpg', alt='')
+                    .col-sm-7
+                      .blog-details
+                        .blog-date
+                          span 05
+                          |  January 2024
+                        h6 Mobile-ready and responsive - your website will shine on any device
+                        .blog-bottom-content
+                          ul.blog-social
+                            li by: Admin
+                            li 02 Hits
+                          hr
+                          p.mt-0
+                            | Embrace the charm and adventure that awaits you in our vibrant visiting area, a destination like no other
+              .col-md-6.col-xxl-3.box-col-6
+                .card
+                  .blog-box.blog-grid.text-center
+                    img.img-fluid.top-radius-blog(src='../assets/images/blog/blog-5.jpg', alt='')
+                    .blog-details-main
+                      ul.blog-social
+                        li 2 May 2024
+                        li by: Admin
+                        li 0 Hits
+                      hr
+                      h6.blog-bottom-details  Unraveling the Elegance of Modern Fashion Trends
+              .col-md-6.col-xxl-3.box-col-6
+                .card
+                  .blog-box.blog-grid.text-center
+                    img.img-fluid.top-radius-blog(src='../assets/images/blog/blog-6.jpg', alt='')
+                    .blog-details-main
+                      ul.blog-social
+                        li 9 March 2024
+                        li by: Admin
+                        li 0 Hits
+                      hr
+                      h6.blog-bottom-details Navigating the Digital Frontier: Insights into the World of Tech
+              .col-md-6.col-xxl-3.box-col-6
+                .card
+                  .blog-box.blog-grid.text-center
+                    img.img-fluid.top-radius-blog(src='../assets/images/blog/blog-5.jpg', alt='')
+                    .blog-details-main
+                      ul.blog-social
+                        li 8 April 2024
+                        li by: Admin
+                        li 0 Hits
+                      hr
+                      h6.blog-bottom-details Wanderlust Chronicles: Exploring the World, One Adventure at a Time
+              .col-md-6.col-xxl-3.box-col-6
+                .card
+                  .blog-box.blog-grid.text-center
+                    img.img-fluid.top-radius-blog(src='../assets/images/blog/blog-6.jpg', alt='')
+                    .blog-details-main
+                      ul.blog-social
+                        li 5 July 2024
+                        li by: Admin
+                        li 0 Hits
+                      hr
+                      h6.blog-bottom-details Stronger Every Day: Empowering Your Body and Mind for Success
+          // Container-fluid Ends
+        include ../../components/footer
+    include ../../components/footer-files      

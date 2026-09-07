@@ -1,0 +1,168 @@
+/**=====================
+   3.34 Progress CSS Start
+==========================**/
+.progress {
+	background: var(--progress-bg);
+}
+.progress-stacked {
+	--bs-progress-height: 9px;
+	--bs-progress-border-radius: 20px;
+}
+.progress-showcase {
+	.progress {
+		margin-bottom: 10px;
+		&:last-child {
+			margin-bottom: 0;
+		}
+	}
+}
+.sm-progress-bar {
+	height: 8px;
+}
+.lg-progress-bar {
+	height: 20px;
+}
+.progress-number {
+	button {
+		width: 2rem;
+		height: 2rem;
+	}
+	.progress-wrapper {
+		height: 1px;
+		&.progress {
+			background-color: var(--recent-dashed-border);
+		}
+		.progress-bar {
+			background-color: var(--theme-default);
+		}
+	}
+}
+.progress-btn {
+	background-color: $light-chartist-grid-color;
+	border-color: $light-chartist-grid-color;
+}
+.small-progressbar {
+	position: relative;
+	overflow: visible;
+	&::after {
+		position: absolute;
+		content: '';
+		top: -2px;
+		right: -9px;
+		background-color: var(--theme-default);
+		width: 12px;
+		height: 12px;
+		border-radius: 100%;
+		[dir="rtl"] & {
+			left: -9px;
+			right: unset;
+		}
+	}
+	.progress-label {
+		position: absolute;
+		top: -26px;
+		right: -6px;
+		font-weight: 700;
+		[dir="rtl"] & {
+			right: unset;
+			left: -6px;
+		}
+	}
+	.animate-circle {
+		position: absolute;
+		top: -11px;
+		right: -18px;
+		height: 30px;
+		width: 30px;
+		border: 14px solid var(--theme-default);
+		border-radius: 70px;
+		animation: heart 1s ease-in-out;
+		animation-iteration-count: infinite;
+		[dir="rtl"] & {
+			right: unset;
+			left: -18px;
+		}
+	}
+}
+@keyframes heart {
+	0% {
+		transform: scale(0);
+		opacity: 0;
+	}
+	25% {
+		transform: scale(.1);
+		opacity: 1;
+	}
+	50% {
+		transform: scale(.5);
+		opacity: .3;
+	}
+	75% {
+		transform: scale(.8);
+		opacity: .5;
+	}
+	100% {
+		transform: scale(1);
+		opacity: 0;
+	}
+}
+.progress-b-space {
+	.progress {
+		margin-bottom: 35px;
+	}
+}
+.progress-stripe-primary,
+.progress-stripe-secondary,
+.progress-stripe-success,
+.progress-stripe-info,
+.progress-stripe-warning,
+.progress-stripe-danger {
+	background: var(--light2);
+	.progress-bar-animated {
+		animation: progress-bar-stripes 5s linear infinite;
+	}
+	.progress-bar-striped {
+		background-size: 10px 15px;
+	}
+}
+.progress-stripe-primary {
+	.progress-bar-striped {
+		background-image: linear-gradient(120deg, var(--theme-default) 25%, transparent 25%, transparent 50%, var(--theme-default) 50%, var(--theme-default) 75%, transparent 75%, transparent);
+	}
+	&.with-light-background {
+		background-color: rgba($primary-color, 0.1);
+	}
+}
+.progress-stripe-warning {
+	.progress-bar-striped {
+		background-image: linear-gradient(120deg, $warning-color 25%, transparent 25%, transparent 50%, $warning-color 50%, $warning-color 75%, transparent 75%, transparent);
+	}
+	&.with-light-background {
+		background-color: rgba($warning-color, 0.1);
+	}
+}
+.progress-stripe-success {
+	.progress-bar-striped {
+		background-image: linear-gradient(120deg, $success-color 25%, transparent 25%, transparent 50%, $success-color 50%, $success-color 75%, transparent 75%, transparent);
+	}
+	&.with-light-background {
+		background-color: rgba($success-color, 0.1);
+	}
+}
+.progress-stripe-secondary {
+	.progress-bar-striped {
+		background-image: linear-gradient(120deg, $secondary-color 25%, transparent 25%, transparent 50%, $secondary-color 50%, $secondary-color 75%, transparent 75%, transparent);
+	}
+	&.with-light-background {
+		background-color: rgba($secondary-color, 0.1);
+	}
+}
+// support ticket
+.support-ticket-font {
+	.progress-showcase {
+		margin-top: 20px;
+	}
+}
+/**=====================
+   3.34 Progress CSS Ends
+==========================**/

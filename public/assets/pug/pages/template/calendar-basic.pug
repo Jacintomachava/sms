@@ -1,0 +1,70 @@
+- var theme_customizer      = true;
+- var sidebar               = true;
+- var calendar              = true;
+- var slick                 = true;
+- var header_slider         = true;
+- var animate               = true;
+- var scrollbar             = true;
+- var script2               = true;
+
+//- mixin
+include ../../mixins/mixin
+
+doctype html
+html(lang='en')
+  include ../../components/header-files
+  body
+    include ../../components/loader
+    include ../../components/taptop
+    // page-wrapper Start
+    #pageWrapper.page-wrapper.compact-wrapper
+      .page-header.row
+        include ../../components/header
+        +left-header
+        +breadcrumb(['Apps','Calender'],'Calender')
+        +right-header
+      // Page Body Start
+      .page-body-wrapper
+        include ../../components/sidebar
+        .page-body
+          // Container-fluid starts
+          .container-fluid.calendar-basic
+            .card
+              .card-body
+                #wrap.row
+                  .col-xl-3.box-col-12
+                    .md-sidebar.mb-3
+                      a.btn.btn-primary.md-sidebar-toggle(href='javascript:void(0)') calendar filter
+                      .md-sidebar-aside.job-left-aside.custom-scrollbar
+                        #external-events
+                          h2 Draggable Events
+                          #external-events-list
+                            .fc-event.fc-h-event.fc-daygrid-event.fc-daygrid-block-event
+                              .fc-event-main.common-flex.align-items-center 
+                                i.fa.fa-birthday-cake
+                                | Birthday Party
+                            .fc-event.fc-h-event.fc-daygrid-event.fc-daygrid-block-event
+                              .fc-event-main.common-flex.align-items-center 
+                                i.fa.fa-user
+                                | Meeting With Team.
+                            .fc-event.fc-h-event.fc-daygrid-event.fc-daygrid-block-event
+                              .fc-event-main.common-flex.align-items-center 
+                                i.fa.fa-plane
+                                | Tour & Picnic
+                            .fc-event.fc-h-event.fc-daygrid-event.fc-daygrid-block-event
+                              .fc-event-main.common-flex.align-items-center 
+                                i.fa.fa-file-text
+                                | Reporting Schedule
+                            .fc-event.fc-h-event.fc-daygrid-event.fc-daygrid-block-event
+                              .fc-event-main.common-flex.align-items-center 
+                                i.fa.fa-briefcase
+                                | Lunch & Break
+                          p
+                            input#drop-remove.checkbox_animated(type='checkbox')
+                            label.mb-0.pb-0(for='drop-remove') remove after drop
+                  .col-xl-9.box-col-12
+                    #calendar-container.calendar-default
+                      #calendar
+          // Container-fluid Ends
+        include ../../components/footer
+    include ../../components/footer-files

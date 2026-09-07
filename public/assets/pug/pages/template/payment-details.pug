@@ -1,0 +1,188 @@
+- var theme_customizer      = true;
+- var tooltip               = true;
+- var sidebar               = true;
+- var slick                 = true;
+- var header_slider         = true;
+- var animate               = true;
+- var script2               = true;
+- var scrollbar             = true;
+
+//- mixin
+include ../../mixins/mixin
+
+doctype html
+html(lang='en')
+  include ../../components/header-files
+  body
+    include ../../components/loader
+    include ../../components/taptop
+    // page-wrapper Start
+    #pageWrapper.page-wrapper.compact-wrapper
+      .page-header.row
+        include ../../components/header
+        +left-header
+        +breadcrumb(['ECommerce','Payment Details'],'Payment Details')
+        +right-header
+      // Page Body Start
+      .page-body-wrapper
+        include ../../components/sidebar
+        .page-body
+          // Container-fluid starts
+          .container-fluid.credit-card
+            .row
+              // Individual column searching (text inputs) Starts
+              .col-xl-8.box-col-12
+                .card
+                  .card-header.py-4
+                    h2 Credit Card 
+                  .card-body
+                    .row
+                      .col-md-7.order-md-0.order-1
+                        form.theme-form.mega-form
+                            input.form-control(type='number', placeholder='Card Number')
+                            input.form-control(type='text', placeholder='First Name')
+                            input.form-control(type='date')
+                            input.form-control(type='text', placeholder='Name on card')
+                            select.form-select(size='1')
+                              option Select Type
+                              option Master
+                              option Visa
+                              option PayPal
+                              option COD
+                      .col-md-5.text-center
+                        img.img-fluid(src='../assets/images/ecommerce/card.png', alt='')
+              // Individual column searching (text inputs) Ends
+              // Debit Card Starts
+              .col-xl-4.col-lg-6.box-col-6.debit-card
+                .card
+                  .card-header.py-4
+                    h2 Debit Card 
+                  .card-body
+                    form.theme-form.g-3.row
+                      .col-sm-6.p-r-0
+                        input.form-control(type='text', placeholder='Full name here')
+                      .col-sm-6
+                        input.form-control(type='number', placeholder='Card Number')
+                      .col-6.p-r-0
+                        input.form-control(type='number', placeholder='CVV Number')
+                      .col-6
+                        input.form-control(type='number', placeholder='CVC')
+                      .col-12
+                        label.col-form-label Expiration Date
+                      .col-xxl-6.p-r-0
+                        select.form-select(size='1')
+                          option Select Month
+                          option Jan
+                          option Fab
+                          option March
+                          option April
+                      .col-xxl-6
+                        select.form-select(size='1')
+                          option Select Year
+                          option 2024
+                          option 2024
+                          option 2025
+                          option 2026
+                          option 2027
+                      .col-12
+                        button.btn.btn-primary.btn-block(type='button', title='') Submit
+              // Debit Card Ends
+              // COD Starts
+              .col-xl-4.col-lg-6.box-col-6
+                .card
+                  .card-header.py-4
+                    h2 COD
+                  .card-body
+                    form.theme-form.row.g-3
+                      .col-sm-6.p-r-0
+                        input.form-control(type='text', placeholder='First Name')
+                      .col-sm-6
+                        input.form-control(type='text', placeholder='Last Name')
+                      .col-6.p-r-0
+                        input.form-control(type='number', placeholder='Pincode')
+                      .col-6
+                        input.form-control(type='number', placeholder='Enter mobile number')
+                      .col-6.p-r-0
+                        input.form-control(type='text', placeholder='State')
+                      .col-6
+                        input.form-control(type='text', placeholder='City')
+                      .col-12
+                        textarea.form-control(rows='3', placeholder='Address')
+                      .col-12
+                        button.btn.btn-primary.btn-block(type='button', title='') Submit
+              // COD Ends
+              // EMI Starts
+              .col-xl-4.col-lg-6.box-col-6
+                .card
+                  .card-header.py-4
+                    h2 EMI
+                  .card-body
+                    form.theme-form.row.g-3
+                      .col-sm-6.p-r-0
+                        input.form-control(type='text', placeholder='First Name')
+                      .col-sm-6
+                        input.form-control(type='text', placeholder='Last Name')
+                      .col-xxl-6.p-r-0
+                        input.form-control(type='number', placeholder='Pincode')
+                      .col-xxl-6
+                        select.form-select(size='1')
+                          option Bank Name
+                          option SBI
+                          option ICICI
+                          option KOTAK
+                          option BOB
+                      .col-12
+                        select.form-select(size='1')
+                          option Select Card
+                          option 2
+                          option 3
+                          option 4
+                          option 5
+                      .col-12
+                        select.form-select(size='1')
+                          option Select Duration
+                          option 2020-2021
+                          option 2021-2022
+                          option 2022-2024
+                          option 2024-2024
+                      .col-12
+                        ul.payment-opt
+                          li
+                            img(src='../assets/images/ecommerce/mastercard.png', alt='')
+                          li
+                            img(src='../assets/images/ecommerce/visa.png', alt='')
+                          li
+                            img(src='../assets/images/ecommerce/paypal.png', alt='')
+                      .col-12
+                        button.btn.btn-primary.btn-block(type='button', title='') Submit
+              // EMI Ends
+              // EMI Starts
+              .col-xl-4.col-lg-6.box-col-6
+                .card
+                  .card-header.py-4
+                    h2 Net Banking
+                  .card-body
+                    form.theme-form.row.g-3
+                      .col-12
+                        input.form-control(type='text', placeholder='AC Holder name')
+                      .col-12
+                        input.form-control(type='text', placeholder='Account number')
+                      .col-xxl-6.p-r-0
+                        select.form-select(size='1')
+                          option Select Bank
+                          option SBI
+                          option ICICI
+                          option KOTAK
+                          option BOB
+                      .col-xxl-6
+                        input.form-control(type='text', placeholder='ICFC code')
+                      .col-12
+                        input.form-control(type='number', placeholder='Enter mobile number')
+                      .col-12
+                        input.form-control(type='text', placeholder='Other Details')
+                      .col-12
+                        button.btn.btn-primary.btn-block(type='button', title='') Submit
+              // EMI Ends
+              // Container-fluid Ends
+        include ../../components/footer
+    include ../../components/footer-files

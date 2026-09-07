@@ -1,0 +1,194 @@
+// general_widget css
+.visitor-wrapper {
+    .average-Visitors {
+        gap: 6px;
+        @media (min-width:1200px) and (max-width:1268px) {
+            gap: 0;
+        }
+    }
+    .weekly-visitor {
+        margin-block: -20px;
+        @media (min-width:320px) and (max-width:1199px) {
+            margin-block: unset;
+            margin-top: -40px;
+        }
+    }
+}
+@mixin ellipsis-box {
+    text-overflow: ellipsis;
+    word-break: break-word;
+    overflow: hidden;
+}
+.pipeline-chart1 {
+    .card-header {
+        h2 {
+            @media (min-width:576px) and (max-width:650px) {
+                @include ellipsis-box;
+                -webkit-line-clamp: 1;
+                -webkit-box-orient: vertical;
+                white-space: nowrap;
+                max-width: 130px;
+            }
+        }
+        >span {
+            @media (min-width:1200px) and (max-width:1262px) {
+                display: none;
+            }
+            @media (min-width:576px) and (max-width:758px) {
+                @include ellipsis-box;
+                -webkit-line-clamp: 1;
+                -webkit-box-orient: vertical;
+                white-space: nowrap;
+                max-width: 130px;
+            }
+        }
+    }
+    .apexcharts-datalabels-group {
+        transform: translate(0px, -10px);
+        .apexcharts-text {
+            &.apexcharts-datalabel-value {
+                font-size: 14px;
+            }
+        }
+    }
+}
+.project-widget-1 {
+    .card-header {
+        h3 {
+            @media (min-width:768px) and (max-width:1204px) {
+                @include ellipsis-box;
+                -webkit-line-clamp: 1;
+                -webkit-box-orient: vertical;
+                white-space: nowrap;
+                max-width: 155px;
+            }
+        }
+    }
+}
+.revenue-wrapper {
+    .card-header {
+        h2 {
+            @media (min-width:1200px) and (max-width:1212px) {
+                @include ellipsis-box;
+                -webkit-line-clamp: 1;
+                -webkit-box-orient: vertical;
+                white-space: nowrap;
+                max-width: 155px;
+            }
+        }
+        span {
+            @media (min-width:1200px) and (max-width:1672px) {
+                @include ellipsis-box;
+                -webkit-line-clamp: 1;
+                -webkit-box-orient: vertical;
+                white-space: nowrap;
+                max-width: 155px;
+            }
+        }
+    }
+    .card-body {
+        .revenue-chart-container {
+            >div {
+                @media (min-width:1200px) and (max-width:1370px) {
+                    margin-bottom: -38px;
+                }
+            }
+        }
+    }
+}
+.widget-acitivity {
+    .card-body {
+        .activity-details {
+            @media (min-width:1213px) and (max-width:1458px) {
+                height: auto;
+            }
+            @media (min-width:1200px) and (max-width:1212px) {
+                height: auto;
+                height: 378px;
+            }
+            li {
+                @media (min-width: 1221px) and (max-width: 1365px) {
+                    padding-bottom: 28px;
+                }
+                @media (min-width: 1200px) and (max-width: 1220px) {
+                    padding-bottom: 32px;
+                }
+            }
+        }
+    }
+}
+.delivery-card-1 {
+    .card-header {
+        .dropdown {
+            @media (min-width:1200px) and (max-width:1420px) {
+                display: none;
+            }
+            @media (min-width:576px) and (max-width:781px) {
+                display: none;
+            }
+            @media (min-width:320px) and (max-width:395px) {
+                display: none;
+            }
+        }
+    }
+    .card-body {
+        .order-list {
+            @media (min-width: 1200px) and (max-width: 1420px) {
+                height: auto;
+            }
+        }
+    }
+}
+.widget-visitor {
+    .card-header {
+        @media (min-width:320px) and (max-width:1199px) {
+            padding-bottom: 0;
+        }
+        .square-legend {
+            @media (min-width:576px) and (max-width:735px) {
+                gap: 10px;
+            }
+            >div {
+                @media (min-width:576px) and (max-width:735px) {
+                    gap: 8px;
+                }
+            }
+            .dropdown {
+                @media (min-width:576px) and (max-width:700px) {
+                    display: none;
+                }
+            }
+        }
+    }
+}
+@media (min-width:320px) and (max-width:1199px) {
+    .main-widget {
+        .order-md-i {
+            order: 1;
+        }
+        .order-md-ii {
+            order: 2;
+        }
+        .order-md-iii {
+            order: 3;
+        }
+        .order-md-iv {
+            order: 4;
+        }
+        .order-md-v {
+            order: 5;
+        }
+        .order-md-vi {
+            order: 6;
+        }
+        .order-md-vii {
+            order: 7;
+        }
+        .order-md-viii {
+            order: 8;
+        }
+        .order-md-ix {
+            order: 9;
+        }
+    }
+}

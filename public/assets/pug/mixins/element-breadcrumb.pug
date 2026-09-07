@@ -1,0 +1,14 @@
+//- =====================
+//-  Breadcrumb 
+//- =====================
+    
+mixin breadcrumb(items,pagetitle)
+    .col-auto.header-right-wrapper.page-title
+      div
+        h2= pagetitle
+        nav
+          ol.breadcrumb.justify-content-sm-start.align-items-center.mb-0
+            li.breadcrumb-item
+              a(href='index.html') Home
+            each pagename, index in items
+              li.breadcrumb-item.f-w-500(class=`${(index === items.length - 1 ?'active':'')}`)= pagename

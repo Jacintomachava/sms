@@ -1,0 +1,70 @@
+- var chat_menu             = true;
+- var theme_customizer      = true;
+- var typeahead             = true;
+- var typeahead_search      = true;
+- var animate               = true;
+- var jkanban               = true;
+- var sidebar               = true;
+- var slick                 = true;
+- var header_slider         = true;
+- var script2               = true;
+- var animate               = true;
+- var scrollbar             = true;
+
+//- mixin
+include ../../mixins/mixin
+
+doctype html
+html(lang='en')
+  include ../../components/header-files
+  body
+    include ../../components/loader
+    include ../../components/taptop
+    // page-wrapper Start
+    #pageWrapper.page-wrapper.default-wrapper
+      .page-header.row
+        include ../../components/header
+        +left-header
+        +breadcrumb(['Apps','Kanban Board'],'Kanban Board')
+        +right-header
+      // Page Body Start
+      .page-body-wrapper.default-menu.default-menu
+        include ../../components/sidebar
+        .page-body
+          // Container-fluid starts
+          .container-fluid.jkanban-container
+            .row
+              .col-12
+                .card
+                  .card-header
+                    h2 Default Demo                            
+                  .card-body                     
+                    #demo1
+              .col-12
+                .card
+                  .card-header
+                    h2 Custom Board  
+                    p.f-m-light.mt-1 Colors, gutter, click on board&apos;s item and restricting which boards to drag items too.
+                  .card-body                     
+                    #demo2
+              .col-12
+                .card
+                  .card-header
+                    h2 API
+                    p.f-m-light.mt-1 Add item, add board, delete board.                
+                  .card-body                     
+                    #demo3
+                    .kanban-buttons
+                      button#addDefault.btn.btn-success Add &quot;Default&quot; board
+                      button#addToDo.btn.btn-success Add element in &quot;To Do&quot; Board
+                      button#removeBoard.btn.btn-danger Remove &quot;Done&quot; Board
+              .col-12
+                .card.note.p-20
+                  | jKanban is pure agnostic javascript plugin for Kanban boards for more options please refer 
+                  a(href="http://www.riccardotartaglia.it/jkanban/" target="_blank") jkanban Official site  
+                  | and 
+                  a(href="https://github.com/riktar/jkanban" target="_blank") githup link
+
+          // Container-fluid Ends
+        include ../../components/footer
+    include ../../components/footer-files

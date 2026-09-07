@@ -1,0 +1,78 @@
+- var theme_customizer      = true;
+- var sparkline             = true;
+- var page_sparkline        = true;
+- var sidebar               = true;
+- var slick                 = true;
+- var header_slider         = true;
+- var animate               = true;
+- var scrollbar             = true;
+- var script2               = true;
+
+//- mixin
+include ../../mixins/mixin
+
+doctype html
+html(lang='en')
+  include ../../components/header-files
+  body
+    include ../../components/loader
+    include ../../components/taptop
+    // page-wrapper Start
+    #pageWrapper.page-wrapper.compact-wrapper
+      .page-header.row
+        include ../../components/header
+        +left-header
+        +breadcrumb(['Charts','Sparkline Chart'],'Sparkline Chart')
+        +right-header
+      // Page Body Start
+      .page-body-wrapper
+        include ../../components/sidebar
+        .page-body
+          // Container-fluid starts
+          .container-fluid
+            .row
+              .col-xl-4.col-md-6.col-sm-12.box-col-6
+                .card.title-line
+                  .card-header
+                    h2 Mouse Speed Chart
+                  .card-body.chart-block
+                    .flot-chart-container
+                      #mouse-speed-chart-sparkline.flot-chart-placeholder
+              .col-xl-4.col-md-6.col-sm-12.box-col-6
+                .card.title-line
+                  .card-header
+                    h2 Simple Bar Charts
+                  .card-body.chart-block
+                    .flot-chart-container
+                      #custom-line-chart.flot-chart-placeholder
+              .col-xl-4.col-md-6.col-sm-12.box-col-6
+                .card.title-line
+                  .card-header
+                    h2 Line Chart
+                  .card-body.chart-block
+                    .flot-chart-container
+                      #line-chart-sparkline.flot-chart-placeholder.line-chart-sparkline
+              .col-xl-4.col-md-6.col-sm-12.box-col-6
+                .card.title-line
+                  .card-header
+                    h2 Simple Line Chart
+                  .card-body.chart-block
+                    .flot-chart-container
+                      #simple-line-chart-sparkline.flot-chart-placeholder
+              .col-xl-4.col-md-6.col-sm-12.box-col-6
+                .card.title-line
+                  .card-header
+                    h2 Bar Chart
+                  .card-body.chart-block
+                    .flot-chart-container
+                      #bar-chart-sparkline.flot-chart-placeholder
+              .col-xl-4.col-md-6.col-sm-12.box-col-6
+                .card.title-line
+                  .card-header
+                    h2 Pie Chart
+                  .card-body.chart-block
+                    .flot-chart-container
+                      #pie-sparkline-chart.flot-chart-placeholder
+          // Container-fluid Ends
+        include ../../components/footer
+    include ../../components/footer-files

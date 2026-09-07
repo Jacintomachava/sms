@@ -1,0 +1,88 @@
+/**=====================
+  2.3 Avatars CSS start
+==========================**/
+.avatars {
+    .avatar {
+        display: inline-block;
+        margin-right: 10px;
+        position: relative;
+        width: auto;
+        &:last-child {
+            margin-right: 0;
+        }
+        &.ratio {
+            img {
+                width: auto;
+            }
+        }
+        .status {
+            position: absolute;
+            height: 14%;
+            width: 14%;
+            border-radius: 100%;
+            bottom: 10%;
+            right: 4%;
+            border: 2px solid var(--white);
+        }
+    }
+}
+.customers {
+    ul {
+        display: inline-block;
+        li {
+            img {
+                border: 2px solid var(--white);
+                transition: 0.5s;
+                &:hover {
+                    transform: translateY(-4px) scale(1.02);
+                    transition: 0.5s;
+                }
+            }
+            +li {
+                margin-left: -10%;
+                [dir="rtl"] & {
+                    margin-right: -10%;
+                    margin-left: unset;
+                }
+            }
+        }
+    }
+    &.avatar-group {
+        margin-right: 30px;
+        [dir="rtl"] & {
+            margin-right: unset;
+            margin-left: 30px;
+        }
+        &:last-child {
+            margin-right: 0;
+            [dir="rtl"] & {
+                margin-right: unset;
+                margin-left: 0;
+            }
+        }
+    }
+}
+.avatars {
+    &.avatar-showcase {
+        margin-bottom: -10px;
+    }
+    .avatar {
+        margin-bottom: 10px;
+    }
+}
+.avatar-group {
+    margin-bottom: 10px;
+}
+.ratio {
+    >* {
+        position: relative;
+        top: unset;
+        left: unset;
+        [dir="rtl"] & {
+            right: unset;
+        }
+    }
+}
+/**=====================
+    2.3 Avatars CSS Ends
+==========================**/

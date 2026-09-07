@@ -1,0 +1,127 @@
+- var theme_customizer      = true;
+- var apex                  = true;
+- var page_apex             = true;
+- var sidebar               = true;
+- var slick                 = true;
+- var header_slider         = true;
+- var animate               = true;
+- var scrollbar             = true;
+- var script2               = true;
+
+//- mixin
+include ../../mixins/mixin
+
+doctype html
+html(lang='en')
+  include ../../components/header-files
+  body
+    include ../../components/loader
+    include ../../components/taptop
+    // page-wrapper Start
+    #pageWrapper.page-wrapper.compact-wrapper
+      .page-header.row
+        include ../../components/header
+        +left-header
+        +breadcrumb(['Charts','Apex Chart'],'Apex Chart')
+        +right-header
+      // Page Body Start
+      .page-body-wrapper
+        include ../../components/sidebar
+        .page-body
+          // Container-fluid starts
+          .container-fluid
+            .row
+              .col-sm-12.col-xl-6.box-col-6
+                .card.title-line
+                  .card-header
+                    h2
+                      | Basic Area Chart 
+                  .card-body
+                    #basic-apex
+              .col-sm-12.col-xl-6.box-col-6
+                .card.title-line
+                  .card-header
+                    h2
+                      | Area Spaline Chart 
+                  .card-body
+                    #area-spaline
+              .col-sm-12.col-xl-6.box-col-6
+                .card.title-line
+                  .card-header
+                    h2
+                      | Bar Chart
+                  .card-body
+                    #basic-bar
+              .col-sm-12.col-xl-6.box-col-6
+                .card.title-line
+                  .card-header
+                    h2
+                      | Column Chart 
+                  .card-body
+                    #column-chart
+              .col-sm-12.col-xl-6.box-col-12
+                .card.title-line
+                  .card-header
+                    h2 
+                      | 3d Bubble Chart 
+                  .card-body
+                    #chart-bubble
+
+              .col-sm-12.col-xl-6.box-col-6
+                .card.title-line
+                  .card-header
+                    h2
+                      | Stepline Chart 
+                  .card-body
+                    #stepline
+              .col-sm-12.col-xl-12.box-col-6
+                .card.title-line
+                  .card-header
+                    h2
+                      | Column Chart
+                  .card-body
+                    #annotationchart
+              .col-sm-12.col-xl-6.box-col-6
+                .card.title-line
+                  .card-header
+                    h2
+                      | Pie Chart 
+                  .card-body.apex-chart
+                    #piechart
+              .col-sm-12.col-xl-6.box-col-6
+                .card.title-line
+                  .card-header
+                    h2
+                      | Donut Chart
+                  .card-body.apex-chart
+                    #donutchart
+              .col-sm-12.col-xl-12.box-col-12
+                .card.title-line
+                  .card-header
+                    h2 Mixed Chart
+                  .card-body
+                    #mixedchart                        
+              .col-sm-12.col-xl-12.box-col-12
+                .card.title-line
+                  .card-header
+                    h2
+                      | Candlestick Chart 
+                  .card-body
+                    #candlestick
+              .col-sm-12.col-xl-6.box-col-6
+                .card.title-line
+                  .card-header
+                    h2
+                      | Radar Chart 
+                  .card-body
+                    #radarchart
+              .col-sm-12.col-xl-6.box-col-6
+                .card.title-line
+                  .card-header
+                    h2
+                      | Radial Bar Chart
+                  .card-body
+                    #circlechart
+          // Container-fluid Ends
+        include ../../components/footer
+    include ../../components/footer-files
