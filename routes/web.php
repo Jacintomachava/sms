@@ -12,7 +12,7 @@ use App\Http\Controllers\MensagemController;
 
 
 Route::get('/', function () {
-    return view('login');
+    return view('welcome');
 });
 
 Route::get('/login', function () {
