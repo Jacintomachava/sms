@@ -12,30 +12,21 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('nome')->nullable();
-            $table->string('username')->nullable()->unique();
-            $table->string('email')->unique()->nullable();  
-            $table->string('telefone')->unique();
-            $table->boolean('estado')->nullable()->default(true);
-            $table->string('password')->nullable();
-            $table->enum('role', ['Admin','Normal'])->nullable()->default('Admin');
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->string('telefone')->nullable();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
+            $table->enum('estado', ['ACTIVO','SUSPENSO','BLOQUEADO'])->default('ACTIVO');
+            $table->timestamp('ultimo_login_em')->nullable();
             $table->rememberToken();
             $table->timestamps();
+
+            $table->softDeletes();
+
+            $table->index('estado');
+            $table->index('telefone');
         });
-
-        // INSERE O USUÁRIO PADRÃO ADMIN
-        DB::table('users')->insert([
-            'nome' => 'Teste Admin',
-            'username' => 'admin',
-            'email' => 'admin@gmail.com',
-            'telefone' => '844870386',
-            'estado' => true,
-            'password' => Hash::make('123456'),
-            'role' => 'Admin',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
     }
 
     public function down(): void

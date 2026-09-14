@@ -11,10 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('saldo', function (Blueprint $table) {
+        // platform_user_roles
+        Schema::create('platform_user_roles', function (Blueprint $table) {
             $table->id();
-            $table->decimal('saldo_sms',10,2)->default(0);  
+            $table->foreignId('user_id')->constrained('users');
+            $table->foreignId('role_id')->constrained('roles');
+            $table->boolean('activo')->default(true);
             $table->timestamps();
+
+            $table->unique(['user_id','role_id']);
         });
     }
 
@@ -23,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('saldo');
+        Schema::dropIfExists('platform_user_roles');
     }
 };

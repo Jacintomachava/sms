@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('recarregar_saldo', function (Blueprint $table) {
+        // platform_user_permissions
+        Schema::create('platform_user_permissions', function (Blueprint $table) {
             $table->id();
-            $table->decimal('saldo_sms',10,2)->default(0); 
-            $table->decimal('saldo_anterior',10,2)->default(0);
-            $table->foreignId('cliente_id')->constrained('clientes')->onDelete('cascade')->onUpdate('cascade'); 
+            $table->foreignId('user_id')->constrained('users');
+            $table->foreignId('permission_id')->constrained('permissions');
             $table->timestamps();
+
+            $table->unique(['user_id','permission_id']);
         });
     }
 
@@ -25,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('recarregar_saldo');
+        Schema::dropIfExists('platform_user_permissions');
     }
 };

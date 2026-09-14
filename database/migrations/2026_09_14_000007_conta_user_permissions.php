@@ -11,11 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('compra_saldo', function (Blueprint $table) {
+        // conta_user_permissions
+        Schema::create('conta_user_permissions', function (Blueprint $table) {
             $table->id();
-            $table->decimal('saldo_sms',10,2)->default(0); 
-            $table->decimal('saldo_anterior',10,2)->default(0);
+            $table->foreignId('conta_user_id')->constrained('conta_user')->cascadeOnDelete();
+            $table->foreignId('permission_id')->constrained('permissions')->cascadeOnDelete();
             $table->timestamps();
+
+            $table->unique(['conta_user_id','permission_id']);
         });
     }
 
@@ -24,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('compra_saldo');
+        Schema::dropIfExists('conta_user_permissions');
     }
 };

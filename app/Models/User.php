@@ -9,16 +9,16 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+
+    use HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'nome',
+        'name',
         'email',
-        'username',
         'telefone',
         'password',
         'estado',
-        'role',
+        'ultimo_login_em',
     ];
 
     protected $hidden = [
@@ -26,7 +26,23 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    protected $casts = [
-        'estado' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'ultimo_login_em' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
+
+    public function contas()
+    {
+        return $this->belongsToMany(Conta::class,'conta_user','user_id','conta_id')->withPivot(['id','role_id','estado','suspenso_em','suspenso_por','removido_em','removido_por',])->withTimestamps();
+    }
+
+    public function contaUsers()
+    {
+        return $this->hasMany(ContaUser::class);
+    }
+
 }

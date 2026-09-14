@@ -1,7 +1,7 @@
     <!-- Page Header Start-->
     <div class="col-auto header-left-wrapper">
         <div class="header-logo-wrapper p-0 left-header">
-        <div class="logo-wrapper"><a href="#"><img class="img-fluid" src="{{ URL('/logotipo/logo.png') }}" alt=""></a></div>
+        <div class="logo-wrapper"><a href="#"><img class="img-fluid" src="{{ URL('/assets/images/logo/logo_dark.png') }}" alt=""></a></div>
         </div>
         <div class="toggle-sidebar">
         <svg class="status_toggle sidebar-toggle">
@@ -37,7 +37,7 @@
                     <li><a href="sign-up.html">
                         <div class="profile-icon">
                             <svg>
-                              <use href="{{ URL('/assets/svg/icon-sprite.svg#user') }}"></use>
+                            <use href="{{ URL('/assets/svg/icon-sprite.svg#user') }}"></use>
                             </svg>
                         </div><span>Account </span></a>
                     </li>
