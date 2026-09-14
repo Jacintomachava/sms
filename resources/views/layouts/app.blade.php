@@ -30,7 +30,7 @@
                   <div class="header-logo-wrapper p-0 left-header">
                     <div class="logo-wrapper">
                       <a href="#">
-                        <img class="img-fluid" src="{{ URL('/logotipo/'. session('logotipo') ) }}" width="150" height="150"  alt="">
+                        <img class="img-fluid" src="#" width="150" height="150"  alt="">
                       </a>
                     </div>
                   </div>
@@ -47,7 +47,7 @@
             <h2>{{ session('escola') }}</h2>
             <nav>
               <ol class="breadcrumb justify-content-sm-start align-items-center mb-0">
-                <li class="breadcrumb-item"><a href="{{route('conta.associacao')}}">{{ session('slogan') }}</a></li>
+                <li class="breadcrumb-item"><a href="#">{{ session('slogan') }}</a></li>
               </ol>
             </nav>
           </div>
@@ -107,7 +107,7 @@
                         <li class="profile-nav onhover-dropdown">
                           <div class="onhover-click">
                             <div class="sidebar-image"> 
-                              <img src="{{ URL('/avatar/'.Auth::user()->avatar) }}" alt="profile">
+                              <img src="#" alt="profile">
                               <span class="status status-success"></span>
                             </div>
                             <div class="sidebar-content"> 
@@ -116,7 +116,7 @@
                             </div>
                           </div>
                           <ul class="profile-dropdown onhover-show-div">
-                              <li><a href="{{route('senha.index')}}">
+                              <li><a href="#">
                                 <div class="profile-icon">
                                   <svg>
                                     <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-form') }}"></use>

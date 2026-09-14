@@ -12,13 +12,6 @@ class Authenticate extends Middleware
      */
     protected function redirectTo(Request $request): ?string
     {
-        // Se a requisição for de API, retorna JSON 401 (não autenticado)
-    if ($request->expectsJson()) {
-        abort(response()->json([
-            'message' => 'Usuário não autenticado. Faça login ou verifique o OTP.'
-        ], 401));
-    }
-    //se a requisicao for da a web retorna null 
-        return null;
+        return $request->expectsJson() ? null : route('login');
     }
 }

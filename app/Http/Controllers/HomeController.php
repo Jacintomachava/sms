@@ -3,9 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-
 
 class HomeController extends Controller
 {
@@ -26,12 +23,6 @@ class HomeController extends Controller
      */
     public function index()
     {
-        
-
-        // Retorna a view com os dados carregados
-        return view('home', [
-
-        ]);
-
+        return view('home');
     }
 }

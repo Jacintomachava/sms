@@ -8,4 +8,17 @@ use Illuminate\Database\Eloquent\Model;
 class Conta extends Model
 {
     use HasFactory;
+
+    protected $table = 'contas';
+
+    protected $fillable = [
+        'nome',
+        'tipo',
+        'nome_legal',
+        'nuit',
+        'email',
+        'telefone',
+        'tipo_cobranca',
+        'estado',
+    ];
 }

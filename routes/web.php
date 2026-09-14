@@ -3,22 +3,18 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashbordController;
 use App\Http\Controllers\LoginController;
-
+use App\Http\Controllers\AuthController;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/login', [AuthController::class, 'index'])->name('login');
+Route::get('/registar', [AuthController::class, 'registar'])->name('registar');
+Route::post('/fazer/register', [AuthController::class, 'login'])->name('login.store');
 
-//Chamar View de Login
-Route::get('/login', [DashbordController::class, 'index'])->name('login');
-
-//Chamar View de Login
-Route::get('/registar', [DashbordController::class, 'registar'])->name('registar');
-
-// Fazer Autenticacao
-Route::post('/autenticar', [LoginController::class, 'login'])->name('fazer.login');
-//Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+//DASHBORD
+Route::get('/dashboard', [DashbordController::class, 'index'])->name('dashboard');
 
 Auth::routes();
 
