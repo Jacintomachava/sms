@@ -9,7 +9,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/login', [AuthController::class, 'index'])->name('login');
+Route::get('/entrar', [AuthController::class, 'index'])->name('formulario');
 Route::get('/registar', [AuthController::class, 'registar'])->name('registar');
 Route::post('/fazer/register', [AuthController::class, 'login'])->name('login.store');
 

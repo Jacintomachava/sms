@@ -23,7 +23,7 @@
         <div class="topbar-right text-lg-end">
           <ul>
             <li><a href="{{route('registar')}}"><i class="ri-customer-service-2-fill"></i><span>Support</span></a></li>
-            <li><a href="{{route('login')}}"><i class="ri-user-settings-line"></i><span>Login</span></a></li>
+            <li><a href="{{route('formulario')}}"><i class="ri-user-settings-line"></i><span>Login</span></a></li>
           </ul>
         </div>
       </div>

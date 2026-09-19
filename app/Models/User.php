@@ -20,7 +20,10 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'telefone',
         'password',
+        'estado',
+        'ultimo_login_em',
     ];
 
     /**
@@ -40,5 +43,22 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'ultimo_login_em' => 'datetime',
+        'password' => 'hashed',
     ];
+
+    public function contas()
+    {
+        return $this->belongsToMany(Conta::class, 'conta_user')
+            ->withPivot([
+                'id',
+                'role_id',
+                'estado',
+                'suspenso_em',
+                'suspenso_por',
+                'removido_em',
+                'removido_por',
+            ])
+            ->withTimestamps();
+    }
 }
