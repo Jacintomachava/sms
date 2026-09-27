@@ -12,18 +12,25 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-
         $this->call([
+
+            /*
+            |--------------------------------------------------------------------------
+            | ESTRUTURA DE PERMISSÕES
+            |--------------------------------------------------------------------------
+            */
             RoleSeeder::class,
             PermissionSeeder::class,
             RolePermissionSeeder::class,
+            /*
+            |--------------------------------------------------------------------------
+            | ADMINISTRADOR DA PLATAFORMA
+            |--------------------------------------------------------------------------
+            */
+            PlatformAdminSeeder::class,
+
+            TarifaSmsSeeder::class,
+
         ]);
-
-        // \App\Models\User::factory(10)->create();
-
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
     }
 }

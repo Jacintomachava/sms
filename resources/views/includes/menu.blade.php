@@ -1,20 +1,20 @@
 <div class="sidebar-wrapper" data-sidebar-layout="stroke-svg">
     <div>
     <div class="logo-wrapper"><a href="#">
-        <img class="img-fluid" src="{{ URL('/logotipo/'.session('logotipo')) }}" width="100" height="100" alt=""></a>
+        <img class="img-fluid" src="{{ URL('/logotipo/logotipo.png') }}" width="100" height="100" alt=""></a>
         <div class="back-btn"><i class="fa fa-angle-left"></i></div>
         <div class="toggle-sidebar"><i class="status_toggle middle sidebar-toggle" data-feather="grid"> </i></div>
     </div>
     <div class="logo-icon-wrapper"><a href="#">
-        <img class="img-fluid" src="{{ URL('/logotipo/'.session('logotipo')) }}"  width="100" height="100" alt=""></a></div>
+        <img class="img-fluid" src="{{ URL('/logotipo/logotipo.png') }}"  width="100" height="100" alt=""></a></div>
     <div class="profile-section sidebar-search"> 
         <div class="profile-wrapper">
-        <div class="active-profile"> <img class="img-fluid"  src="#" alt="user">
+        <div class="active-profile"> <img class="img-fluid"  src="{{ URL('/avatar/avatar.png') }}" alt="user">
             <div class="status bg-success"> </div>
         </div>
         <div> 
             <h4>Codigo</h4>
-            <span>codigo utilizador</span>
+            <span>codigo utilizador44</span>
         </div>
         </div>
         <div>
@@ -25,7 +25,7 @@
     </div>
     <div class="sidebar-search"> 
         <div class="input-group">
-          ....Escola
+          Servicos de SMS
         </div>
     </div>
     <nav class="sidebar-main">
@@ -41,187 +41,157 @@
             </div>
             </li>
 
-            @role('Secretaria')
+            {{-- ============================================================
+                MENUS DO CLIENTE / ACCOUNT
+            ============================================================ --}}
 
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
+            @if(session('contexto') === 'ACCOUNT')
+
+
+                <li class="sidebar-list">
+
+                    <i class="fa fa-thumb-tack"></i>
+                    <a class="sidebar-link sidebar-title"  href="javascript:void(0)">
                         <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-learning') }}"></use>
-                        </svg><span class="lan-3">Home</span></a>
-                </li>
-                
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
-                        <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-blog') }}"></use>
-                        </svg><span class="lan-3">Matriculas</span></a>
-                </li>
+                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-contact') }}"></use>
+                        </svg>
+                        <span>Contactos</span>
 
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
-                        <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-icons') }}"></use>
-                        </svg><span class="lan-3">Alunos</span></a>
-                </li>
+                        <div class="according-menu">
+                            <i class="fa fa-angle-right"></i>
+                        </div>
 
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
-                        <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-form') }}"></use>
-                        </svg><span class="lan-3">Professores</span></a>
-                </li>
+                    </a>
 
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
-                        <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-form') }}"></use>
-                        </svg><span class="lan-3">Prof. Turma</span></a>
-                </li>
-
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
-                        <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-task') }}"></use>
-                        </svg><span class="lan-3">Propina</span></a>
-                </li>
-
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
-                        <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-task') }}"></use>
-                        </svg><span class="lan-3">Pagamentos</span></a>
-                </li>
-
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
-                        <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-task') }}"></use>
-                        </svg><span class="lan-3">Referencias</span></a>
-                </li>
-
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
-                        <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-chat') }}"></use>
-                        </svg><span class="lan-3">Credito & SMS</span></a>
-                </li>
-
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
-                        <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-chat') }}"></use>
-                        </svg><span class="lan-3">Transferencia</span></a>
-                </li>
-
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
-                    <span class="lan-3"><i style="font-size: 15pt; padding-right: 5pt; color: white" class="icofont icofont-chart-histogram"></i>Finanças</span></a>
-                </li>
-                    
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
-                    <span class="lan-3"><i style="font-size: 15pt; padding-right: 5pt; color: white" class="icofont icofont-graduate-alt"></i>Pauta</span></a>
-                </li>
-
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
-                        <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-faq') }}"></use>
-                        </svg><span class="lan-3">Curriculo</span></a>
-                </li>
-
-            
-
-               
-                
-            @endrole
-
-            @role('Secretaria')    
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">7</label><a class="sidebar-link sidebar-title" href="#">
-                        <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-learning') }}"></use>
-                        </svg><span class="lan-3">Parametrização</span></a>
                     <ul class="sidebar-submenu">
-                        <li><a class="lan-1" href="#">Ano Academico</a></li>
-                        <li><a class="lan-2" href="#">Turmas</a></li>
-                        <li><a class="lan-2" href="#">Taxas</a></li>
-                        <li><a class="lan-2" href="#">Disciplinas</a></li>
-                        <li><a class="lan-2" href="#">Classes</a></li>
-                        <li><a class="lan-2" href="#">Meses</a></li>
-                        <li><a class="lan-2" href="#">Metodo Pagamento</a></li>
-                        <li><a class="lan-2" href="#">Escola</a></li>
+
+                        <li>
+                            <a href="{{ route('contactos.index') }}">
+                                Contactos
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="{{ route('grupos-contactos.index') }}">
+                                Grupos
+                            </a>
+                        </li>
+
                     </ul>
+
                 </li>
 
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">2</label><a class="sidebar-link sidebar-title" href="#">
+                <li class="sidebar-list">
+                    <i class="fa fa-thumb-tack"></i>
+
+                    <a
+                        class="sidebar-link sidebar-title {{ request()->routeIs('compras.sms.*') ? 'active' : '' }}"
+                        href="{{ route('compras.sms.index') }}"
+                    >
                         <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-learning') }}"></use>
-                        </svg><span class="lan-3">Administração</span></a>
-                    <ul class="sidebar-submenu">
-                        <li><a class="lan-1" href="#">Funcionarios</a></li>
-                        <li><a class="lan-2" href="#">Usuarios</a></li>
-                    </ul>
+                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-ecommerce') }}"></use>
+                        </svg>
+
+                        <span>Créditos SMS</span>
+                    </a>
                 </li>
 
-            @endrole
+                <li class="sidebar-list">
+                    <i class="fa fa-thumb-tack"></i>
 
-            @role('Professor')
-
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
+                    <a
+                        class="sidebar-link sidebar-title {{ request()->routeIs('sms.*') ? 'active' : '' }}"
+                        href="{{ route('sms.hitorico') }}"
+                    >
                         <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-task') }}"></use>
-                        </svg><span class="lan-3">Home</span></a>
+                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-email') }}"></use>
+                        </svg>
+
+                        <span>SMS</span>
+                    </a>
                 </li>
 
-                 <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
+                <li class="sidebar-list">
+                    <i class="fa fa-thumb-tack"></i>
+
+                    <label class="badge badge-light-primary">1</label>
+
+                    <a
+                        class="sidebar-link sidebar-title"
+                        href="{{ route('sender-ids.index') }}"
+                    >
                         <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-task') }}"></use>
-                        </svg><span class="lan-3">Turma</span></a>
+                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-blog') }}"></use>
+                        </svg>
+
+                        <span class="lan-3">Sender</span>
+                    </a>
                 </li>
 
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
+                <li class="sidebar-list">
+
+                    <i class="fa fa-thumb-tack"></i>
+
+                    <a
+                        class="sidebar-link sidebar-title"
+                        href="{{ route('api-keys.index') }}"
+                    >
                         <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-charts') }}"></use>
-                        </svg><span class="lan-3">Notas</span></a>
+                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-blog') }}"></use>
+                        </svg>
+
+                        <span>API</span>
+
+                    </a>
+
                 </li>
 
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
-                        <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-icons') }}"></use>
-                        </svg><span class="lan-3">Meu Dados</span></a>
-                </li>
-            @endrole
-           
+            @endif
 
-            @role('Aluno')
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
-                        <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-blog') }}"></use>
-                        </svg><span class="lan-3">Matriculas</span></a>
-                </li>
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
-                        <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-charts') }}"></use>
-                        </svg><span class="lan-3">Pauta</span></a>
-                </li>
-                
+            {{-- ============================================================
+                MENUS DA ADMINISTRAÇÃO / PLATFORM
+            ============================================================ --}}
 
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-                    <label class="badge badge-light-primary">1</label><a class="sidebar-link sidebar-title" href="#">
-                        <svg class="stroke-icon">
-                        <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-icons') }}"></use>
-                        </svg><span class="lan-3">Meu Dados</span></a>
-                </li>
-            @endrole
+            @if(session('contexto') === 'PLATFORM')
 
+                <li class="sidebar-list">
+
+                    <i class="fa fa-thumb-tack"></i>
+
+                    <a
+                        class="sidebar-link sidebar-title"
+                        href="{{ route('admin.tarifas-sms.index') }}"
+                    >
+
+                        <svg class="stroke-icon">
+                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-ecommerce') }}">
+                            </use>
+                        </svg>
+
+                        <span>Tarifas SMS</span>
+
+                    </a>
+
+                </li>
+
+                <li class="sidebar-list">
+                    <i class="fa fa-thumb-tack"></i>
+
+                    <label class="badge badge-light-primary">1</label>
+
+                    <a
+                        class="sidebar-link sidebar-title"
+                        href="{{ route('admin.sender-ids.index') }}"
+                    >
+                        <svg class="stroke-icon">
+                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-icons') }}"></use>
+                        </svg>
+
+                        <span class="lan-3">Senders Admin</span>
+                    </a>
+                </li>
+
+            @endif
 
         </ul>
         </div>

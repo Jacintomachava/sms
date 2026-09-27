@@ -31,4 +31,11 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'mpesa' => [
+        'env' => env('MPESA_ENV'),
+        'api_key' => env('MPESA_API_KEY'),
+        'public_key' => env('MPESA_PUBLIC_KEY'),
+        'service_provider_code' => env('MPESA_SERVICE_PROVIDER_CODE'),
+    ],
+
 ];

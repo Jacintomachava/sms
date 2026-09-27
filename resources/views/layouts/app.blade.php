@@ -30,7 +30,7 @@
                   <div class="header-logo-wrapper p-0 left-header">
                     <div class="logo-wrapper">
                       <a href="#">
-                        <img class="img-fluid" src="#" width="150" height="150"  alt="">
+                        <img class="img-fluid" src="{{ URL('/avatar/avatar.png') }}" width="150" height="150"  alt="">
                       </a>
                     </div>
                   </div>
@@ -42,16 +42,16 @@
                 </div>
 
 
-        <div class="col-auto header-right-wrapper page-title">
-          <div>
-            <h2>{{ session('escola') }}</h2>
-            <nav>
-              <ol class="breadcrumb justify-content-sm-start align-items-center mb-0">
-                <li class="breadcrumb-item"><a href="#">{{ session('slogan') }}</a></li>
-              </ol>
-            </nav>
-          </div>
-        </div>
+            <div class="col-auto header-right-wrapper page-title">
+              <div>
+                <h2>{{ session('escola') }}</h2>
+                <nav>
+                  <ol class="breadcrumb justify-content-sm-start align-items-center mb-0">
+                    <li class="breadcrumb-item"><a href="#">{{ session('slogan') }}</a></li>
+                  </ol>
+                </nav>
+              </div>
+            </div>
 
                 <div class="col header-wrapper m-0 header-right-wrapper">
                   <div class="row m-0">
@@ -71,7 +71,7 @@
                       <ul class="nav-menus">
                         <li class="onhover-dropdown">
 
-                        @role('Secretaria') 
+                        
                           <div class="notification-box onhover-click">
                             <svg>
                               <use href="{{ URL('/assets/svg/icon-sprite.svg#notification')}}"></use>
@@ -102,17 +102,17 @@
                                 @endif
                             </ul>
                           </div>
-                        @endrole  
+  
                         </li>
                         <li class="profile-nav onhover-dropdown">
                           <div class="onhover-click">
                             <div class="sidebar-image"> 
-                              <img src="#" alt="profile">
+                              <img src="{{ URL('/avatar/avatar.png') }}" alt="profile">
                               <span class="status status-success"></span>
                             </div>
                             <div class="sidebar-content"> 
-                              <span class="f-12 f-w-600 f-light">Nome</span><br>
-                              <span class="f-12 f-w-600 f-light">Codigo</span>
+                              <span class="f-12 f-w-600 f-light">{{ Auth::user()->name }}</span><br>
+                              <span class="f-12 f-w-600 f-light">{{ Auth::user()->estado }}</span>
                             </div>
                           </div>
                           <ul class="profile-dropdown onhover-show-div">
@@ -181,6 +181,7 @@
 
     @include('includes.js')
 
-    @stack('js')
+    @yield('script')
+    
   </body>
 </html>

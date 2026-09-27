@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Model;
 
 class Conta extends Model
@@ -35,5 +37,32 @@ class Conta extends Model
                 'removido_por',
             ])
             ->withTimestamps();
+    }
+
+    public function carteira(): HasOne
+    {
+        return $this->hasOne(Carteira::class);
+    }
+
+    public function senderIds(): BelongsToMany
+    {
+        return $this->belongsToMany(SenderId::class,'conta_sender_ids','conta_id','sender_id')
+        ->withPivot(['estado','atribuido_por','atribuido_em'])
+        ->withTimestamps();
+    }
+
+    public function contactos(): HasMany
+    {
+        return $this->hasMany(Contacto::class);
+    }
+
+    public function gruposContactos(): HasMany
+    {
+        return $this->hasMany(GrupoContacto::class);
+    }
+
+    public function tarifasSms(): HasMany
+    {
+        return $this->hasMany(TarifaSms::class);
     }
 }

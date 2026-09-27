@@ -11,7 +11,7 @@
 
     <link rel="icon" href="{{ URL('/leading/images/favicon.png') }}" type="image/x-icon">
     <link rel="shortcut icon" href="{{ URL('/leading/images/favicon.png') }}" type="image/x-icon">
-    <title>Área Restrita | Colégio Lhaysso</title>
+    <title>Área Restrita | INFORDATA SMS</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -366,19 +366,19 @@
     <main class="login-page">
         <section class="login-visual">
             <div class="visual-content">
-                <div class="visual-pill"><i class="fa fa-star"></i> Área restrita escolar</div>
-                <h1>Colégio Lhaysso</h1>
-                <p>Acesso reservado para alunos, professores e equipa administrativa acompanharem a vida escolar com segurança.</p>
+                <div class="visual-pill"><i class="fa fa-star"></i> Área restrita</div>
+                <h1>SERVICO DE SMS, INFORDATA</h1>
+                <p>ACESSO RESERVADOS A USUARIO COM CONTA CRIADA: INDIVIDUAL OU EMPRESARIAL.</p>
             </div>
         </section>
 
         <section class="login-panel">
             <div class="login-card-school">
                 <div class="login-brand">
-                    <img src="{{ URL('/logotipo/lhaysso.png') }}" alt="Colégio Lhaysso">
+                    <img src="{{ URL('/logotipo/logotipo.png') }}" alt="Colégio Lhaysso">
                     <div>
-                        <strong>Kindergarten and School</strong>
-                        <span>Meu filho, meu tesouro</span>
+                        <strong>INFORDATA</strong>
+                        <span>Servico de SMS</span>
                     </div>
                 </div>
 
@@ -389,10 +389,10 @@
                     @csrf
 
                     <div class="form-group-school">
-                        <label class="form-label" for="user">Utilizador</label>
+                        <label class="form-label" for="email">Email</label>
                         <div class="input-wrap">
                             <i class="fa fa-user-o"></i>
-                            <input id="user" class="school-input" name="user" type="text" placeholder="Telefone, código ou utilizador" autocomplete="username" autofocus>
+                            <input id="user" class="school-input" name="email" type="text" placeholder="Telefone, código ou utilizador" autocomplete="username" autofocus>
                         </div>
                     </div>
 
@@ -455,20 +455,10 @@
                         minlength: 2
                     }
                 },
-                messages: {
-                    user: {
-                        required: "Informe o telefone, código ou utilizador.",
-                        minlength: "O utilizador deve ter pelo menos 2 caracteres."
-                    },
-                    senha: {
-                        required: "Informe a sua senha.",
-                        minlength: "A senha deve ter pelo menos 2 caracteres."
-                    }
-                },
                 submitHandler: function(form) {
                     $.ajax({
                         type: "POST",
-                        url: "#",
+                        url: "{{route('login.store')}}",
                         data: $(form).serialize(),
 
                         beforeSend: function () {
@@ -484,14 +474,10 @@
                             $('#botao_texto').text('Entrar com segurança');
 
                             if(response.status == 1) {
-                                if(response.codigo == 'A') {
-                                    window.location.href = '/home/aluno';
-                                } else if(response.codigo == 'P') {
-                                    window.location.href = '/home/professor';
-                                } else if(response.codigo == 'F') {
-                                    window.location.href = '/home';
-                                }
-                            } else if(response.status == 0) {
+
+                                window.location.href = response.redirect ?? '/dashboard';
+
+                            }else if(response.status == 0) {
                                 $('#error').text(response.message);
                             }
                         },
