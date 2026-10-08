@@ -4,8 +4,14 @@ namespace App\Services;
 
 use App\Models\CompraSms;
 use App\Models\Conta;
+use App\Models\Carteira;
+use App\Models\CarteiraLoteSms;
+use App\Models\CarteiraMovimento;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+
+
+use RuntimeException;
 
 class CompraSmsService
 {
@@ -42,4 +48,6 @@ class CompraSmsService
             'criado_por' => $userId,
         ]);
     }
+
+
 }

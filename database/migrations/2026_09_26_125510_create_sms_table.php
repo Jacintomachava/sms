@@ -23,6 +23,16 @@ return new class extends Migration
             ])->default('GSM7');
             $table->unsignedInteger('caracteres');
             $table->unsignedSmallInteger('segmentos')->default(1);
+            $table->enum('finalidade', ['NORMAL','NOTIFICACAO','NOTIFICACAO_INTERNA','CORTESIA_TESTE'])->default('NORMAL');
+            /*
+            * Quem suporta financeiramente esta SMS.
+            */
+            $table->enum('custeado_por', ['CLIENTE','INFORDATA'])->default('CLIENTE');
+            /*
+            * Se entra ou não no consumo
+            * facturável do cliente.
+            */
+            $table->boolean('facturavel_cliente')->default(true);
             $table->enum('origem', ['PAINEL','API','CAMPANHA'])->default('PAINEL');
             $table->enum('estado', [
                 'PENDENTE',

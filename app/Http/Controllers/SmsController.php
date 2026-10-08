@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+
+use App\Models\Conta;
 use App\Models\Carteira;
+use App\Models\CicloConsumoSms;
 use App\Models\SenderId;
 use App\Models\Sms;
 use App\Services\SmsSegmentService;
@@ -17,34 +20,73 @@ class SmsController extends Controller
         $contaId = (int) session('conta_id');
 
         /*
-         * Somente Senders:
-         * - aprovados
-         * - associados à conta
-         * - associação activa
-         */
+        |--------------------------------------------------------------------------
+        | CONTA ACTUAL
+        |--------------------------------------------------------------------------
+        */
+        $conta = Conta::query()->where('id', $contaId)->where('estado', 'ACTIVA')->firstOrFail();
+
+        /*
+        |--------------------------------------------------------------------------
+        | SENDERS
+        |--------------------------------------------------------------------------
+        */
         $senders = SenderId::query()
             ->where('estado', 'APROVADO')
             ->whereHas('contas', function ($query) use ($contaId) {
+
                 $query
                     ->where('contas.id', $contaId)
-                    ->where('conta_sender_ids.estado','ACTIVO');
+                    ->where('conta_sender_ids.estado', 'ACTIVO');
+
             })
             ->orderBy('sender')
             ->get();
 
-        $saldoSms = Carteira::where('conta_id', $contaId)->value('saldo_sms') ?? 0;
+        /*
+        |--------------------------------------------------------------------------
+        | PRE-PAGO
+        |--------------------------------------------------------------------------
+        */
+        $saldoSms = 0;
 
         /*
-         * Últimos envios.
-         */
-        $sms = Sms::query()
-            ->where('conta_id', $contaId)
-            ->with('sender')
-            ->latest()
-            ->limit(100)
-            ->get();
+        |--------------------------------------------------------------------------
+        | POS-PAGO
+        |--------------------------------------------------------------------------
+        */
+        $consumoPeriodo = 0;
 
-        return view('sms.index', compact('senders','saldoSms','sms'));
+        if ($conta->tipo_cobranca === 'PRE_PAGO') {
+
+            $saldoSms = (int) (
+                Carteira::query()
+                    ->where('conta_id', $contaId)
+                    ->value('saldo_sms') ?? 0
+            );
+
+        } elseif ($conta->tipo_cobranca === 'POS_PAGO') {
+
+            $inicio = now()->startOfMonth()->toDateString();
+            $fim = now()->endOfMonth()->toDateString();
+
+            $consumoPeriodo = (int) (
+                CicloConsumoSms::query()
+                    ->where('conta_id', $contaId)
+                    ->where('periodo_inicio', $inicio)
+                    ->where('periodo_fim', $fim)
+                    ->value('segmentos') ?? 0
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | ÚLTIMOS ENVIOS
+        |--------------------------------------------------------------------------
+        */
+        $sms = Sms::query()->where('conta_id', $contaId)->with('sender')->latest()->limit(100)->get();
+
+        return view('sms.index', compact('conta','senders','saldoSms','consumoPeriodo','sms'));
     }
 
     public function historico()
@@ -107,7 +149,7 @@ class SmsController extends Controller
 
         try {
 
-            $sms = $smsService->enviar((int) session('conta_id'), (int) $request->sender_id, $request->telefone, $request->mensagem, (int) auth()->id(), $origem);
+            $sms = $smsService->enviar((int) session('conta_id'), (int) $request->sender_id, $request->telefone, $request->mensagem, $origem, (int) auth()->id());
 
             return response()->json([
                 'status' => 1,

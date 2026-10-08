@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->string('telefone')->nullable();
             $table->enum('tipo_cobranca', ['PRE_PAGO','POS_PAGO'])->default('PRE_PAGO');
+            //$table->foreignId('tarifa_sms_id')->nullable()->constrained('tarifas_sms')->nullOnDelete();
             $table->enum('estado', ['ACTIVA','SUSPENSA','BLOQUEADA'])->default('ACTIVA');
             $table->timestamps();
             $table->softDeletes();

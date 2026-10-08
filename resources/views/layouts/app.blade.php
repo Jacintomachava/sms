@@ -10,7 +10,8 @@
           margin: 0;
       }
     </style>
-    @stack('css')
+    
+    @yield('css')
 
   </head>
   <body> 
@@ -182,6 +183,6 @@
     @include('includes.js')
 
     @yield('script')
-    
+
   </body>
 </html>

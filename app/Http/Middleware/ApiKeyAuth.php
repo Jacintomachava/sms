@@ -69,10 +69,13 @@ class ApiKeyAuth
          * Não precisamos bloquear a resposta
          * por causa desta actualização.
          */
-        $apiKey->update([
-            'ultimo_uso_em' => now(),
-            'ultimo_ip' => $request->ip(),
-        ]);
+        if (!$apiKey->ultimo_uso_em || $apiKey->ultimo_uso_em->lt(now()->subMinutes(5))) {
+
+            $apiKey->update([
+                'ultimo_uso_em' => now(),
+                'ultimo_ip' => $request->ip(),
+            ]);
+        }
 
         return $next($request);
     }

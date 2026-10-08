@@ -14,24 +14,29 @@ class ApiKeyController extends Controller
     {
         $contaId = (int) session('conta_id');
 
-        $keys = ApiKey::query()->where('conta_id', $contaId)->latest()->get();
+        $conta = \App\Models\Conta::findOrFail($contaId);
 
-        /*
-         * Vamos buscar um Sender activo para montar
-         * automaticamente o exemplo cURL.
-         */
-        $sender = SenderId::query()
+        $keys = \App\Models\ApiKey::query() ->where('conta_id', $contaId) ->latest() ->get();
+
+        $senders = \App\Models\SenderId::query()
             ->where('estado', 'APROVADO')
             ->whereHas('contas', function ($query) use ($contaId) {
                 $query
                     ->where('contas.id', $contaId)
-                    ->where('conta_sender_ids.estado', 'ACTIVO');
+                    ->where(
+                        'conta_sender_ids.estado',
+                        'ACTIVO'
+                    );
             })
             ->orderBy('sender')
-            ->first();
+            ->get();
 
-        return view('api-keys.index', compact('keys', 'sender'));
+        $carteira = \App\Models\Carteira::query() ->where('conta_id', $contaId) ->first();
 
+        $activeKeys = $keys ->where('estado', 'ACTIVA')->count();
+
+        return view('api-keys.index', compact('conta','keys','senders','carteira','activeKeys'));
+        
     }
 
 

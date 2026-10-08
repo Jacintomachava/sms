@@ -6,6 +6,7 @@ use App\Models\Carteira;
 use App\Models\CarteiraMovimento;
 use App\Models\CompraSms;
 use App\Models\Pagamento;
+use App\Models\CarteiraLoteSms;
 use App\Models\TransacaoPagamento;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -362,6 +363,32 @@ class PagamentoSmsService
 
             /*
             |--------------------------------------------------------------------------
+            | 9. CRIAR LOTE COMERCIAL DOS CRÉDITOS
+            |--------------------------------------------------------------------------
+            |
+            | O lote guarda o snapshot comercial da compra.
+            |
+            | A compra pode gerar apenas um lote, garantido também
+            | pelo UNIQUE(compra_sms_id).
+            |
+            */
+            $lote = CarteiraLoteSms::create([
+                'conta_id' => $compra->conta_id,
+                'compra_sms_id' => $compra->id,
+                'quantidade_sms' => $compra->quantidade_sms,
+                'quantidade_disponivel' => $compra->quantidade_sms,
+                'preco_venda_unitario' => $compra->preco_unitario,
+                'valor_total' => $compra->valor_total,
+                'moeda' => $compra->moeda ?? 'MZN',
+                'origem' => 'COMPRA',
+                'referencia' => 'COMPRA-' . $compra->id,
+                'estado' => 'ACTIVO',
+                'creditado_em' => now(),
+                'criado_por' => $userId,
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
             | 9. CREDITAR SMS
             |--------------------------------------------------------------------------
             */
@@ -395,11 +422,14 @@ class PagamentoSmsService
 
                 'metadata' => [
                     'compra_sms_id' => $compra->id,
+                    'carteira_lote_sms_id' => $lote->id,
                     'pagamento_id' => $pagamento->id,
                     'transacao_pagamento_id' => $transacao->id,
                     'forma_pagamento' => $transacao->forma_pagamento,
                     'provider' => $transacao->provider,
                     'provider_transacao_id' => $transacao->provider_transacao_id,
+                    'preco_unitario' => (string) $compra->preco_unitario,
+                    'valor_total' => (string) $compra->valor_total,
                 ],
             ]);
 

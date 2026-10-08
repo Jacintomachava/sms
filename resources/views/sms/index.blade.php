@@ -180,37 +180,91 @@
 
                 <div class="card-body">
 
-                    <p>
-                        <strong>Saldo:</strong>
+                    {{-- =====================================================
+                        PRE-PAGO
+                    ====================================================== --}}
+                    @if($conta->tipo_cobranca === 'PRE_PAGO')
 
-                        {{ number_format(
-                            $saldoSms,
-                            0,
-                            ',',
-                            '.'
-                        ) }} SMS
-                    </p>
+                        <p>
+                            <strong>Saldo:</strong>
 
-                    <p>
-                        <strong>SMS a consumir:</strong>
+                            <span id="saldoActual">
+                                {{ number_format(
+                                    $saldoSms,
+                                    0,
+                                    ',',
+                                    '.'
+                                ) }}
+                            </span>
 
-                        <span id="resumoSegmentos">
-                            0
-                        </span>
-                    </p>
+                            SMS
+                        </p>
 
-                    <p>
-                        <strong>Saldo após envio:</strong>
+                        <p>
+                            <strong>SMS a consumir:</strong>
 
-                        <span id="saldoDepois">
-                            {{ number_format(
-                                $saldoSms,
-                                0,
-                                ',',
-                                '.'
-                            ) }}
-                        </span>
-                    </p>
+                            <span id="resumoSegmentos">
+                                0
+                            </span>
+                        </p>
+
+                        <p>
+                            <strong>Saldo após envio:</strong>
+
+                            <span id="saldoDepois">
+                                {{ number_format(
+                                    $saldoSms,
+                                    0,
+                                    ',',
+                                    '.'
+                                ) }}
+                            </span>
+                        </p>
+
+                    {{-- =====================================================
+                        POS-PAGO
+                    ====================================================== --}}
+                    @elseif($conta->tipo_cobranca === 'POS_PAGO')
+
+                        <p>
+                            <strong>Consumo no mês:</strong>
+
+                            <span id="consumoActual">
+                                {{ number_format(
+                                    $consumoPeriodo,
+                                    0,
+                                    ',',
+                                    '.'
+                                ) }}
+                            </span>
+
+                            SMS
+                        </p>
+
+                        <p>
+                            <strong>SMS desta mensagem:</strong>
+
+                            <span id="resumoSegmentos">
+                                0
+                            </span>
+                        </p>
+
+                        <p>
+                            <strong>Consumo após envio:</strong>
+
+                            <span id="consumoDepois">
+                                {{ number_format(
+                                    $consumoPeriodo,
+                                    0,
+                                    ',',
+                                    '.'
+                                ) }}
+                            </span>
+
+                            SMS
+                        </p>
+
+                    @endif
 
                 </div>
 
@@ -233,7 +287,11 @@
 
 $(document).ready(function () {
 
+    const tipoCobranca = @json($conta->tipo_cobranca);
+
     let saldoActual = {{ (int) $saldoSms }};
+
+    let consumoActual = {{ (int) $consumoPeriodo }};
 
     let timer = null;
 
@@ -250,13 +308,22 @@ $(document).ready(function () {
             $('#totalSegmentos').text(0);
             $('#resumoSegmentos').text(0);
             $('#encoding').text('-');
-            $('#saldoDepois').text(
-                saldoActual.toLocaleString()
-            );
+
+            if (tipoCobranca === 'PRE_PAGO') {
+
+                $('#saldoDepois').text(
+                    saldoActual.toLocaleString()
+                );
+
+            } else if (tipoCobranca === 'POS_PAGO') {
+
+                $('#consumoDepois').text(
+                    consumoActual.toLocaleString()
+                );
+            }
 
             return;
         }
-
 
         timer = setTimeout(function () {
 
@@ -284,17 +351,36 @@ $(document).ready(function () {
                     $('#resumoSegmentos')
                         .text(dados.segmentos);
 
-                    $('#encoding')
-                        .text(dados.encoding);
+                    $('#encoding').text(dados.encoding);
 
 
-                    let saldoDepois =
-                        saldoActual -
-                        dados.segmentos;
+                    /*
+                    |--------------------------------------------------------------------------
+                    | PRE-PAGO
+                    |--------------------------------------------------------------------------
+                    */
+                    if (tipoCobranca === 'PRE_PAGO') {
 
-                    $('#saldoDepois').text(
-                        saldoDepois.toLocaleString()
-                    );
+                        let saldoDepois = saldoActual - dados.segmentos;
+
+                        $('#saldoDepois').text(
+                            saldoDepois.toLocaleString()
+                        );
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | POS-PAGO
+                    |--------------------------------------------------------------------------
+                    */
+                    else if (tipoCobranca === 'POS_PAGO') {
+
+                        let consumoDepois = consumoActual + dados.segmentos;
+
+                        $('#consumoDepois').text(
+                            consumoDepois.toLocaleString()
+                        );
+                    }
 
                 }
 

@@ -6,6 +6,7 @@ use App\Models\Conta;
 use App\Models\ContaUser;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\CriarContaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -14,6 +15,13 @@ use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
+
+    private CriarContaService $criarContaService;
+
+    public function __construct(CriarContaService $criarContaService) {
+        
+        $this->criarContaService = $criarContaService;
+    }
 
     public function index()
     {
@@ -164,6 +172,10 @@ class AuthController extends Controller
                 'conta_user.conta_id',
                 'conta_user.role_id',
                 'contas.nome as conta_nome',
+
+                // IMPORTANTE
+                'contas.tipo_cobranca as tipo_cobranca',
+
             ])
             ->first();
 
@@ -198,6 +210,7 @@ class AuthController extends Controller
         $request->session()->put('conta_id',$contaUser->conta_id);
         $request->session()->put('conta_user_id',$contaUser->conta_user_id);
         $request->session()->put('role_id',$contaUser->role_id);
+        $request->session()->put('tipo_cobranca', $contaUser->tipo_cobranca);
 
         /*
         |--------------------------------------------------------------------------
@@ -272,114 +285,10 @@ class AuthController extends Controller
             */
             $resultado = DB::transaction(function () use ($dados) {
 
-                /*
-                |--------------------------------------------------------------------------
-                | 1. CRIAR UTILIZADOR
-                |--------------------------------------------------------------------------
-                */
-                $user = User::create([
-                    'name' => trim($dados['name']),
-                    'email' => strtolower(trim($dados['email'])),
-                    'telefone' => trim($dados['telefone']),
-                    /*
-                    * Se no Model User tens:
-                    *
-                    * 'password' => 'hashed'
-                    *
-                    * não precisas Hash::make().
-                    */
-                    'password' => $dados['password'],
-                    'estado' => 'ACTIVO',
-                ]);
-                /*
-                |--------------------------------------------------------------------------
-                | 2. DEFINIR DADOS DA CONTA
-                |--------------------------------------------------------------------------
-                */
-                if ($dados['tipo_conta'] === 'EMPRESA') {
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | EMPRESA
-                    |--------------------------------------------------------------------------
-                    */
-                    $nomeConta = trim($dados['nome_empresa']);
-                    $nomeLegal = trim($dados['nome_legal']);
-                    $nuit = trim($dados['nuit']);
-                } else {
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | INDIVIDUAL
-                    |--------------------------------------------------------------------------
-                    */
-                    $nomeConta = trim($dados['name']);
-                    $nomeLegal = null;
-                    $nuit = null;
-                }
-
-                /*
-                |--------------------------------------------------------------------------
-                | 3. CRIAR CONTA
-                |--------------------------------------------------------------------------
-                */
-                $conta = Conta::create([
-                    'nome' => $nomeConta,
-                    'tipo' => $dados['tipo_conta'],
-                    'nome_legal' => $nomeLegal,
-                    'nuit' => $nuit,
-                    'email' => strtolower(trim($dados['email'])),
-                    'telefone' => trim($dados['telefone']),
-                    /*
-                    |--------------------------------------------------------------------------
-                    | TODA CONTA NOVA COMEÇA PRÉ-PAGA
-                    |--------------------------------------------------------------------------
-                    */
-                    'tipo_cobranca' => 'PRE_PAGO',
-                    'estado' => 'ACTIVA',
-                ]);
-
-                /*
-                |--------------------------------------------------------------------------
-                | 4. PROCURAR ROLE OWNER
-                |--------------------------------------------------------------------------
-                */
-                $ownerRole = Role::query()->where('codigo','OWNER')->where('scope','ACCOUNT')->where('activo',true)->first();
-
-                /*
-                |--------------------------------------------------------------------------
-                | SEGURANÇA
-                |--------------------------------------------------------------------------
-                */
-                if (!$ownerRole) {
-                    throw new \Exception(
-                        'A role OWNER da conta não está configurada.'
-                    );
-                }
-
-                /*
-                |--------------------------------------------------------------------------
-                | 5. ASSOCIAR UTILIZADOR À CONTA
-                |--------------------------------------------------------------------------
-                */
-                DB::table('conta_user')->insert([
-                    'conta_id' => $conta->id,
-                    'user_id' => $user->id,
-                    'role_id' => $ownerRole->id,
-                    'estado' => 'ACTIVO',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                /*
-                |--------------------------------------------------------------------------
-                | RETORNAR DADOS DA TRANSACTION
-                |--------------------------------------------------------------------------
-                */
-                return [
-                    'user' => $user,
-                    'conta' => $conta,
-                ];
+                return $this->criarContaService->criar(
+                    dados: $dados,
+                    tipoCobranca: 'PRE_PAGO'
+                );
 
             });
 

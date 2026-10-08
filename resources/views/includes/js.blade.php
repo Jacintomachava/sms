@@ -30,4 +30,6 @@
     <script src="{{ URL('/assets/js/script2.js') }}"></script>
     <script src="{{ URL('/assets/js/theme-customizer/customizer.js') }}"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+
     @stack('js')

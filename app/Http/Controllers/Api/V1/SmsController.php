@@ -240,7 +240,7 @@ class SmsController extends Controller
              * Vamos ajustar SmsService para aceitar
              * ?int $userId.
              */
-            $sms = $smsService->enviar($contaId, $sender->id, $validated['to'], $validated['message'], null, $origem);
+            $sms = $smsService->enviar($contaId, $sender->id, $validated['to'], $validated['message'], $origem, null);
 
             $saldo = Carteira::where('conta_id', $contaId)->value('saldo_sms');
 
@@ -356,7 +356,7 @@ class SmsController extends Controller
 
                 try {
 
-                    $sms = $smsService->enviar($contaId, $sender->id, $telefone, $validated['message'], null, $origem);
+                    $sms = $smsService->enviar($contaId, $sender->id, $telefone, $validated['message'], $origem, null);
 
                     $results[] = [
                         'id' => $sms->id,
@@ -470,7 +470,7 @@ class SmsController extends Controller
                         );
                     }
 
-                    $sms = $smsService->enviar($contaId, $sender->id, $item['to'], $item['message'], null, $origem);
+                    $sms = $smsService->enviar($contaId, $sender->id, $item['to'], $item['message'], $origem, null);
 
                     $results[] = [
                         'id' => $sms->id,

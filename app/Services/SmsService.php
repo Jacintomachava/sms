@@ -5,107 +5,242 @@ namespace App\Services;
 use App\Models\Sms;
 use App\Models\SenderId;
 use App\Models\Carteira;
+use App\Models\Conta;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class SmsService
 {
-    public function __construct(private SmsSegmentService $segmentService, private CarteiraService $carteiraService) {
+    public function __construct(
+        private SmsSegmentService $segmentService,
+        private CarteiraService $carteiraService,
+        private TarifaSmsService $tarifaSmsService,
+        private ConsumoPosPagoService $consumoPosPagoService,
+        private LimiteInternoSmsService $limiteInternoSmsService,
+        private LimiteSmsService $limiteSmsService,
+        private StockSmsService $stockSmsService
+    ) {
     }
 
-    public function enviar(int $contaId, int $senderId, string $telefone, string $mensagem, ?int $userId = null, string $origem): Sms {
+    public function enviar(int $contaId, int $senderId, string $telefone, string $mensagem, string $origem, ?int $userId = null): Sms {
 
+        /*
+        |--------------------------------------------------------------------------
+        | CONTA
+        |--------------------------------------------------------------------------
+        */
+        $conta = Conta::query() ->where('id', $contaId)->where('estado', 'ACTIVA')->first();
+
+        if (!$conta) {
+
+            throw new RuntimeException(
+                'Conta inválida ou inactiva.'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | TELEFONE
+        |--------------------------------------------------------------------------
+        */
         $telefone = $this->normalizarTelefone($telefone);
 
         /*
         |--------------------------------------------------------------------------
-        | VALIDAR SENDER
+        | SENDER
         |--------------------------------------------------------------------------
         */
         $sender = $this->obterSenderValido($contaId, $senderId);
 
         /*
         |--------------------------------------------------------------------------
-        | CALCULAR SEGMENTOS
+        | SEGMENTOS
         |--------------------------------------------------------------------------
         */
         $calculo = $this->segmentService->calcular($mensagem);
 
-
         /*
         |--------------------------------------------------------------------------
-        | VALIDAR SALDO
+        | STOCK FÍSICO
         |--------------------------------------------------------------------------
         */
-        $carteira = Carteira::where('conta_id', $contaId)->first();
+        if (!$this->stockSmsService->temStock($calculo['segmentos'])) {
 
-        if (!$carteira) {
             throw new RuntimeException(
-                'Carteira não encontrada.'
-            );
-        }
-
-        if ($carteira->saldo_sms < $calculo['segmentos']) {
-            throw new RuntimeException(
-                'Saldo SMS insuficiente.'
+                'Stock SMS temporariamente indisponível.'
             );
         }
 
         /*
         |--------------------------------------------------------------------------
-        | CRIAR SMS
+        | VALIDAÇÕES POR TIPO DE COBRANÇA
         |--------------------------------------------------------------------------
         */
-        return DB::transaction(function () use (
-            $contaId,
-            $sender,
-            $telefone,
-            $mensagem,
-            $calculo,
-            $userId,
-            $origem
-        ) {
+        $tarifaPosPago = null;
 
-            $sms = Sms::create([
-                'conta_id' => $contaId,
-                'sender_id' => $sender->id,
-                'telefone' => $telefone,
-                'mensagem' => $mensagem,
-                'encoding' => $calculo['encoding'],
-                'caracteres' => $calculo['caracteres'],
-                'segmentos' => $calculo['segmentos'],
-                'estado' => 'ENVIADO',
-                //'estado' => 'PENDENTE',
-                'provider' => 'MOVITEL',
-                'origem'  => $origem,
-                'criado_por' => $userId,
-                'enviado_em' => now(),
-            ]);
+        if ($conta->tipo_cobranca === 'PRE_PAGO') {
+
+            $carteira = Carteira::query() ->where('conta_id', $contaId)->first();
+
+            if (!$carteira) {
+
+                throw new RuntimeException(
+                    'Carteira não encontrada.'
+                );
+            }
+
+            if ( $carteira->saldo_sms < $calculo['segmentos']) {
+
+                throw new RuntimeException(
+                    'Saldo SMS insuficiente.'
+                );
+            }
+
+        }
+        elseif ($conta->tipo_cobranca === 'POS_PAGO') {
 
             /*
-             * Debitar os créditos.
-             */
-            $this->carteiraService->debitarSms(
-                contaId: $contaId,
-                quantidade: $calculo['segmentos'],
-                origem: 'SMS',
-                referencia: 'SMS-' . $sms->id,
-                descricao: 'Envio de SMS para '. $telefone,
-                userId: $userId,
+            |--------------------------------------------------------------------------
+            | TARIFA POS-PAGO
+            |--------------------------------------------------------------------------
+            */
+            $tarifaPosPago = $this->tarifaSmsService->obterTarifaPosPago($conta);
 
-                metadata: [
-                    'sms_id' => $sms->id,
+        }
+        else {
+
+            throw new RuntimeException(
+                'Tipo de cobrança inválido.'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | TRANSACTION
+        |--------------------------------------------------------------------------
+        */
+        return DB::transaction(
+            function () use (
+                $conta,
+                $contaId,
+                $sender,
+                $telefone,
+                $mensagem,
+                $calculo,
+                $userId,
+                $origem,
+                $tarifaPosPago
+            ) {
+
+                /*
+                |--------------------------------------------------------------------------
+                | PROTECÇÃO POS-PAGO
+                |--------------------------------------------------------------------------
+                */
+                if ($conta->tipo_cobranca === 'POS_PAGO') {
+
+                    $conta = Conta::query()
+                        ->where('id', $contaId)
+                        ->where('estado', 'ACTIVA')
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (!$conta) {
+                        throw new RuntimeException(
+                            'Conta inválida ou inactiva.'
+                        );
+                    }
+
+                    /*
+                    | Limite interno INFORDATA.
+                    */
+                    $this->limiteInternoSmsService->validarEnvio($conta, $calculo['segmentos']);
+
+                    /*
+                    | Limite opcional definido pelo cliente.
+                    */
+                    $this->limiteSmsService->validarEnvio($conta, $calculo['segmentos']);
+                    
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | SMS
+                |--------------------------------------------------------------------------
+                */
+                $sms = Sms::create([
+                    'conta_id' => $contaId,
                     'sender_id' => $sender->id,
                     'telefone' => $telefone,
+                    'mensagem' => $mensagem,
+                    'encoding' => $calculo['encoding'],
+                    'caracteres' => $calculo['caracteres'],
                     'segmentos' => $calculo['segmentos'],
-                ]
-            );
+                    'estado' => 'ENVIADO',
+                    'provider' => 'MOVITEL',
+                    'origem' => $origem,
+                    'criado_por' => $userId,
+                    'enviado_em' => now(),
+                ]);
 
+                /*
+                |--------------------------------------------------------------------------
+                | STOCK FÍSICO INFORDATA
+                |--------------------------------------------------------------------------
+                */
+                $this->stockSmsService
+                    ->consumirDentroDaTransacao(
+                        smsId: $sms->id,
+                        segmentos: $calculo['segmentos'],
+                        userId: $userId
+                    );
 
-            return $sms;
-        });
+                /*
+                |--------------------------------------------------------------------------
+                | PRE-PAGO
+                |--------------------------------------------------------------------------
+                */
+                if ($conta->tipo_cobranca === 'PRE_PAGO') {
+
+                    $this->carteiraService
+                        ->debitarSms(
+                            contaId: $contaId,
+                            quantidade: $calculo['segmentos'],
+                            origem: 'SMS',
+                            referencia: 'SMS-' . $sms->id,
+                            descricao: 'Envio de SMS para ' .$telefone,
+                            userId: $userId,
+
+                            metadata: [
+                                'sms_id' => $sms->id,
+                                'sender_id' => $sender->id,
+                                'telefone' => $telefone,
+                                'segmentos' => $calculo['segmentos'],
+                            ],
+
+                            smsId: $sms->id
+                        );
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | POS-PAGO
+                |--------------------------------------------------------------------------
+                */
+                if ($conta->tipo_cobranca === 'POS_PAGO') {
+
+                    $this->consumoPosPagoService
+                        ->registar(
+                            conta: $conta,
+                            tarifa: $tarifaPosPago,
+                            segmentos: $calculo['segmentos']
+                        );
+                }
+
+                return $sms;
+            }
+        );
     }
-
 
     private function obterSenderValido(int $contaId, int $senderId): SenderId {
 

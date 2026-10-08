@@ -21,6 +21,7 @@ class Conta extends Model
         'email',
         'telefone',
         'tipo_cobranca',
+        'tarifa_sms_id',
         'estado',
     ];
 
@@ -64,5 +65,20 @@ class Conta extends Model
     public function tarifasSms(): HasMany
     {
         return $this->hasMany(TarifaSms::class);
+    }
+
+    public function ciclosConsumoSms()
+    {
+        return $this->hasMany(CicloConsumoSms::class);
+    }
+
+    public function tarifaSms()
+    {
+        return $this->belongsTo(TarifaSms::class,'tarifa_sms_id');
+    }
+
+    public function lotesSms()
+    {
+        return $this->hasMany(CarteiraLoteSms::class,'conta_id');
     }
 }

@@ -13,8 +13,8 @@
             <div class="status bg-success"> </div>
         </div>
         <div> 
-            <h4>Codigo</h4>
-            <span>codigo utilizador44</span>
+            <h4>TIPO</h4>
+            <span>{{session('tipo_cobranca')}}</span>
         </div>
         </div>
         <div>
@@ -84,17 +84,55 @@
                 <li class="sidebar-list">
                     <i class="fa fa-thumb-tack"></i>
 
+                    <label class="badge badge-light-primary"></label>
+
                     <a
-                        class="sidebar-link sidebar-title {{ request()->routeIs('compras.sms.*') ? 'active' : '' }}"
-                        href="{{ route('compras.sms.index') }}"
+                        class="sidebar-link sidebar-title"
+                        href="{{ route('sender-ids.index') }}"
                     >
                         <svg class="stroke-icon">
-                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-ecommerce') }}"></use>
+                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-blog') }}"></use>
                         </svg>
 
-                        <span>Créditos SMS</span>
+                        <span class="lan-3">Sender </span>
                     </a>
                 </li>
+
+                <li class="sidebar-list">
+                    <i class="fa fa-thumb-tack"></i>
+
+                    <label class="badge badge-light-primary"></label>
+
+                    <a
+                        class="sidebar-link sidebar-title"
+                        href="{{ route('financeiro.index') }}"
+                    >
+                        <svg class="stroke-icon">
+                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-blog') }}"></use>
+                        </svg>
+
+                        <span class="lan-3">Financeiro </span>
+                    </a>
+                </li>
+
+                @if(session('tipo_cobranca') === 'PRE_PAGO')
+
+                    <li class="sidebar-list">
+                        <i class="fa fa-thumb-tack"></i>
+
+                        <a
+                            class="sidebar-link sidebar-title {{ request()->routeIs('compras.sms.*') ? 'active' : '' }}"
+                            href="{{ route('compras.sms.index') }}"
+                        >
+                            <svg class="stroke-icon">
+                                <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-ecommerce') }}"></use>
+                            </svg>
+
+                            <span>Recarregar </span>
+                        </a>
+                    </li>
+
+                @endif
 
                 <li class="sidebar-list">
                     <i class="fa fa-thumb-tack"></i>
@@ -114,36 +152,17 @@
                 <li class="sidebar-list">
                     <i class="fa fa-thumb-tack"></i>
 
-                    <label class="badge badge-light-primary">1</label>
-
                     <a
-                        class="sidebar-link sidebar-title"
-                        href="{{ route('sender-ids.index') }}"
-                    >
-                        <svg class="stroke-icon">
-                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-blog') }}"></use>
-                        </svg>
-
-                        <span class="lan-3">Sender</span>
-                    </a>
-                </li>
-
-                <li class="sidebar-list">
-
-                    <i class="fa fa-thumb-tack"></i>
-
-                    <a
-                        class="sidebar-link sidebar-title"
+                        class="sidebar-link sidebar-title
+                        {{ request()->routeIs('api-keys.*') ? 'active' : '' }}"
                         href="{{ route('api-keys.index') }}"
                     >
                         <svg class="stroke-icon">
                             <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-blog') }}"></use>
                         </svg>
 
-                        <span>API</span>
-
+                        <span>Integração API</span>
                     </a>
-
                 </li>
 
             @endif
@@ -153,6 +172,46 @@
             ============================================================ --}}
 
             @if(session('contexto') === 'PLATFORM')
+
+
+                <li class="sidebar-list">
+                    <a  class="sidebar-link sidebar-title" href="javascript:void(0)">
+                        <svg class="stroke-icon">
+                            <use href="{{ asset('assets/svg/icon-sprite.svg#stroke-ecommerce') }}"></use>
+                        </svg>
+
+                        <span> Contas</span>
+                    </a>
+                    <ul class="sidebar-submenu">
+
+                        <li>
+                            <a href="{{ route('admin.contas.index') }}">
+                                Contas
+                            </a>
+                        </li>
+
+                    </ul>
+                </li>
+
+
+                <li class="sidebar-list">
+                    <a  class="sidebar-link sidebar-title" href="javascript:void(0)">
+                        <svg class="stroke-icon">
+                            <use href="{{ asset('assets/svg/icon-sprite.svg#stroke-ecommerce') }}"></use>
+                        </svg>
+
+                        <span>Stock SMS</span>
+                    </a>
+                    <ul class="sidebar-submenu">
+
+                        <li>
+                            <a href="{{ route('admin.stock.index') }}">
+                                Stock Movitel
+                            </a>
+                        </li>
+
+                    </ul>
+                </li>
 
                 <li class="sidebar-list">
 

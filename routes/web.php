@@ -10,8 +10,11 @@ use App\Http\Controllers\GrupoContactoController;
 use App\Http\Controllers\ContactoImportController;
 use App\Http\Controllers\SmsController;
 use App\Http\Controllers\ApiKeyController;
+use App\Http\Controllers\Admin\ContaController;
+use App\Http\Controllers\Admin\CompraStockSmsController;
 use App\Http\Controllers\Admin\TarifaSmsController;
 use App\Http\Controllers\CompraSmsController;
+use App\Http\Controllers\FinanceiroController;
 use App\Http\Controllers\Admin\SenderIdController as AdminSenderIdController;
 
 Route::get('/', function () {
@@ -73,10 +76,15 @@ Route::middleware(['auth','account.active'])->group(function () {
     Route::post('/integracao-api/keys', [ApiKeyController::class, 'store'])->name('api-keys.store');
     Route::post('/integracao-api/keys/{id}/revoke', [ApiKeyController::class, 'revoke'])->name('api-keys.revoke');
 
+    Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('financeiro.index');
+
 });
 
 
 Route::middleware(['auth', 'platform'])->prefix('admin')->name('admin.')->group(function () {
+
+    Route::get('/stock-sms',[CompraStockSmsController::class, 'index'])->name('stock.index');
+    Route::post('/stock-sms/compras',[CompraStockSmsController::class, 'store'])->name('stock.store');
 
     Route::get('/dashboard', function () { return view('admin.dashboard'); })->name('dashboard');
 
@@ -98,5 +106,8 @@ Route::middleware(['auth', 'platform'])->prefix('admin')->name('admin.')->group(
     Route::post('/tarifas-sms', [TarifaSmsController::class, 'store'])->name('tarifas-sms.store');
     Route::put('/tarifas-sms/{tarifa}',[TarifaSmsController::class, 'update'])->name('tarifas-sms.update');
     Route::patch('/tarifas-sms/{tarifa}/estado',[TarifaSmsController::class, 'alterarEstado'])->name('tarifas-sms.estado');
+
+    Route::get('/contas', [ContaController::class, 'index'])->name('contas.index');
+    Route::post('/contas', [ContaController::class, 'store'])->name('contas.store');
 
 });

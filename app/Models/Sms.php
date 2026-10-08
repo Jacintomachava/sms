@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Sms extends Model
 {
@@ -50,5 +51,15 @@ class Sms extends Model
     public function criadoPor()
     {
         return $this->belongsTo(User::class,'criado_por');
+    }
+
+    public function consumosStock()
+    {
+        return $this->hasMany(SmsConsumoStock::class,'sms_id');
+    }
+
+    public function consumosCreditos(): HasMany
+    {
+        return $this->hasMany(SmsConsumoCredito::class,'sms_id');
     }
 }

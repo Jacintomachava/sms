@@ -10,6 +10,11 @@ use RuntimeException;
 
 class CarteiraService
 {
+    public function __construct(
+        private CarteiraLoteSmsService $loteSmsService
+    ) {
+    }
+
     /**
      * Creditar valor na carteira.
      */
@@ -91,7 +96,7 @@ class CarteiraService
     /**
      * Debitar valor da carteira.
      */
-    public function debitarSms(int $contaId, int $quantidade, string $origem, ?string $referencia = null, ?string $descricao = null, ?int $userId = null, array $metadata = []): CarteiraMovimento {
+    public function debitarSms(int $contaId, int $quantidade, string $origem, ?string $referencia = null, ?string $descricao = null, ?int $userId = null, array $metadata = [], ?int $smsId = null): CarteiraMovimento {
 
         if ($quantidade <= 0) {
             throw new RuntimeException(
@@ -106,10 +111,19 @@ class CarteiraService
             $referencia,
             $descricao,
             $userId,
-            $metadata
+            $metadata,
+            $smsId
         ) {
 
-            $carteira = Carteira::where('conta_id', $contaId)->lockForUpdate()->first();
+            /*
+            |--------------------------------------------------------------------------
+            | BLOQUEAR CARTEIRA
+            |--------------------------------------------------------------------------
+            */
+            $carteira = Carteira::query()
+                ->where('conta_id', $contaId)
+                ->lockForUpdate()
+                ->first();
 
             if (!$carteira) {
                 throw new RuntimeException(
@@ -117,25 +131,62 @@ class CarteiraService
                 );
             }
 
+            /*
+            |--------------------------------------------------------------------------
+            | VALIDAR ESTADO
+            |--------------------------------------------------------------------------
+            */
             if ($carteira->estado !== 'ACTIVA') {
                 throw new RuntimeException(
                     'A carteira encontra-se bloqueada.'
                 );
             }
 
-            if ($carteira->saldo_sms < $quantidade) {
+            /*
+            |--------------------------------------------------------------------------
+            | VALIDAR SALDO
+            |--------------------------------------------------------------------------
+            */
+            if ((int) $carteira->saldo_sms < $quantidade) {
                 throw new RuntimeException(
                     'Saldo SMS insuficiente.'
                 );
             }
 
-            $saldoAnterior = $carteira->saldo_sms;
+            /*
+            |--------------------------------------------------------------------------
+            | CONSUMIR LOTES COMERCIAIS FIFO
+            |--------------------------------------------------------------------------
+            |
+            | Quando o débito pertence a uma SMS concreta, além de reduzir
+            | o saldo agregado da carteira, identificamos de quais lotes
+            | comerciais vieram os segmentos.
+            */
+            if ($smsId !== null) {
+                $this->loteSmsService->consumir(
+                    contaId: $contaId,
+                    smsId: $smsId,
+                    segmentos: $quantidade
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | DEBITAR SALDO AGREGADO
+            |--------------------------------------------------------------------------
+            */
+            $saldoAnterior = (int) $carteira->saldo_sms;
             $saldoPosterior = $saldoAnterior - $quantidade;
 
             $carteira->update([
                 'saldo_sms' => $saldoPosterior,
             ]);
 
+            /*
+            |--------------------------------------------------------------------------
+            | REGISTAR MOVIMENTO
+            |--------------------------------------------------------------------------
+            */
             return CarteiraMovimento::create([
                 'carteira_id' => $carteira->id,
                 'tipo' => 'DEBITO',

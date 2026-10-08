@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\TarifaSms;
+use App\Models\Conta;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\ValidationException;
@@ -108,5 +109,64 @@ class TarifaSmsService
             'preco_unitario' => $precoUnitario,
             'valor_total' => $valorTotal,
         ];
+    }
+
+    public function obterTarifaPosPago(Conta $conta): TarifaSms
+    {
+        if ($conta->tipo_cobranca !== 'POS_PAGO') {
+
+            throw new RuntimeException(
+                'A conta não é pós-paga.'
+            );
+        }
+
+        if (!$conta->tarifa_sms_id) {
+
+            throw new RuntimeException(
+                'A conta pós-paga não possui tarifa configurada.'
+            );
+        }
+
+        $tarifa = TarifaSms::query()
+            ->where('id', $conta->tarifa_sms_id)
+            ->where('activo', true)
+            ->where(function ($query) {
+                $query
+                    ->whereNull('data_inicio')
+                    ->orWhere(
+                        'data_inicio',
+                        '<=',
+                        now()->toDateString()
+                    );
+            })
+            ->where(function ($query) {
+                $query
+                    ->whereNull('data_fim')
+                    ->orWhere(
+                        'data_fim',
+                        '>=',
+                        now()->toDateString()
+                    );
+            })
+            ->first();
+
+        if (!$tarifa) {
+
+            throw new RuntimeException(
+                'A tarifa da conta pós-paga não está activa ou encontra-se fora da validade.'
+            );
+        }
+
+        /*
+        * Tarifa exclusiva.
+        */
+        if ($tarifa->conta_id !== null && (int) $tarifa->conta_id !== (int) $conta->id) {
+
+            throw new RuntimeException(
+                'A tarifa configurada não pertence a esta conta.'
+            );
+        }
+
+        return $tarifa;
     }
 }
