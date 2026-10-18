@@ -17,6 +17,7 @@ return new class extends Migration
             * Representa créditos SMS disponíveis.
             */
             $table->unsignedBigInteger('saldo_sms')->default(0);
+            $table->unsignedBigInteger('saldo_reservado_sms')->default(0);
             $table->enum('estado', ['ACTIVA','BLOQUEADA'])->default('ACTIVA');
             /*
             * PRE_PAGO:

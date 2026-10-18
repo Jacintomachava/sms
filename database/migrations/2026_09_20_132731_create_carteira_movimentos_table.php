@@ -26,6 +26,7 @@ return new class extends Migration
             $table->unsignedBigInteger('saldo_anterior');
             $table->unsignedBigInteger('saldo_posterior');
             $table->string('referencia', 100)->nullable();
+            $table->string('chave_idempotencia', 120)->unique();
             $table->string('descricao', 255)->nullable();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->json('metadata')->nullable();

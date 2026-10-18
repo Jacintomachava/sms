@@ -16,7 +16,7 @@ use Throwable;
 
 class PagamentoSmsService
 {
-    public function __construct(private MpesaService $mpesaService) {
+    public function __construct(private MpesaService $mpesaService, private ConfirmacaoPagamentoService $confirmacaoService) {
     }
 
     /**

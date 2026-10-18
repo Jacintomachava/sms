@@ -21,16 +21,16 @@ return new class extends Migration
             $table->foreignId('transacao_pagamento_id')->nullable()->constrained('transacoes_pagamento')->restrictOnDelete();
             $table->enum('tipo', ['COMPRA_SMS','FACTURA']);
             $table->enum('forma_pagamento', [
-                'MPESA',
-                'EMOLA',
-                'TRANSFERENCIA',
-                'DEPOSITO',
-                'ENTIDADE REFERENCIA'
+                    'MPESA',
+                    'CASH',
+                    'DEPOSITO',
+                    'TRANSFERENCIA',
             ]);
             $table->decimal('valor', 15, 2);
             $table->string('moeda', 3)->default('MZN');
             $table->string('referencia', 150)->nullable();
             $table->timestamp('pago_em');
+            $table->timestamp('paga_em')->nullable();
             $table->foreignId('confirmado_por')->nullable()->constrained('users')->nullOnDelete();
 
             $table->timestamps();

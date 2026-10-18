@@ -31,6 +31,7 @@ return new class extends Migration
             */
             $table->unsignedBigInteger('quantidade_sms');
             $table->unsignedBigInteger('quantidade_disponivel');
+            $table->unsignedBigInteger('quantidade_reservada')->default(0);
             /*
             |--------------------------------------------------------------------------
             | PREÇO DE VENDA

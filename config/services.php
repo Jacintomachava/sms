@@ -38,4 +38,30 @@ return [
         'service_provider_code' => env('MPESA_SERVICE_PROVIDER_CODE'),
     ],
 
+    'smpp' => [
+        'hosts' => array_values(array_filter(
+            array_map(
+                'trim',
+                explode(',', env('SMPP_HOSTS', '10.229.35.80'))
+            )
+        )),
+
+        'port' => (int) env('SMPP_PORT', 8014),
+
+        'system_id' => env('SMPP_SYSTEM_ID'),
+        'password' => env('SMPP_PASSWORD'),
+
+        'timeout' => (int) env('SMPP_TIMEOUT', 10),
+        'reconnect_delay' => (int) env('SMPP_RECONNECT_DELAY', 10),
+
+        'tps' => (int) env('SMPP_TPS', 20),
+
+        'window_size' => (int) env('SMPP_WINDOW_SIZE', 10),
+
+        'heartbeat_interval' => (int) env('SMPP_HEARTBEAT_INTERVAL', 30),
+
+        'heartbeat_timeout' => (int) env('SMPP_HEARTBEAT_TIMEOUT', 15),
+    ],
+
+  
 ];

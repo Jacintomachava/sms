@@ -13,11 +13,10 @@ return new class extends Migration
             $table->foreignId('conta_id')->constrained('contas')->restrictOnDelete();
             $table->foreignId('compra_sms_id')->nullable()->constrained('compras_sms')->restrictOnDelete();
             $table->enum('forma_pagamento', [
-                'MPESA',
-                'EMOLA',
-                'TRANSFERENCIA',
-                'DEPOSITO',
-                'ENTIDADE REFERENCIA'
+                    'MPESA',
+                    'CASH',
+                    'DEPOSITO',
+                    'TRANSFERENCIA',
             ]);
             $table->string('provider', 50)->nullable();
             $table->decimal('valor', 15, 2);
@@ -37,15 +36,25 @@ return new class extends Migration
             $table->enum('estado', [
                 'INICIADA',
                 'PROCESSANDO',
+                'AGUARDANDO_CONFIRMACAO',
+                'INCERTA',
                 'SUCESSO',
                 'FALHADA',
                 'CANCELADA',
-                'EXPIRADA'
+                'EXPIRADA',
             ])->default('INICIADA');
             $table->json('request_payload')->nullable();
             $table->json('response_payload')->nullable();
             $table->text('erro_tecnico')->nullable();
             $table->timestamp('processada_em')->nullable();
+            $table->string('referencia_externa', 150)->nullable();
+            $table->string('banco', 100)->nullable();
+            $table->timestamp('confirmada_em')->nullable();
+            $table->foreignId('confirmado_por')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedInteger('tentativas_consulta')->default(0);
+            $table->timestamp('ultima_consulta_em')->nullable();
+            $table->timestamp('proxima_consulta_em')->nullable();
+
             $table->timestamps();
 
             $table->unique('reference_id');

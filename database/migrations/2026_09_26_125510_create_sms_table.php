@@ -37,6 +37,7 @@ return new class extends Migration
             $table->enum('estado', [
                 'PENDENTE',
                 'PROCESSANDO',
+                'INCERTO',
                 'ENVIADO',
                 'ENTREGUE',
                 'FALHADO',
@@ -50,13 +51,27 @@ return new class extends Migration
             $table->timestamp('enviado_em')->nullable();
             $table->timestamp('entregue_em')->nullable();
             $table->timestamp('falhado_em')->nullable();
+
+            $table->unsignedInteger('smpp_sequence')->nullable();
+            $table->string('smpp_host', 45)->nullable();
+            $table->string('dlr_estado', 30)->nullable();
+            $table->string('dlr_codigo_erro', 100)->nullable();
+            $table->text('dlr_raw')->nullable();
+            $table->timestamp('dlr_recebido_em')->nullable();
+
             $table->foreignId('criado_por')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
             $table->index(['conta_id','estado']);
             $table->index(['conta_id','created_at']);
             $table->index('telefone');
+
             $table->index('provider_message_id');
+
+            $table->index(
+                ['provider', 'provider_message_id'],
+                'sms_provider_message_idx'
+            );
         });
     }
 

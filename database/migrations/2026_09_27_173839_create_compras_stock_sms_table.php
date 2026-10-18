@@ -18,6 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('quantidade_sms');
             // Quantidade que ainda existe neste lote
             $table->unsignedBigInteger('quantidade_disponivel');
+            $table->unsignedBigInteger('quantidade_reservada')->default(0);
             // Preço realmente pago por SMS/segmento
             $table->decimal('preco_unitario', 10, 4);
             $table->decimal('valor_total', 15, 2);
