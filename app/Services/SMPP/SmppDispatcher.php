@@ -4,7 +4,6 @@ namespace App\Services\SMPP;
 
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
-use Throwable;
 
 class SmppDispatcher
 {
@@ -20,100 +19,164 @@ class SmppDispatcher
 
     private int $lastActivityAt;
 
-    public function __construct(private readonly SmppConnectionManager $manager) {
-        
+    public function __construct(
+        private readonly SmppConnectionManager $manager,
+        private readonly SmppDlrService $dlrService,
+        private readonly SmppRespostaService $respostaService
+    ) {
         $this->lastActivityAt = time();
     }
 
     /**
-     * Processa uma PDU recebida do SMSC.
+     * Processa a próxima PDU recebida da Movitel.
      *
-     * $persistDlr deve guardar o relatório de forma
-     * durável antes de devolver o controlo.
+     * Retorna sem processamento quando ainda não existe
+     * uma PDU completa.
      */
-   public function processNext(callable $persistDlr, ?callable $processSubmitResponse = null): void {
-
+    public function processNext(): void
+    {
         $connection = $this->manager->getConnection();
 
-        try {
-            $pdu = $connection->readPdu();
+        $pdu = $connection->readPdu();
 
-            if ($pdu === null) {
-                return;
-            }
+        if ($pdu === null) {
+            return;
+        }
 
-            $this->lastActivityAt = time();
+        $this->lastActivityAt = time();
 
-            switch ($pdu['command_id']) {
+        $commandId = (int) $pdu['command_id'];
+        $sequence = (int) $pdu['sequence'];
 
-                case self::ENQUIRE_LINK:
-                    $connection->respondEnquireLink(
-                        $pdu['sequence']
-                    );
-                    break;
+        switch ($commandId) {
 
-                case self::ENQUIRE_LINK_RESP:
-                    unset(
-                        $this->pendingHeartbeats[
-                            $pdu['sequence']
-                        ]
-                    );
-                    break;
-
-                case self::DELIVER_SM:
-                    /*
-                     * O callback recebe a PDU completa.
-                     * Ele deve interpretar e persistir
-                     * o DLR de forma idempotente.
-                     */
-                    $persistDlr($pdu);
-
-                    $connection->respondDeliverSm(
-                        $pdu['sequence']
-                    );
-                    break;
-
-                case self::SUBMIT_SM_RESP:
-                        if ($processSubmitResponse !== null) {
-                            $processSubmitResponse($pdu);
-                        } else {
-                            $this->submitResponses[$pdu['sequence']] = $pdu;
-                        }
-                    break;
-
-                case self::UNBIND:
-                    $connection->respondUnbind(
-                        $pdu['sequence']
-                    );
-
-                    throw new RuntimeException(
-                        'SMSC solicitou encerramento da sessão.'
-                    );
-
-                default:
-                    Log::warning(
-                        'PDU SMPP não tratada',
-                        [
-                            'command_id' => sprintf(
-                                '0x%08X',
-                                $pdu['command_id']
-                            ),
-                            'sequence' => $pdu['sequence'],
-                        ]
-                    );
-                    break;
-            }
-
-        } catch (Throwable $e) {
             /*
-             * Nem toda falha deve ser tratada como
-             * falha de ligação.
-             *
-             * Uma falha de BD ao persistir um DLR
-             * exige tratamento separado, sem
-             * confirmar a recepção.
-             */
-            throw $e;
+            |--------------------------------------------------------------------------
+            | 1. HEARTBEAT RECEBIDO
+            |--------------------------------------------------------------------------
+            */
+            case self::ENQUIRE_LINK:
+
+                $connection->respondEnquireLink(
+                    $sequence
+                );
+
+                break;
+
+            /*
+            |--------------------------------------------------------------------------
+            | 2. RESPOSTA AO NOSSO HEARTBEAT
+            |--------------------------------------------------------------------------
+            */
+            case self::ENQUIRE_LINK_RESP:
+
+                unset(
+                    $this->pendingHeartbeats[$sequence]
+                );
+
+                break;
+
+            /*
+            |--------------------------------------------------------------------------
+            | 3. RELATÓRIO DE ENTREGA
+            |--------------------------------------------------------------------------
+            */
+            case self::DELIVER_SM:
+
+                /*
+                 * Primeiro persistimos o relatório.
+                 *
+                 * Se houver erro na base de dados,
+                 * a excepção interrompe o processamento
+                 * antes de responder à Movitel.
+                 */
+                $this->dlrService->processar(
+                    $pdu,
+                    $this->manager->activeHost()
+                );
+
+                /*
+                 * Só confirmamos depois de a persistência
+                 * terminar com sucesso.
+                 */
+                $connection->respondDeliverSm(
+                    $sequence
+                );
+
+                break;
+
+            /*
+            |--------------------------------------------------------------------------
+            | 4. RESPOSTA DE SUBMISSÃO
+            |--------------------------------------------------------------------------
+            */
+            case self::SUBMIT_SM_RESP:
+
+                $sessionId = $this->manager->sessionId();
+
+                if (!$sessionId) {
+                    throw new RuntimeException(
+                        'Sessão SMPP não identificada.'
+                    );
+                }
+
+                $messageId = $this->extractSubmitMessageId(
+                    $pdu
+                );
+
+                /*
+                 * Actualiza a tentativa SMPP e confirma
+                 * ou liberta as reservas financeiras.
+                 */
+                $this->respostaService->processar(
+                    sessionId: $sessionId,
+                    sequenceNumber: $sequence,
+                    commandStatus: (int) $pdu['status'],
+                    providerMessageId: $messageId
+                );
+
+                /*
+                 * Mantemos também a resposta em memória
+                 * para compatibilidade com takeSubmitResponse().
+                 */
+                $this->submitResponses[$sequence] = $pdu;
+
+                break;
+
+            /*
+            |--------------------------------------------------------------------------
+            | 5. MOVITEL SOLICITOU DESLIGAR
+            |--------------------------------------------------------------------------
+            */
+            case self::UNBIND:
+
+                $connection->respondUnbind(
+                    $sequence
+                );
+
+                throw new RuntimeException(
+                    'Movitel solicitou encerramento da sessão SMPP.'
+                );
+
+            /*
+            |--------------------------------------------------------------------------
+            | 6. OUTROS COMANDOS
+            |--------------------------------------------------------------------------
+            */
+            default:
+
+                Log::warning(
+                    'PDU SMPP não tratada',
+                    [
+                        'command_id' => sprintf(
+                            '0x%08X',
+                            $commandId
+                        ),
+                        'sequence' => $sequence,
+                    ]
+                );
+
+                break;
         }
     }
 
@@ -140,14 +203,13 @@ class SmppDispatcher
     }
 
     /**
-     * Detecta heartbeats sem resposta.
+     * Verifica heartbeats sem resposta.
      */
     public function assertHeartbeatHealthy(
         int $timeoutSeconds = 15
     ): void {
         foreach (
-            $this->pendingHeartbeats as
-            $sequence => $sentAt
+            $this->pendingHeartbeats as $sequence => $sentAt
         ) {
             if (
                 time() - $sentAt >= $timeoutSeconds
@@ -160,7 +222,7 @@ class SmppDispatcher
     }
 
     /**
-     * Obtém uma resposta de submissão já recebida.
+     * Obtém uma resposta SMPP recebida.
      */
     public function takeSubmitResponse(
         int $sequence
@@ -181,6 +243,9 @@ class SmppDispatcher
         return $response;
     }
 
+    /**
+     * Limpa os dados da sessão anterior.
+     */
     public function clearSessionState(): void
     {
         $this->pendingHeartbeats = [];
@@ -188,9 +253,13 @@ class SmppDispatcher
         $this->lastActivityAt = time();
     }
 
-    public function extractSubmitMessageId(array $pdu): ?string
-    {
-        if ((int) $pdu['status'] !== 0) {
+    /**
+     * Extrai o message_id de submit_sm_resp.
+     */
+    public function extractSubmitMessageId(
+        array $pdu
+    ): ?string {
+        if ((int) ($pdu['status'] ?? -1) !== 0) {
             return null;
         }
 
@@ -204,7 +273,11 @@ class SmppDispatcher
             );
         }
 
-        $messageId = substr($body, 0, $position);
+        $messageId = substr(
+            $body,
+            0,
+            $position
+        );
 
         if ($messageId === '') {
             throw new RuntimeException(

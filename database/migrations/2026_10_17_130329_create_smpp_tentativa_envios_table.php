@@ -57,6 +57,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('smpp_tentativa_envios');
+        Schema::dropIfExists('smpp_tentativa_envio');
     }
 };

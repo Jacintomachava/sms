@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Services\SMPP\SmppConnectionManager;
 use App\Services\SMPP\SmppDispatcher;
-use App\Services\SMPP\SmppRespostaService;
 use App\Services\SMPP\SmppRecuperacaoService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
@@ -16,21 +15,27 @@ class SmppWorker extends Command
 {
     protected $signature = 'smpp:worker {--diagnostico}';
 
-    protected $description = 'Worker persistente SMPP Movitel';
+    protected $description = 'Worker SMPP Movitel - INFORDATA SMS';
 
     public function handle(
         SmppConnectionManager $manager,
         SmppDispatcher $dispatcher,
-        SmppRespostaService $respostaService,
         SmppRecuperacaoService $recuperacaoService
     ): int {
 
         /*
         |--------------------------------------------------------------------------
-        | 1. DIAGNÓSTICO
+        | 1. MODO DIAGNÓSTICO
         |--------------------------------------------------------------------------
+        |
+        | Mantemos o diagnóstico sem processamento de SMS.
+        |
         */
         if ($this->option('diagnostico')) {
+
+            $this->info('INFORDATA SMS - Worker SMPP');
+            $this->line('----------------------------');
+
             $this->info(
                 'Modo diagnóstico. Nenhuma SMS será enviada.'
             );
@@ -40,11 +45,14 @@ class SmppWorker extends Command
 
         /*
         |--------------------------------------------------------------------------
-        | 2. BLOQUEIO EXCLUSIVO
+        | 2. BLOQUEIO EXCLUSIVO REDIS
         |--------------------------------------------------------------------------
         |
-        | O worker só mantém a sessão enquanto possuir o bloqueio.
-        | Nesta versão, o ciclo é limitado a 60 segundos.
+        | Impede dois workers desta aplicação de estabelecerem
+        | sessões SMPP simultaneamente.
+        |
+        | Esta versão executa apenas um ciclo limitado,
+        | ainda não é um daemon de produção.
         |
         */
         $lock = Cache::store('redis')->lock(
@@ -53,6 +61,7 @@ class SmppWorker extends Command
         );
 
         if (!$lock->get()) {
+
             $this->warn(
                 'Já existe um worker SMPP activo.'
             );
@@ -61,13 +70,14 @@ class SmppWorker extends Command
         }
 
         $sessionId = null;
-        $connectionFailed = false;
+        $sessaoEncerrada = false;
+        $resultado = self::FAILURE;
 
         try {
 
             /*
             |--------------------------------------------------------------------------
-            | 3. ESTABELECER SESSÃO
+            | 3. ESTABELECER LIGAÇÃO
             |--------------------------------------------------------------------------
             */
             $manager->getConnection();
@@ -80,109 +90,167 @@ class SmppWorker extends Command
                 );
             }
 
+            $dispatcher->clearSessionState();
+
             $this->info(
-                'Ligação SMPP estabelecida: ' .
-                $manager->activeHost()
+                'Sessão SMPP estabelecida.'
             );
+
+            $this->line(
+                'IP activo: ' . $manager->activeHost()
+            );
+
+            Log::info('Worker SMPP iniciado', [
+                'session_id' => $sessionId,
+                'host' => $manager->activeHost(),
+                'worker_id' => $manager->workerId(),
+            ]);
 
             /*
             |--------------------------------------------------------------------------
             | 4. CICLO DE RECEPÇÃO
             |--------------------------------------------------------------------------
+            |
+            | O dispatcher agora processa directamente:
+            |
+            | - enquire_link
+            | - enquire_link_resp
+            | - submit_sm_resp
+            | - deliver_sm
+            | - unbind
+            |
+            | Não precisamos de callbacks aqui.
+            |
             */
             $deadline = microtime(true) + 60;
 
             while (microtime(true) < $deadline) {
 
-                $dispatcher->processNext(
-                    persistDlr: function (array $pdu) {
-                        Log::info(
-                            'DLR SMPP recebido; persistência pendente',
-                            [
-                                'sequence' => $pdu['sequence'] ?? null,
-                            ]
-                        );
-                    },
+                /*
+                 * Ler e processar a próxima PDU.
+                 *
+                 * readPdu() devolve null quando ainda
+                 * não existe uma PDU completa.
+                 */
+                $dispatcher->processNext();
 
-                    processSubmitResponse: function (array $pdu) use (
-                        $manager,
-                        $dispatcher,
-                        $respostaService
-                    ) {
-
-                        $sessionId = $manager->sessionId();
-
-                        if (!$sessionId) {
-                            throw new RuntimeException(
-                                'Sessão SMPP não identificada.'
-                            );
-                        }
-
-                        $messageId =
-                            $dispatcher->extractSubmitMessageId($pdu);
-
-                        $respostaService->processar(
-                            sessionId: $sessionId,
-                            sequenceNumber: (int) $pdu['sequence'],
-                            commandStatus: (int) $pdu['status'],
-                            providerMessageId: $messageId
-                        );
-                    }
-                );
-
+                /*
+                 * Manter a sessão activa.
+                 */
                 $dispatcher->heartbeatIfNeeded();
+
+                /*
+                 * Detectar heartbeats sem resposta.
+                 */
                 $dispatcher->assertHeartbeatHealthy();
             }
 
-            return self::SUCCESS;
+            /*
+            |--------------------------------------------------------------------------
+            | 5. TERMINAR CICLO
+            |--------------------------------------------------------------------------
+            */
+            $this->info(
+                'Ciclo SMPP terminado.'
+            );
+
+            $resultado = self::SUCCESS;
 
         } catch (Throwable $e) {
 
-            $this->error($e->getMessage());
+            $this->error(
+                'Erro no worker SMPP: ' . $e->getMessage()
+            );
 
             Log::error('Erro no worker SMPP', [
-                'erro' => $e->getMessage(),
                 'session_id' => $sessionId,
+                'erro' => $e->getMessage(),
+                'exception' => get_class($e),
             ]);
 
-            /*
-            |--------------------------------------------------------------------------
-            | IMPORTANTE
-            |--------------------------------------------------------------------------
-            |
-            | Não presumimos que toda excepção seja uma falha de rede.
-            | A classificação será adicionada na próxima etapa.
-            |
-            */
-            $connectionFailed = false;
-
-            return self::FAILURE;
+            $resultado = self::FAILURE;
 
         } finally {
 
+            /*
+            |--------------------------------------------------------------------------
+            | 6. ENCERRAR SESSÃO
+            |--------------------------------------------------------------------------
+            */
             try {
+
                 $manager->disconnect();
+
+                $sessaoEncerrada = true;
+
             } catch (Throwable $e) {
+
                 Log::error(
-                    'Falha ao desligar SMPP',
-                    ['erro' => $e->getMessage()]
+                    'Falha ao encerrar sessão SMPP',
+                    [
+                        'session_id' => $sessionId,
+                        'erro' => $e->getMessage(),
+                    ]
                 );
             }
 
-            if ($connectionFailed && $sessionId) {
+            /*
+            |--------------------------------------------------------------------------
+            | 7. RECUPERAR TENTATIVAS SEM RESPOSTA
+            |--------------------------------------------------------------------------
+            |
+            | Apenas depois de encerrar a sessão.
+            |
+            | Não libertamos créditos nem reenviamos SMS.
+            |
+            */
+            if ($sessaoEncerrada && $sessionId) {
+
                 try {
+
                     $recuperacaoService->recuperarSessao(
                         $sessionId
                     );
+
                 } catch (Throwable $e) {
+
                     Log::error(
-                        'Falha ao recuperar sessão SMPP',
-                        ['erro' => $e->getMessage()]
+                        'Falha na recuperação SMPP',
+                        [
+                            'session_id' => $sessionId,
+                            'erro' => $e->getMessage(),
+                        ]
                     );
                 }
             }
 
-            $lock->release();
+            /*
+            |--------------------------------------------------------------------------
+            | 8. LIMPAR ESTADO DO DISPATCHER
+            |--------------------------------------------------------------------------
+            */
+            $dispatcher->clearSessionState();
+
+            /*
+            |--------------------------------------------------------------------------
+            | 9. LIBERTAR BLOQUEIO REDIS
+            |--------------------------------------------------------------------------
+            */
+            try {
+
+                $lock->release();
+
+            } catch (Throwable $e) {
+
+                Log::error(
+                    'Falha ao libertar bloqueio Redis SMPP',
+                    [
+                        'erro' => $e->getMessage(),
+                    ]
+                );
+            }
         }
+
+        return $resultado;
     }
 }
