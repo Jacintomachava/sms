@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use App\Services\SMPP\SmppConnectionManager;
 use App\Services\SMPP\SmppDispatcher;
+use App\Services\SMPP\SmppEnvioService;
+use App\Services\SMPP\SmppRateLimiter;
 use App\Services\SMPP\SmppRecuperacaoService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
@@ -13,15 +15,73 @@ use Throwable;
 
 class SmppWorker extends Command
 {
-    protected $signature = 'smpp:worker {--diagnostico}';
+  
+    protected $signature = 'smpp:worker {--diagnostico} {--simular-envio}';
 
     protected $description = 'Worker SMPP Movitel - INFORDATA SMS';
 
     public function handle(
         SmppConnectionManager $manager,
         SmppDispatcher $dispatcher,
-        SmppRecuperacaoService $recuperacaoService
+        SmppRecuperacaoService $recuperacaoService,
+        SmppEnvioService $envioService,
+        SmppRateLimiter $rateLimiter
     ): int {
+
+        /*
+        |--------------------------------------------------------------------------
+        | SIMULAÇÃO DE ENVIO
+        |--------------------------------------------------------------------------
+        |
+        | Não estabelece ligação SMPP.
+        | Não altera SMS, reservas ou tentativas.
+        | Não consome TPS.
+        |
+        */
+        if ($this->option('simular-envio')) {
+
+            $this->info('INFORDATA SMS - Simulação de envio');
+            $this->line('----------------------------------');
+
+            $sms = $envioService->proximaSms();
+
+            if (!$sms) {
+                $this->info('Nenhuma SMS elegível encontrada.');
+
+                return self::SUCCESS;
+            }
+
+            try {
+                $envioService->preparar((int) $sms->id);
+
+                $this->info('SMS validada para preparação.');
+
+                $this->table(
+                    ['Campo', 'Valor'],
+                    [
+                        ['SMS ID', $sms->id],
+                        ['Conta ID', $sms->conta_id],
+                        ['Telefone', $sms->telefone],
+                        ['Segmentos', $sms->segmentos],
+                        ['Estado', $sms->estado],
+                    ]
+                );
+
+                $this->warn(
+                    'Simulação concluída. Nenhuma SMS foi enviada.'
+                );
+
+                return self::SUCCESS;
+
+            } catch (Throwable $e) {
+
+                $this->error(
+                    'SMS não elegível: ' . $e->getMessage()
+                );
+
+                return self::FAILURE;
+            }
+        }
 
         /*
         |--------------------------------------------------------------------------
