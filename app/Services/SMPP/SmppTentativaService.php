@@ -94,16 +94,16 @@ class SmppTentativaService
                 'worker_id' => $workerId,
                 'session_id' => $sessionId,
                 'sequence_number' => $sequenceNumber,
-                'estado' => 'SUBMETENDO',
+                'estado' => 'PREPARADA',
                 'iniciada_em' => now(),
             ]);
 
-            DB::table('sms')
+            /*DB::table('sms')
                 ->where('id', $smsId)
                 ->update([
                     'estado' => 'PROCESSANDO',
                     'updated_at' => now(),
-                ]);
+                ]);  */
 
             return $tentativa;
 

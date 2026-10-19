@@ -112,4 +112,38 @@ class SmppEnvioService
 
         return $sms;
     }
+
+    /**
+     * Regista uma tentativa SMPP sem transmitir a SMS.
+     *
+     * A preparação é persistida na base de dados.
+     */
+    public function prepararTentativa(
+        int $smsId,
+        string $sessionId,
+        int $sequenceNumber,
+        string $host,
+        int $porta,
+        string $workerId,
+        SmppTentativaService $tentativaService
+    ): int {
+        /*
+        * Validação preliminar.
+        * O estado e as reservas devem ser revalidados
+        * sob bloqueio antes de iniciar a transmissão.
+        */
+        $sms = $this->preparar($smsId);
+
+        $tentativa = $tentativaService->preparar(
+            smsId: $sms->id,
+            sessionId: $sessionId,
+            sequenceNumber: $sequenceNumber,
+            host: $host,
+            porta: $porta,
+            workerId: $workerId
+        );
+
+        return (int) $tentativa->id;
+    }
+
 }
