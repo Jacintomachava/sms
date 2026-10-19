@@ -10,44 +10,80 @@ use RuntimeException;
 
 class CarteiraService
 {
-    public function __construct(
-        private CarteiraLoteSmsService $loteSmsService
-    ) {
+    /**
+     * Consultar os saldos de uma carteira.
+     */
+    public function consultarSaldo(int $contaId): array
+    {
+        $carteira = Carteira::query()
+            ->where('conta_id', $contaId)
+            ->firstOrFail();
+
+        $saldo = (int) $carteira->saldo_sms;
+        $reservado = (int) $carteira->saldo_reservado_sms;
+
+        return [
+            'conta_id' => $contaId,
+            'carteira_id' => $carteira->id,
+            'saldo_sms' => $saldo,
+            'saldo_reservado_sms' => $reservado,
+            'saldo_livre_sms' => max(
+                0,
+                $saldo - $reservado
+            ),
+        ];
     }
 
     /**
-     * Creditar valor na carteira.
+     * Creditar SMS na carteira.
+     *
+     * IMPORTANTE:
+     * Este método altera apenas a carteira e
+     * regista o movimento.
+     *
+     * Para uma compra de SMS, a criação do lote
+     * comercial deve ocorrer na mesma transacção
+     * que chama este método.
      */
-    public function creditar(int $carteiraId, float $valor, string $origem, ?string $referencia = null, ?string $descricao = null, ?int $userId = null, ?array $metadata = null): CarteiraMovimento {
+    public function creditar(
+        int $carteiraId,
+        int $quantidade,
+        string $origem,
+        ?string $referencia = null,
+        ?string $descricao = null,
+        ?int $userId = null,
+        ?array $metadata = null
+    ): CarteiraMovimento {
 
-        if ($valor <= 0) {
+        if ($quantidade <= 0) {
             throw new InvalidArgumentException(
-                'O valor do crédito deve ser superior a zero.'
+                'A quantidade de SMS deve ser superior a zero.'
             );
         }
 
         return DB::transaction(function () use (
             $carteiraId,
-            $valor,
+            $quantidade,
             $origem,
             $referencia,
             $descricao,
             $userId,
             $metadata
         ) {
-            /*
-            |--------------------------------------------------------------------------
-            | BLOQUEAR CARTEIRA
-            |--------------------------------------------------------------------------
-            |
-            | lockForUpdate impede duas operações simultâneas
-            | de alterarem o mesmo saldo.
-            */
-            $carteira = Carteira::query()->where('id', $carteiraId)->lockForUpdate()->firstOrFail();
 
             /*
             |--------------------------------------------------------------------------
-            | VERIFICAR ESTADO
+            | 1. BLOQUEAR CARTEIRA
+            |--------------------------------------------------------------------------
+            */
+            $carteira = Carteira::query()
+                ->whereKey($carteiraId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            /*
+            |--------------------------------------------------------------------------
+            | 2. VALIDAR ESTADO
             |--------------------------------------------------------------------------
             */
             if ($carteira->estado !== 'ACTIVA') {
@@ -58,138 +94,33 @@ class CarteiraService
 
             /*
             |--------------------------------------------------------------------------
-            | SALDOS
+            | 3. ACTUALIZAR SALDO
             |--------------------------------------------------------------------------
             */
-            $saldoAnterior = (float) $carteira->saldo;
-            $saldoPosterior = round($saldoAnterior + $valor, 2);
+            $saldoAnterior = (int) $carteira->saldo_sms;
 
-            /*
-            |--------------------------------------------------------------------------
-            | ACTUALIZAR CARTEIRA
-            |--------------------------------------------------------------------------
-            */
-            $carteira->saldo = $saldoPosterior;
+            if (
+                $quantidade >
+                PHP_INT_MAX - $saldoAnterior
+            ) {
+                throw new RuntimeException(
+                    'O crédito ultrapassa o limite permitido.'
+                );
+            }
+
+            $saldoPosterior = $saldoAnterior + $quantidade;
+
+            $carteira->saldo_sms = $saldoPosterior;
             $carteira->save();
 
             /*
             |--------------------------------------------------------------------------
-            | REGISTAR MOVIMENTO
+            | 4. REGISTAR MOVIMENTO
             |--------------------------------------------------------------------------
             */
             return CarteiraMovimento::create([
                 'carteira_id' => $carteira->id,
                 'tipo' => 'CREDITO',
-                'origem' => $origem,
-                'valor' => $valor,
-                'saldo_anterior' => $saldoAnterior,
-                'saldo_posterior' => $saldoPosterior,
-                'referencia' => $referencia,
-                'descricao' => $descricao,
-                'user_id' => $userId,
-                'metadata' => $metadata,
-            ]);
-        });
-    }
-
-
-    /**
-     * Debitar valor da carteira.
-     */
-    public function debitarSms(int $contaId, int $quantidade, string $origem, ?string $referencia = null, ?string $descricao = null, ?int $userId = null, array $metadata = [], ?int $smsId = null): CarteiraMovimento {
-
-        if ($quantidade <= 0) {
-            throw new RuntimeException(
-                'A quantidade de SMS deve ser superior a zero.'
-            );
-        }
-
-        return DB::transaction(function () use (
-            $contaId,
-            $quantidade,
-            $origem,
-            $referencia,
-            $descricao,
-            $userId,
-            $metadata,
-            $smsId
-        ) {
-
-            /*
-            |--------------------------------------------------------------------------
-            | BLOQUEAR CARTEIRA
-            |--------------------------------------------------------------------------
-            */
-            $carteira = Carteira::query()
-                ->where('conta_id', $contaId)
-                ->lockForUpdate()
-                ->first();
-
-            if (!$carteira) {
-                throw new RuntimeException(
-                    'Carteira não encontrada.'
-                );
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | VALIDAR ESTADO
-            |--------------------------------------------------------------------------
-            */
-            if ($carteira->estado !== 'ACTIVA') {
-                throw new RuntimeException(
-                    'A carteira encontra-se bloqueada.'
-                );
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | VALIDAR SALDO
-            |--------------------------------------------------------------------------
-            */
-            if ((int) $carteira->saldo_sms < $quantidade) {
-                throw new RuntimeException(
-                    'Saldo SMS insuficiente.'
-                );
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | CONSUMIR LOTES COMERCIAIS FIFO
-            |--------------------------------------------------------------------------
-            |
-            | Quando o débito pertence a uma SMS concreta, além de reduzir
-            | o saldo agregado da carteira, identificamos de quais lotes
-            | comerciais vieram os segmentos.
-            */
-            if ($smsId !== null) {
-                $this->loteSmsService->consumir(
-                    contaId: $contaId,
-                    smsId: $smsId,
-                    segmentos: $quantidade
-                );
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | DEBITAR SALDO AGREGADO
-            |--------------------------------------------------------------------------
-            */
-            $saldoAnterior = (int) $carteira->saldo_sms;
-            $saldoPosterior = $saldoAnterior - $quantidade;
-
-            $carteira->update([
-                'saldo_sms' => $saldoPosterior,
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | REGISTAR MOVIMENTO
-            |--------------------------------------------------------------------------
-            */
-            return CarteiraMovimento::create([
-                'carteira_id' => $carteira->id,
-                'tipo' => 'DEBITO',
                 'origem' => $origem,
                 'quantidade_sms' => $quantidade,
                 'saldo_anterior' => $saldoAnterior,
@@ -199,6 +130,36 @@ class CarteiraService
                 'user_id' => $userId,
                 'metadata' => $metadata,
             ]);
-        });
+
+        }, 3);
+    }
+
+    /**
+     * Débito directo desactivado.
+     *
+     * O consumo financeiro de SMS deve ser feito
+     * exclusivamente pelo SmsConfirmacaoService.
+     *
+     * Mantemos a assinatura do método para
+     * identificar chamadas antigas e evitar
+     * débitos que contornem as reservas.
+     */
+    public function debitarSms(
+        int $contaId,
+        int $quantidade,
+        string $origem,
+        ?string $referencia = null,
+        ?string $descricao = null,
+        ?int $userId = null,
+        array $metadata = [],
+        ?int $smsId = null
+    ): CarteiraMovimento {
+
+        throw new RuntimeException(
+            'Débito directo de SMS desactivado. ' .
+            'Utilize SmsReservaService para reservar ' .
+            'e SmsConfirmacaoService para confirmar ' .
+            'o consumo após a aceitação SMPP.'
+        );
     }
 }

@@ -3,117 +3,141 @@
 namespace App\Services;
 
 use App\Models\CarteiraLoteSms;
-use App\Models\SmsConsumoCredito;
+use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 use RuntimeException;
 
 class CarteiraLoteSmsService
 {
-    public function consumir(int $contaId, int $smsId, int $segmentos): array {
-
-        if ($segmentos <= 0) {
-            throw new RuntimeException(
-                'Quantidade de segmentos inválida.'
-            );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | IDEMPOTÊNCIA
-        |--------------------------------------------------------------------------
-        */
-        if (SmsConsumoCredito::query()->where('sms_id', $smsId)->exists()) {
-            
-            throw new RuntimeException(
-                'Os créditos desta SMS já foram consumidos.'
-            );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | LOTES FIFO DA CONTA
-        |--------------------------------------------------------------------------
-        */
+    /**
+     * Consultar os créditos comerciais disponíveis
+     * de uma conta.
+     *
+     * O saldo livre é:
+     *
+     * quantidade_disponivel - quantidade_reservada
+     */
+    public function saldoLivre(int $contaId): int
+    {
         $lotes = CarteiraLoteSms::query()
             ->where('conta_id', $contaId)
             ->where('estado', 'ACTIVO')
-            ->where('quantidade_disponivel', '>', 0)
+            ->get([
+                'quantidade_disponivel',
+                'quantidade_reservada',
+            ]);
+
+        return $lotes->sum(function ($lote) {
+            return max(
+                0,
+                (int) $lote->quantidade_disponivel
+                - (int) $lote->quantidade_reservada
+            );
+        });
+    }
+
+    /**
+     * Consultar lotes comerciais activos
+     * por ordem FIFO.
+     */
+    public function listarLotesDisponiveis(int $contaId)
+    {
+        return CarteiraLoteSms::query()
+            ->where('conta_id', $contaId)
+            ->where('estado', 'ACTIVO')
+            ->whereRaw(
+                'quantidade_disponivel > quantidade_reservada'
+            )
             ->orderBy('creditado_em')
             ->orderBy('id')
-            ->lockForUpdate()
             ->get();
+    }
 
-        $disponivel = (int) $lotes->sum('quantidade_disponivel');
-
-        if ($disponivel < $segmentos) {
-            throw new RuntimeException(
-                'Saldo de lotes SMS insuficiente.'
+    /**
+     * Validar se a conta possui créditos livres
+     * suficientes para uma determinada quantidade
+     * de segmentos SMS.
+     *
+     * Esta consulta é informativa.
+     * A reserva efectiva deve ser feita pelo
+     * SmsReservaService dentro de uma transacção.
+     */
+    public function validarSaldo(
+        int $contaId,
+        int $segmentos
+    ): void {
+        if ($segmentos <= 0) {
+            throw new InvalidArgumentException(
+                'A quantidade de segmentos deve ser superior a zero.'
             );
         }
 
-        $restante = $segmentos;
-        $valorTotal = '0.0000';
-        $alocacoes = [];
+        $saldoLivre = $this->saldoLivre($contaId);
 
-        foreach ($lotes as $lote) {
+        if ($saldoLivre < $segmentos) {
+            throw new RuntimeException(
+                "Saldo de lotes SMS insuficiente. " .
+                "Disponível: {$saldoLivre}; " .
+                "Necessário: {$segmentos}."
+            );
+        }
+    }
 
-            if ($restante <= 0) {
-                break;
-            }
-
-            $saldoAnterior = (int) $lote->quantidade_disponivel;
-            $consumir = min($saldoAnterior, $restante);
-            $saldoPosterior = $saldoAnterior - $consumir;
-
-            /*
-            |--------------------------------------------------------------------------
-            | RECEITA DESTE PEDAÇO
-            |--------------------------------------------------------------------------
-            */
-            $valor = bcmul( (string) $consumir, (string) $lote->preco_venda_unitario, 4);
-
-            /*
-            |--------------------------------------------------------------------------
-            | ACTUALIZAR LOTE
-            |--------------------------------------------------------------------------
-            */
-            $lote->quantidade_disponivel = $saldoPosterior;
-
-            if ($saldoPosterior === 0) {
-                $lote->estado = 'ESGOTADO';
-            }
-
-            $lote->save();
-
-            /*
-            |--------------------------------------------------------------------------
-            | RASTREABILIDADE DA SMS
-            |--------------------------------------------------------------------------
-            */
-            SmsConsumoCredito::create([
-                'sms_id' => $smsId,
-                'carteira_lote_sms_id' => $lote->id,
-                'segmentos' => $consumir,
-                'preco_venda_unitario' => $lote->preco_venda_unitario,
-                'valor_total' => $valor,
+    /**
+     * Consultar o resumo dos lotes comerciais
+     * de uma conta.
+     */
+    public function resumo(int $contaId): array
+    {
+        $lotes = CarteiraLoteSms::query()
+            ->where('conta_id', $contaId)
+            ->get([
+                'quantidade_disponivel',
+                'quantidade_reservada',
             ]);
 
-            $valorTotal = bcadd($valorTotal, $valor, 4);
+        $disponivel = (int) $lotes->sum(
+            'quantidade_disponivel'
+        );
 
-            $alocacoes[] = [
-                'lote_id' => $lote->id,
-                'segmentos' => $consumir,
-                'preco_venda_unitario' => (string) $lote->preco_venda_unitario,
-                'valor_total' => $valor,
-            ];
-
-            $restante -= $consumir;
-        }
+        $reservado = (int) $lotes->sum(
+            'quantidade_reservada'
+        );
 
         return [
-            'sms_id' => $smsId,
-            'segmentos' => $segmentos,
-            'valor_total' => $valorTotal,
-            'alocacoes' => $alocacoes,
+            'conta_id' => $contaId,
+            'saldo_sms' => $disponivel,
+            'saldo_reservado_sms' => $reservado,
+            'saldo_livre_sms' => max(
+                0,
+                $disponivel - $reservado
+            ),
         ];
+    }
+
+    /**
+     * Método antigo de consumo directo.
+     *
+     * Mantido para detectar chamadas antigas
+     * que ainda não foram migradas.
+     *
+     * No novo fluxo:
+     *
+     * 1. SmsReservaService reserva créditos.
+     * 2. A SMS é submetida à Movitel.
+     * 3. SmsConfirmacaoService consome reservas
+     *    quando submit_sm_resp indica aceitação.
+     */
+    public function consumir(
+        int $contaId,
+        int $smsId,
+        int $segmentos
+    ): array {
+        throw new RuntimeException(
+            'Consumo directo de créditos desactivado. ' .
+            'O consumo deve ser realizado através ' .
+            'do SmsConfirmacaoService após a ' .
+            'confirmação SMPP.'
+        );
     }
 }
