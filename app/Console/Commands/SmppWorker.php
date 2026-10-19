@@ -16,7 +16,7 @@ use Throwable;
 class SmppWorker extends Command
 {
   
-    protected $signature = 'smpp:worker {--diagnostico} {--simular-envio}';
+    protected $signature = 'smpp:worker-teste {--diagnostico} {--simular-envio}';
 
     protected $description = 'Worker SMPP Movitel - INFORDATA SMS';
 
