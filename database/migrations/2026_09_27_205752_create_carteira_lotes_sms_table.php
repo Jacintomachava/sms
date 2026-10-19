@@ -99,6 +99,11 @@ return new class extends Migration
                 'created_at',
                 'creditado_em'
             ]);
+
+            $table->unique(
+                'compra_sms_id',
+                'carteira_lotes_compra_unique'
+            );
         });
     }
 

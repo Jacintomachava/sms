@@ -17,9 +17,10 @@ class CompraSmsService
     }
 
     /**
-     * Criar uma compra pendente.
+     * Criar uma compra de créditos SMS.
      *
-     * Não credita a carteira.
+     * A compra fica PENDENTE.
+     * Nenhum crédito é disponibilizado nesta fase.
      */
     public function criar(
         int $contaId,
@@ -29,7 +30,8 @@ class CompraSmsService
 
         if ($quantidade <= 0) {
             throw ValidationException::withMessages([
-                'quantidade' => 'A quantidade deve ser superior a zero.',
+                'quantidade' =>
+                    'A quantidade de SMS deve ser superior a zero.',
             ]);
         }
 
@@ -38,7 +40,7 @@ class CompraSmsService
         if ($conta->tipo_cobranca !== 'PRE_PAGO') {
             throw ValidationException::withMessages([
                 'quantidade' =>
-                    'A compra de créditos está disponível apenas para contas pré-pagas.',
+                    'A compra de créditos SMS está disponível apenas para contas pré-pagas.',
             ]);
         }
 
@@ -60,13 +62,11 @@ class CompraSmsService
     }
 
     /**
-     * Confirmar uma compra e disponibilizar os créditos.
+     * Confirmar pagamento e creditar SMS.
      *
-     * Chamar apenas após confirmação de pagamento
-     * ou aprovação administrativa autorizada.
-     *
-     * O bloqueio da compra impede duas confirmações
-     * simultâneas de criarem créditos duplicados.
+     * IMPORTANTE:
+     * Chamar apenas após confirmação efectiva
+     * do pagamento ou aprovação administrativa.
      */
     public function confirmarPagamento(
         int $compraId,
@@ -74,9 +74,14 @@ class CompraSmsService
         ?int $userId = null
     ): CompraSms {
 
-        if (trim($referenciaPagamento) === '') {
+        $referenciaPagamento = trim($referenciaPagamento);
+
+        if (
+            $referenciaPagamento === '' ||
+            strlen($referenciaPagamento) > 100
+        ) {
             throw new RuntimeException(
-                'A referência do pagamento é obrigatória.'
+                'Referência de pagamento inválida.'
             );
         }
 
@@ -101,7 +106,21 @@ class CompraSmsService
             | 2. IDEMPOTÊNCIA
             |--------------------------------------------------------------------------
             */
-            if ($compra->estado === 'PAGO') {
+            if ($compra->estado === 'PAGA') {
+
+                $lote = DB::table('carteira_lotes_sms')
+                    ->where('compra_sms_id', $compra->id)
+                    ->first();
+
+                if (
+                    !$lote ||
+                    $lote->referencia !== $referenciaPagamento
+                ) {
+                    throw new RuntimeException(
+                        'Compra já confirmada com outra referência ou sem lote válido.'
+                    );
+                }
+
                 return $compra;
             }
 
@@ -113,7 +132,35 @@ class CompraSmsService
 
             /*
             |--------------------------------------------------------------------------
-            | 3. BLOQUEAR CARTEIRA
+            | 3. VALIDAR QUANTIDADE
+            |--------------------------------------------------------------------------
+            */
+            $quantidade = (int) $compra->quantidade_sms;
+
+            if ($quantidade <= 0) {
+                throw new RuntimeException(
+                    'Quantidade de SMS inválida.'
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | 4. VERIFICAR DUPLICAÇÃO
+            |--------------------------------------------------------------------------
+            */
+            $loteExistente = DB::table('carteira_lotes_sms')
+                ->where('compra_sms_id', $compra->id)
+                ->exists();
+
+            if ($loteExistente) {
+                throw new RuntimeException(
+                    'Esta compra já possui um lote comercial.'
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | 5. BLOQUEAR CARTEIRA
             |--------------------------------------------------------------------------
             */
             $carteira = Carteira::query()
@@ -135,25 +182,8 @@ class CompraSmsService
 
             /*
             |--------------------------------------------------------------------------
-            | 4. VALIDAR QUANTIDADE
+            | 6. CRIAR LOTE COMERCIAL
             |--------------------------------------------------------------------------
-            */
-            $quantidade = (int) $compra->quantidade_sms;
-
-            if ($quantidade <= 0) {
-                throw new RuntimeException(
-                    'Quantidade de SMS inválida.'
-                );
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | 5. CRIAR LOTE COMERCIAL
-            |--------------------------------------------------------------------------
-            |
-            | Utilizamos os valores gravados na compra,
-            | sem recalcular a tarifa.
-            |
             */
             DB::table('carteira_lotes_sms')->insert([
                 'conta_id' => $compra->conta_id,
@@ -175,14 +205,14 @@ class CompraSmsService
 
             /*
             |--------------------------------------------------------------------------
-            | 6. CREDITAR CARTEIRA
+            | 7. CREDITAR CARTEIRA
             |--------------------------------------------------------------------------
             */
             $saldoAnterior = (int) $carteira->saldo_sms;
 
             if ($quantidade > PHP_INT_MAX - $saldoAnterior) {
                 throw new RuntimeException(
-                    'O crédito ultrapassa o limite permitido.'
+                    'Quantidade ultrapassa o limite permitido.'
                 );
             }
 
@@ -193,19 +223,20 @@ class CompraSmsService
 
             /*
             |--------------------------------------------------------------------------
-            | 7. REGISTAR MOVIMENTO
+            | 8. REGISTAR MOVIMENTO
             |--------------------------------------------------------------------------
             */
             DB::table('carteira_movimentos')->insert([
                 'carteira_id' => $carteira->id,
                 'tipo' => 'CREDITO',
-                'origem' => 'COMPRA_SMS',
+                'origem' => 'COMPRA',
                 'quantidade_sms' => $quantidade,
                 'saldo_anterior' => $saldoAnterior,
                 'saldo_posterior' => $saldoPosterior,
                 'referencia' => $referenciaPagamento,
-                'chave_idempotencia' => 'COMPRA_SMS:' . $compra->id,
-                'descricao' => 'Crédito de SMS da compra #' . $compra->id,
+                'chave_idempotencia' => 'COMPRA:' . $compra->id,
+                'descricao' =>
+                    'Crédito da compra SMS #' . $compra->id,
                 'user_id' => $userId,
                 'metadata' => json_encode([
                     'compra_sms_id' => $compra->id,
@@ -217,10 +248,11 @@ class CompraSmsService
 
             /*
             |--------------------------------------------------------------------------
-            | 8. CONFIRMAR COMPRA
+            | 9. CONFIRMAR COMPRA
             |--------------------------------------------------------------------------
             */
-            $compra->estado = 'PAGO';
+            $compra->estado = 'PAGA';
+            $compra->creditada_em = now();
             $compra->save();
 
             return $compra;
