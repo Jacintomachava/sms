@@ -90,10 +90,7 @@ class SmppWorker extends Command
         | ainda não é um daemon de produção.
         |
         */
-        $lock = Cache::store('redis')->lock(
-            'smpp:movitel:worker',
-            120
-        );
+        $lock = Cache::store('redis')->lock('smpp:movitel:worker', 120);
 
         if (!$lock->get()) {
 
