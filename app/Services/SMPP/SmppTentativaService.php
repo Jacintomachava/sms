@@ -109,4 +109,75 @@ class SmppTentativaService
 
         }, 3);
     }
+
+    /**
+     * Autoriza a passagem de PREPARADA para SUBMETENDO.
+     *
+     * Não transmite a PDU à operadora.
+     *
+     * ATENÇÃO:
+     * Chamar apenas no fluxo real de transmissão,
+     * imediatamente antes de sendPreparedSubmit().
+     */
+    public function iniciarSubmissao(int $tentativaId): void
+    {
+        DB::transaction(function () use ($tentativaId) {
+
+            $referencia = SmppTentativaEnvio::query()
+                ->findOrFail($tentativaId);
+
+            // Manter a ordem de bloqueio SMS -> tentativa.
+            $sms = DB::table('sms')
+                ->where('id', $referencia->sms_id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$sms) {
+                throw new RuntimeException(
+                    'SMS associada à tentativa não encontrada.'
+                );
+            }
+
+            $tentativa = SmppTentativaEnvio::query()
+                ->whereKey($tentativaId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ((int) $tentativa->sms_id !== (int) $sms->id || $tentativa->estado !== 'PREPARADA' || $sms->estado !== 'PENDENTE') {
+                throw new RuntimeException(
+                    'Tentativa ou SMS em estado incompatível.'
+                );
+            }
+
+            // Não iniciar sem reservas válidas.
+            $reservas = DB::table('sms_reservas')
+                ->where('sms_id', $sms->id)
+                ->where('estado', 'RESERVADA')
+                ->selectRaw('tipo, SUM(quantidade) AS total')
+                ->groupBy('tipo')
+                ->pluck('total', 'tipo');
+
+            $segmentos = (int) $sms->segmentos;
+
+            if ($segmentos !== 1 || $sms->custeado_por !== 'CLIENTE' || (int) ($reservas['CLIENTE'] ?? 0) !== $segmentos || (int) ($reservas['STOCK'] ?? 0) !== $segmentos) {
+                throw new RuntimeException(
+                    'Reservas ou financiamento incompatíveis.'
+                );
+            }
+
+            $tentativa->update([
+                'estado' => 'SUBMETENDO',
+                'iniciada_em' => now(),
+            ]);
+
+            DB::table('sms')
+                ->where('id', $sms->id)
+                ->update([
+                    'estado' => 'PROCESSANDO',
+                    'updated_at' => now(),
+                ]);
+
+        }, 3);
+    }
+
 }
