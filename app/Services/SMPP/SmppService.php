@@ -23,6 +23,9 @@ class SmppService
     private bool $bound = false;
     private array $preparedSubmits = [];
 
+    private string $readBuffer = '';
+    private const MAX_PDU_LENGTH = 65536;
+
     public function __construct(
         private readonly string $host,
         private readonly int $port,
@@ -218,24 +221,55 @@ class SmppService
         }
     }
 
-    public function readPdu(): array
+    public function readPdu(): ?array
     {
-        $headerLength = $this->readExact(4);
-
-        $length = unpack('N', $headerLength)[1];
-
-        if ($length < 16 || $length > 65536) {
+        if (!is_resource($this->socket)) {
             throw new RuntimeException(
-                'Tamanho de PDU inválido.'
+                'Ligação SMPP indisponível.'
             );
         }
 
-        $data = $this->readExact($length - 4);
+        /*
+        |--------------------------------------------------------------------------
+        | 1. LER O CABEÇALHO DO TAMANHO
+        |--------------------------------------------------------------------------
+        */
+        if (!$this->readExact(4)) {
+            return null;
+        }
 
-        $header = unpack(
-            'Ncommand_id/Nstatus/Nsequence',
-            substr($data, 0, 12)
-        );
+        $length = unpack('N', substr($this->readBuffer, 0, 4))[1];
+
+        if ($length < 16 || $length > self::MAX_PDU_LENGTH) {
+            throw new RuntimeException(
+                'Tamanho de PDU SMPP inválido.'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 2. AGUARDAR A PDU COMPLETA
+        |--------------------------------------------------------------------------
+        */
+        if (!$this->readExact($length)) {
+            return null;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 3. EXTRAIR A PDU DO BUFFER
+        |--------------------------------------------------------------------------
+        */
+        $data = substr($this->readBuffer, 4, $length - 4);
+
+        $this->readBuffer = substr($this->readBuffer, $length);
+
+        /*
+        |--------------------------------------------------------------------------
+        | 4. INTERPRETAR CABEÇALHO SMPP
+        |--------------------------------------------------------------------------
+        */
+        $header = unpack('Ncommand_id/Nstatus/Nsequence', substr($data, 0, 12));
 
         return [
             'command_id' => $header['command_id'],
@@ -280,7 +314,7 @@ class SmppService
         }
     }
 
-    private function readExact(int $length): string
+    private function readExact(int $length): bool
     {
         if (!is_resource($this->socket)) {
             throw new RuntimeException(
@@ -288,24 +322,40 @@ class SmppService
             );
         }
 
-        $data = '';
+        while (strlen($this->readBuffer) < $length) {
 
-        while (strlen($data) < $length) {
-            $chunk = @fread(
-                $this->socket,
-                $length - strlen($data)
-            );
+            $remaining = $length - strlen($this->readBuffer);
 
-            if ($chunk === false || $chunk === '') {
+            $chunk = @fread($this->socket, min($remaining, 8192));
+
+            if ($chunk === false) {
                 throw new RuntimeException(
-                    'Ligação SMPP interrompida ou timeout.'
+                    'Erro na leitura do socket SMPP.'
                 );
             }
 
-            $data .= $chunk;
+            if ($chunk === '') {
+
+                if (feof($this->socket)) {
+                    throw new RuntimeException(
+                        'Ligação SMPP encerrada pela Movitel.'
+                    );
+                }
+
+                $metadata = stream_get_meta_data($this->socket);
+
+                if (!empty($metadata['timed_out'])) {
+                    return false;
+                }
+
+                // Sem progresso, devolver controlo ao dispatcher.
+                return false;
+            }
+
+            $this->readBuffer .= $chunk;
         }
 
-        return $data;
+        return true;
     }
 
     private function cstring(string $value): string
@@ -347,6 +397,7 @@ class SmppService
 
         $this->socket = null;
         $this->bound = false;
+        $this->readBuffer = '';
     }
 
     public function __destruct()

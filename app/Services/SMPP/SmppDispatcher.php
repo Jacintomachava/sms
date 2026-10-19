@@ -38,6 +38,10 @@ class SmppDispatcher
         try {
             $pdu = $connection->readPdu();
 
+            if ($pdu === null) {
+                return;
+            }
+
             $this->lastActivityAt = time();
 
             switch ($pdu['command_id']) {
