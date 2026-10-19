@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('host', 45);
             $table->unsignedSmallInteger('porta');
             $table->string('worker_id', 100);
+            $table->uuid('session_id')->nullable();
             $table->unsignedInteger('sequence_number')->nullable();
             $table->enum('estado', [
                 'PREPARADA',
@@ -43,6 +44,11 @@ return new class extends Migration
             $table->index([
                 'provider_message_id',
             ]);
+
+            $table->unique(
+                ['session_id', 'sequence_number'],
+                'smpp_tentativas_sessao_seq_unique'
+            );
        });
     }
 

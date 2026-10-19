@@ -4,6 +4,7 @@ namespace App\Services\SMPP;
 
 use App\Models\SmppEventoConexao;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use RuntimeException;
 use Throwable;
 
@@ -12,6 +13,7 @@ class SmppConnectionManager
     private ?SmppService $connection = null;
 
     private ?string $activeHost = null;
+    private ?string $sessionId = null;
 
     private array $hosts;
 
@@ -97,6 +99,7 @@ class SmppConnectionManager
 
                 $this->connection = $client;
                 $this->activeHost = $host;
+                $this->sessionId = (string) Str::uuid();
 
                 $this->recordEvent(
                     host: $host,
@@ -169,6 +172,7 @@ class SmppConnectionManager
 
         $this->connection?->disconnect();
         $this->connection = null;
+        $this->sessionId = null;
 
         /*
          * Mantemos activeHost para registar a
@@ -202,6 +206,11 @@ class SmppConnectionManager
     public function workerId(): string
     {
         return $this->workerId;
+    }
+
+    public function sessionId(): ?string
+    {
+        return $this->sessionId;
     }
 
     private function recordEvent(string $host, string $type, ?string $description = null, ?string $previousHost = null, ?string $newHost = null): void {

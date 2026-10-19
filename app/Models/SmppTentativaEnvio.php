@@ -13,6 +13,7 @@ class SmppTentativaEnvio extends Model
         'host',
         'porta',
         'worker_id',
+        'session_id',
         'sequence_number',
         'estado',
         'provider_message_id',

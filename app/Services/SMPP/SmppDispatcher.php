@@ -31,8 +31,8 @@ class SmppDispatcher
      * $persistDlr deve guardar o relatório de forma
      * durável antes de devolver o controlo.
      */
-    public function processNext(callable $persistDlr): void
-    {
+   public function processNext(callable $persistDlr, ?callable $processSubmitResponse = null): void {
+
         $connection = $this->manager->getConnection();
 
         try {
@@ -41,6 +41,7 @@ class SmppDispatcher
             $this->lastActivityAt = time();
 
             switch ($pdu['command_id']) {
+
                 case self::ENQUIRE_LINK:
                     $connection->respondEnquireLink(
                         $pdu['sequence']
@@ -69,9 +70,11 @@ class SmppDispatcher
                     break;
 
                 case self::SUBMIT_SM_RESP:
-                    $this->submitResponses[
-                        $pdu['sequence']
-                    ] = $pdu;
+                        if ($processSubmitResponse !== null) {
+                            $processSubmitResponse($pdu);
+                        } else {
+                            $this->submitResponses[$pdu['sequence']] = $pdu;
+                        }
                     break;
 
                 case self::UNBIND:
@@ -179,5 +182,32 @@ class SmppDispatcher
         $this->pendingHeartbeats = [];
         $this->submitResponses = [];
         $this->lastActivityAt = time();
+    }
+
+    public function extractSubmitMessageId(array $pdu): ?string
+    {
+        if ((int) $pdu['status'] !== 0) {
+            return null;
+        }
+
+        $body = (string) ($pdu['body'] ?? '');
+
+        $position = strpos($body, "\0");
+
+        if ($position === false) {
+            throw new RuntimeException(
+                'submit_sm_resp sem terminador do message_id.'
+            );
+        }
+
+        $messageId = substr($body, 0, $position);
+
+        if ($messageId === '') {
+            throw new RuntimeException(
+                'submit_sm_resp sem message_id.'
+            );
+        }
+
+        return $messageId;
     }
 }

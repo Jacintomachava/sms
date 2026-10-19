@@ -21,6 +21,7 @@ class SmppService
     private $socket = null;
     private int $sequence = 0;
     private bool $bound = false;
+    private array $preparedSubmits = [];
 
     public function __construct(
         private readonly string $host,
@@ -416,25 +417,15 @@ class SmppService
         $this->sendPdu(0x80000006, $sequence);
     }
 
-    
-    /**
-     * Submete uma SMS sem aguardar submit_sm_resp.
-     *
-     * Retorna o sequence_number da submissão.
-     *
-     * Esta versão suporta apenas mensagens ASCII
-     * de um único segmento, com subconjunto GSM-7.
-     */
-    public function submitAsync(string $sender, string $destination, string $message): int {
+    public function prepareSubmit(string $sender, string $destination, string $message): int {
 
         if (!$this->isBound()) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'Sessão SMPP não autenticada.'
             );
         }
 
         if ($sender === '' || strlen($sender) > 11 || !preg_match('/^[A-Za-z0-9]+$/', $sender)) {
-
             throw new \InvalidArgumentException(
                 'Sender ID inválido.'
             );
@@ -446,22 +437,9 @@ class SmppService
             );
         }
 
-        if ($message === '' || strlen($message) > 160 || preg_match('/[^\x20-\x7E]/', $message)) {
-
+        if ($message === '' || strlen($message) > 160 || preg_match('/[^\x20-\x7E]/', $message) || strpbrk($message, '@$[]\\^{}|~`') !== false) {
             throw new \InvalidArgumentException(
-                'Mensagem fora do subconjunto suportado.'
-            );
-        }
-
-        /*
-        * Caracteres da extensão GSM-7 e caracteres
-        * ASCII que exigem codificação especial.
-        *
-        * A implementação completa virá depois.
-        */
-        if (strpbrk($message, '@$[]\\^{}|~`') !== false) {
-            throw new \InvalidArgumentException(
-                'Mensagem exige codificação GSM-7 específica.'
+                'Mensagem fora do subconjunto GSM-7 suportado.'
             );
         }
 
@@ -480,10 +458,43 @@ class SmppService
             pack('C', strlen($message)) .
             $message;
 
-        $this->sendPdu(self::SUBMIT_SM, $sequence, $body);
+        $this->preparedSubmits[$sequence] = $body;
 
         return $sequence;
     }
 
+    public function sendPreparedSubmit(int $sequence): void
+    {
+        if (!$this->isBound()) {
+            throw new RuntimeException(
+                'Sessão SMPP não autenticada.'
+            );
+        }
+
+        if (!array_key_exists($sequence, $this->preparedSubmits)) {
+            throw new RuntimeException(
+                'Submissão SMPP não preparada.'
+            );
+        }
+
+        $body = $this->preparedSubmits[$sequence];
+
+        try {
+            $this->sendPdu(self::SUBMIT_SM, $sequence, $body);
+
+        } finally {
+            // Não reutilizar esta submissão após tentativa de escrita.
+            unset($this->preparedSubmits[$sequence]);
+        }
+    }
+
+    public function submitAsync(string $sender, string $destination, string $message): int {
+
+        $sequence = $this->prepareSubmit($sender, $destination, $message);
+
+        $this->sendPreparedSubmit($sequence);
+
+        return $sequence;
+    }
 
 }
