@@ -33,14 +33,49 @@ class SmppWorker extends Command
         */
         if ($this->option('diagnostico')) {
 
-            $this->info('INFORDATA SMS - Worker SMPP');
-            $this->line('----------------------------');
+            $this->info('INFORDATA SMS - Diagnóstico SMPP');
+            $this->line('--------------------------------');
 
-            $this->info(
-                'Modo diagnóstico. Nenhuma SMS será enviada.'
-            );
+            $lock = Cache::store('redis')->lock('smpp:movitel:worker', 120);
 
-            return self::SUCCESS;
+            if (!$lock->get()) {
+                $this->warn('Já existe um worker SMPP activo.');
+
+                return self::FAILURE;
+            }
+
+            try {
+                $connection = $manager->getConnection();
+
+                if (!$connection->isBound()) {
+                    throw new RuntimeException(
+                        'A sessão SMPP não foi autenticada.'
+                    );
+                }
+
+                $this->info('Autenticação SMPP: OK');
+                $this->line('IP activo: ' . $manager->activeHost());
+                $this->line('Sessão: ' . $manager->sessionId());
+                $this->info('Nenhuma SMS foi enviada.');
+
+                return self::SUCCESS;
+
+            } catch (Throwable $e) {
+
+                $this->error(
+                    'Falha no diagnóstico SMPP: ' . $e->getMessage()
+                );
+
+                return self::FAILURE;
+
+            } finally {
+
+                try {
+                    $manager->disconnect();
+                } finally {
+                    $lock->release();
+                }
+            }
         }
 
         /*

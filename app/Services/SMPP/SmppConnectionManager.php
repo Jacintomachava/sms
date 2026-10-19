@@ -196,6 +196,7 @@ class SmppConnectionManager
 
         $this->connection = null;
         $this->activeHost = null;
+        $this->sessionId = null;
     }
 
     public function activeHost(): ?string

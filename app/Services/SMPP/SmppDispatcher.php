@@ -199,6 +199,10 @@ class SmppDispatcher
 
         $this->pendingHeartbeats[$sequence] = time();
 
+        if (!empty($this->pendingHeartbeats)) {
+            return;
+        }
+
         $this->lastActivityAt = time();
     }
 
