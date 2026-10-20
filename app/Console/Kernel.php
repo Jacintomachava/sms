@@ -13,6 +13,18 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Reconciliação automática de pagamentos SMS
+        |--------------------------------------------------------------------------
+        |
+        | Executa a cada minuto.
+        | Recupera pagamentos confirmados sem crédito na carteira.
+        |
+        */
+        $schedule->command('pagamentos:reconciliar-creditos')->everyMinute()->withoutOverlapping(10);
+        
     }
 
     /**

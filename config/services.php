@@ -63,5 +63,13 @@ return [
         'heartbeat_timeout' => (int) env('SMPP_HEARTBEAT_TIMEOUT', 15),
     ],
 
+    
+    'sms_testes' => [
+        'activo' => env('SMS_TESTES_ACTIVO', false),
+        'limite_segmentos' => (int) env('SMS_TESTES_LIMITE', 1000),
+        'sender' => env('SMS_TESTES_SENDER', 'infoSMS'),
+    ],
+
+
   
 ];

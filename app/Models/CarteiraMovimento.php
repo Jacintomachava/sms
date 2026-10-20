@@ -19,6 +19,7 @@ class CarteiraMovimento extends Model
         'saldo_anterior',
         'saldo_posterior',
         'referencia',
+        'chave_idempotencia',
         'descricao',
         'user_id',
         'metadata',

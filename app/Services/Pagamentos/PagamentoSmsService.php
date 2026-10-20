@@ -413,6 +413,7 @@ class PagamentoSmsService
                 'saldo_anterior' => $saldoAnterior,
                 'saldo_posterior' => $saldoPosterior,
                 'referencia' => 'COMPRA-' . $compra->id,
+                'chave_idempotencia' => 'COMPRA-' . $compra->id,
                 'descricao' => 'Compra de créditos SMS.',
                 /*
                  * Quem iniciou a compra.
