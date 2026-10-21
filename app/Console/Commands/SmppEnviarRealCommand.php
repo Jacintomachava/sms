@@ -36,13 +36,6 @@ class SmppEnviarRealCommand extends Command
         $smsId = (int) $this->option('sms-id');
         $sender = trim((string) $this->option('sender'));
 
-        if ($smsId !== 4 || !$this->option('confirmar')) {
-            $this->error(
-                'Nesta fase, apenas a SMS #4 pode ser enviada, mediante confirmação.'
-            );
-
-            return self::FAILURE;
-        }
 
         if (!preg_match('/^[A-Za-z0-9]{1,11}$/', $sender)) {
             $this->error('Sender ID inválido.');
