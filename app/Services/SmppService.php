@@ -87,6 +87,12 @@ class SmppService
 
         $response = $this->readPdu();
 
+        if ($response === null) {
+            throw new RuntimeException(
+                'Timeout ao aguardar resposta de autenticação SMPP.'
+            );
+        }
+
         if ($response['command_id'] !== self::BIND_TRANSCEIVER_RESP || $response['sequence'] !== $sequence || $response['status'] !== 0) {
 
             throw new RuntimeException(sprintf(

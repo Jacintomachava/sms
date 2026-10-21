@@ -183,13 +183,16 @@ class SmppDispatcher
     /**
      * Envia heartbeat quando a sessão estiver ociosa.
      */
-    public function heartbeatIfNeeded(
-        int $intervalSeconds = 30
-    ): void {
-        if (
-            time() - $this->lastActivityAt
-            < $intervalSeconds
-        ) {
+    public function heartbeatIfNeeded(int $intervalSeconds = 30): void {
+
+        // Se existe um heartbeat pendente,
+        // não enviar outro.
+        if (!empty($this->pendingHeartbeats)) {
+            return;
+        }
+
+        // Aguardar o intervalo mínimo.
+        if (time() - $this->lastActivityAt < $intervalSeconds) {
             return;
         }
 
@@ -198,10 +201,6 @@ class SmppDispatcher
         $sequence = $connection->sendEnquireLink();
 
         $this->pendingHeartbeats[$sequence] = time();
-
-        if (!empty($this->pendingHeartbeats)) {
-            return;
-        }
 
         $this->lastActivityAt = time();
     }
