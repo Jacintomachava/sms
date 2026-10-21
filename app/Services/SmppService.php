@@ -188,17 +188,29 @@ class SmppService
 
     private function readExact(int $length): bool
     {
-        $this->assertSocket();
+        if (!is_resource($this->socket)) {
+            throw new RuntimeException(
+                'Ligação SMPP indisponível.'
+            );
+        }
 
         while (strlen($this->readBuffer) < $length) {
+
             $remaining = $length - strlen($this->readBuffer);
-            $chunk = @fread($this->socket, min($remaining, 8192));
+
+            $chunk = @fread(
+                $this->socket,
+                min($remaining, 8192)
+            );
 
             if ($chunk === false || $chunk === '') {
+
                 $metadata = stream_get_meta_data($this->socket);
 
                 if (feof($this->socket) || !empty($metadata['eof'])) {
-                    throw new RuntimeException('Ligação SMPP encerrada pelo servidor remoto.');
+                    throw new RuntimeException(
+                        'Ligação SMPP encerrada durante a leitura.'
+                    );
                 }
 
                 if (!empty($metadata['timed_out'])) {
@@ -207,12 +219,10 @@ class SmppService
 
                 if ($chunk === false) {
                     throw new RuntimeException(
-                        'Falha na leitura do socket SMPP sem timeout identificado.'
+                        'Falha de leitura SMPP sem timeout identificado.'
                     );
                 }
 
-                // Leitura sem progresso, sem EOF nem timeout confirmado.
-                // O dispatcher pode voltar a tentar; os bytes parciais ficam no buffer.
                 return false;
             }
 
