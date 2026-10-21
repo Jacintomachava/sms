@@ -36,9 +36,9 @@ class SmppEnviarRealCommand extends Command
         $smsId = (int) $this->option('sms-id');
         $sender = trim((string) $this->option('sender'));
 
-        if ($smsId !== 2 || !$this->option('confirmar')) {
+        if ($smsId !== 3 || !$this->option('confirmar')) {
             $this->error(
-                'Nesta fase, apenas a SMS #2 pode ser enviada.'
+                'Nesta fase, apenas a SMS #3 pode ser enviada, mediante confirmação.'
             );
 
             return self::FAILURE;
@@ -88,19 +88,12 @@ class SmppEnviarRealCommand extends Command
                 );
             }
 
-            if ($senderGuardado !== $sender) {
+            if (!is_string($senderGuardado) || $senderGuardado === '' || $senderGuardado !== $sender) {
                 throw new RuntimeException(
                     'Sender ID não corresponde ao da SMS.'
                 );
             }
 
-            if ($senderGuardado === null || $senderGuardado !== $sender) {
-                throw new RuntimeException(
-                    'Sender ID não corresponde ao da SMS.'
-                );
-            }
-
-            // A aprovação do sender para esta conta
             // deve ter sido confirmada previamente.
 
             // 3. Normalizar número de Moçambique.
