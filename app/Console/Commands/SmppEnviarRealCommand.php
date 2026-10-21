@@ -80,12 +80,19 @@ class SmppEnviarRealCommand extends Command
                 );
             }
 
-            // Ajustar este campo ao modelo real
-            // caso a coluna não se chame sender_id.
-            $senderGuardado = $senderRegisto->sender_id
-                ?? $senderRegisto->nome
-                ?? $senderRegisto->codigo
-                ?? null;
+           $senderGuardado = $senderRegisto->sender;
+
+            if ($senderRegisto->estado !== 'APROVADO' || $senderRegisto->operadora !== 'MOVITEL' || !$senderRegisto->aprovado_operadora_em) {
+                throw new RuntimeException(
+                    'Sender ID não está aprovado para envio pela Movitel.'
+                );
+            }
+
+            if ($senderGuardado !== $sender) {
+                throw new RuntimeException(
+                    'Sender ID não corresponde ao da SMS.'
+                );
+            }
 
             if ($senderGuardado === null || $senderGuardado !== $sender) {
                 throw new RuntimeException(
