@@ -214,11 +214,12 @@ class SmppService
             try {
 
                 $chunk = fread($this->socket, min($remaining, 8192));
-                
+
             } finally {
                 restore_error_handler();
             }
 
+            
             if ($chunk === false) {
 
                 $metadata = stream_get_meta_data($this->socket);
