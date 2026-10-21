@@ -187,104 +187,51 @@ class SmppService
         }
     }
 
-
-   //Read
     private function readExact(int $length): bool
-{
-    if (!is_resource($this->socket)) {
-        throw new RuntimeException(
-            'Ligação SMPP indisponível.'
-        );
-    }
-
-    while (strlen($this->readBuffer) < $length) {
-
-        $remaining = $length - strlen($this->readBuffer);
-
-        $read = [$this->socket];
-        $write = null;
-        $except = null;
-
-        // Esperar no máximo 1 segundo por dados.
-        $ready = @stream_select(
-            $read,
-            $write,
-            $except,
-            1,
-            0
-        );
-
-        if ($ready === false) {
+    {
+        if (!is_resource($this->socket)) {
             throw new RuntimeException(
-                'Erro ao verificar disponibilidade do socket SMPP.'
+                'Ligação SMPP indisponível.'
             );
         }
 
-        if ($ready === 0) {
-            // Nenhum dado disponível.
-            return false;
-        }
+        while (strlen($this->readBuffer) < $length) {
 
-        $readError = null;
+            $remaining = $length - strlen($this->readBuffer);
 
-        set_error_handler(
-            static function (
-                int $severity,
-                string $message
-            ) use (&$readError): bool {
-                $readError = $message;
-                return true;
-            }
-        );
-
-        try {
-            $chunk = fread(
+            $chunk = @fread(
                 $this->socket,
                 min($remaining, 8192)
             );
-        } finally {
-            restore_error_handler();
-        }
 
-        if ($chunk === false) {
+            if ($chunk === false || $chunk === '') {
 
-            $metadata = stream_get_meta_data($this->socket);
+                $metadata = stream_get_meta_data($this->socket);
 
-            \Illuminate\Support\Facades\Log::error(
-                'SMPP FALHA NA LEITURA',
-                [
-                    'host' => $this->host,
-                    'porta' => $this->port,
-                    'erro_php' => $readError,
-                    'timed_out' => $metadata['timed_out'] ?? null,
-                    'eof' => $metadata['eof'] ?? null,
-                    'bytes_esperados' => $length,
-                    'bytes_buffer' => strlen($this->readBuffer),
-                ]
-            );
+                if (feof($this->socket) || !empty($metadata['eof'])) {
+                    throw new RuntimeException(
+                        'Ligação SMPP encerrada durante a leitura.'
+                    );
+                }
 
-            throw new RuntimeException(
-                'Erro na leitura do socket SMPP: ' .
-                ($readError ?: 'erro desconhecido')
-            );
-        }
+                if (!empty($metadata['timed_out'])) {
+                    return false;
+                }
 
-        if ($chunk === '') {
+                if ($chunk === false) {
+                    throw new RuntimeException(
+                        'Falha de leitura SMPP sem timeout identificado.'
+                    );
+                }
 
-            if (feof($this->socket)) {
-                throw new RuntimeException(
-                    'Ligação SMPP encerrada pela Movitel.'
-                );
+                return false;
             }
 
-            return false;
+            $this->readBuffer .= $chunk;
         }
 
-        $this->readBuffer .= $chunk;
+        return true;
     }
-
-    return true;
-}
 
     private function assertSocket(): void
     {
