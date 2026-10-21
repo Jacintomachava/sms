@@ -70,9 +70,22 @@ class SmppDispatcher
             */
             case self::ENQUIRE_LINK_RESP:
 
-                unset(
-                    $this->pendingHeartbeats[$sequence]
-                );
+                if (!array_key_exists($sequence, $this->pendingHeartbeats)) {
+                    Log::warning('Resposta a heartbeat desconhecido', [
+                        'sequence' => $sequence,
+                        'host' => $this->manager->activeHost(),
+                    ]);
+
+                    break;
+                }
+
+                if ((int) $pdu['status'] !== 0) {
+                    throw new RuntimeException(
+                        'Heartbeat SMPP rejeitado pela operadora.'
+                    );
+                }
+
+                unset($this->pendingHeartbeats[$sequence]);
 
                 break;
 
