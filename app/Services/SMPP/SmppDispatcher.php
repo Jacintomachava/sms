@@ -136,6 +136,14 @@ class SmppDispatcher
             */
             case self::SUBMIT_SM_RESP:
 
+                // LOG 3: resposta de submissão recebida
+                Log::info('SMPP SUBMIT_SM_RESP IDENTIFICADO', [
+                    'session_id' => $this->manager->sessionId(),
+                    'sequence_number' => $sequence,
+                    'command_status' => (int) $pdu['status'],
+                    'host' => $this->manager->activeHost(),
+                ]);
+
                 $sessionId = $this->manager->sessionId();
 
                 if (!$sessionId) {
