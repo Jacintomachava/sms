@@ -36,9 +36,9 @@ class SmppEnviarRealCommand extends Command
         $smsId = (int) $this->option('sms-id');
         $sender = trim((string) $this->option('sender'));
 
-        if ($smsId !== 3 || !$this->option('confirmar')) {
+        if ($smsId !== 4 || !$this->option('confirmar')) {
             $this->error(
-                'Nesta fase, apenas a SMS #3 pode ser enviada, mediante confirmação.'
+                'Nesta fase, apenas a SMS #4 pode ser enviada, mediante confirmação.'
             );
 
             return self::FAILURE;
@@ -170,7 +170,7 @@ class SmppEnviarRealCommand extends Command
             );
 
             // 10. Processar resposta pelo dispatcher.
-            $deadline = microtime(true) + 30;
+            $deadline = microtime(true) + 60;
             $respostaRecebida = false;
 
             while (microtime(true) < $deadline) {

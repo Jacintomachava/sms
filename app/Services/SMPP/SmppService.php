@@ -31,7 +31,7 @@ class SmppService
         private readonly int $port,
         private readonly string $systemId,
         private readonly string $password,
-        private readonly int $timeout = 10
+        private readonly int $timeout = 30
     ) {
     }
 

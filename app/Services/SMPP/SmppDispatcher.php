@@ -43,6 +43,17 @@ class SmppDispatcher
             return;
         }
 
+        Log::info('SMPP PDU RECEBIDA', [
+            'command_id' => sprintf(
+                '0x%08X',
+                (int) $pdu['command_id']
+            ),
+            'command_status' => (int) $pdu['status'],
+            'sequence_number' => (int) $pdu['sequence'],
+            'body_length' => strlen((string) $pdu['body']),
+            'host' => $this->manager->activeHost(),
+        ]);
+
         $this->lastActivityAt = time();
 
         $commandId = (int) $pdu['command_id'];
