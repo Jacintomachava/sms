@@ -170,7 +170,7 @@ class SmppEnviarRealCommand extends Command
             );
 
             // 10. Processar resposta pelo dispatcher.
-            $deadline = microtime(true) + 60;
+            $deadline = microtime(true) + 90;
             $respostaRecebida = false;
 
             while (microtime(true) < $deadline) {

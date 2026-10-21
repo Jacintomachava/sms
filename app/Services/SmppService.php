@@ -3,6 +3,7 @@
 namespace App\Services\SMPP;
 
 use InvalidArgumentException;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
 
@@ -198,29 +199,59 @@ class SmppService
 
             $remaining = $length - strlen($this->readBuffer);
 
-            $chunk = @fread(
-                $this->socket,
-                min($remaining, 8192)
+            $readError = null;
+
+            set_error_handler(
+                static function (
+                    int $severity,
+                    string $message
+                ) use (&$readError): bool {
+                    $readError = $message;
+                    return true;
+                }
             );
 
-            if ($chunk === false || $chunk === '') {
+            try {
+
+                $chunk = fread($this->socket, min($remaining, 8192));
+                
+            } finally {
+                restore_error_handler();
+            }
+
+            if ($chunk === false) {
 
                 $metadata = stream_get_meta_data($this->socket);
 
-                if (feof($this->socket) || !empty($metadata['eof'])) {
+                Log::error('SMPP FALHA NA LEITURA', [
+                    'host' => $this->host,
+                    'porta' => $this->port,
+                    'erro_php' => $readError,
+                    'timed_out' => $metadata['timed_out'] ?? null,
+                    'eof' => $metadata['eof'] ?? null,
+                    'stream_type' => $metadata['stream_type'] ?? null,
+                    'bytes_esperados' => $length,
+                    'bytes_buffer' => strlen($this->readBuffer),
+                ]);
+
+                throw new RuntimeException(
+                    'Erro na leitura do socket SMPP: ' .
+                    ($readError ?: 'sem detalhe do PHP')
+                );
+            }
+
+            if ($chunk === '') {
+
+                if (feof($this->socket)) {
                     throw new RuntimeException(
-                        'Ligação SMPP encerrada durante a leitura.'
+                        'Ligação SMPP encerrada pela Movitel.'
                     );
                 }
+
+                $metadata = stream_get_meta_data($this->socket);
 
                 if (!empty($metadata['timed_out'])) {
                     return false;
-                }
-
-                if ($chunk === false) {
-                    throw new RuntimeException(
-                        'Falha de leitura SMPP sem timeout identificado.'
-                    );
                 }
 
                 return false;
