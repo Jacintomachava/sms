@@ -6,12 +6,14 @@ namespace App\Http\Controllers;
 use App\Models\Conta;
 use App\Models\Carteira;
 use App\Models\CicloConsumoSms;
+use App\Services\SmsCriacaoService;
 use App\Models\SenderId;
 use App\Models\Sms;
 use App\Services\SmsSegmentService;
 use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Throwable;
+
 
 class SmsController extends Controller
 {
@@ -137,23 +139,35 @@ class SmsController extends Controller
         ]);
     }
 
-    public function enviar(Request $request, SmsService $smsService) {
-        
-        $request->validate([
-            'sender_id' => ['required','integer'],
-            'telefone' => ['required','string','max:20'],
-            'mensagem' => ['required','string','max:5000'],
+    public function enviar(Request $request, SmsCriacaoService $smsCriacaoService) {
+
+        $dados = $request->validate([
+            'sender_id' => ['required', 'integer'],
+            'telefone' => ['required', 'string', 'max:20'],
+            'mensagem' => ['required', 'string', 'max:160'],
         ]);
 
-        $origem = 'PAINEL';
-
         try {
+            $contaId = (int) session('conta_id');
 
-            $sms = $smsService->enviar((int) session('conta_id'), (int) $request->sender_id, $request->telefone, $request->mensagem, $origem, (int) auth()->id());
+            if ($contaId <= 0) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => 'Nenhuma conta activa seleccionada.',
+                ], 403);
+            }
+
+            $sms = $smsCriacaoService->criar(
+                contaId: $contaId,
+                senderId: (int) $dados['sender_id'],
+                telefone: $dados['telefone'],
+                mensagem: $dados['mensagem'],
+                userId: (int) auth()->id()
+            );
 
             return response()->json([
                 'status' => 1,
-                'message' => 'SMS registado com sucesso.',
+                'message' => 'SMS registada e colocada na fila de envio.',
                 'data' => [
                     'id' => $sms->id,
                     'segmentos' => $sms->segmentos,
@@ -167,8 +181,10 @@ class SmsController extends Controller
 
             return response()->json([
                 'status' => 0,
-                'message' => $e->getMessage(),
+                'message' => 'Não foi possível registar a SMS: '
+                    . $e->getMessage(),
             ], 422);
         }
     }
+
 }
