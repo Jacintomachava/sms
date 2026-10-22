@@ -2,347 +2,412 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Sms;
 use App\Services\SMPP\SmppConnectionManager;
 use App\Services\SMPP\SmppDispatcher;
 use App\Services\SMPP\SmppEnvioService;
 use App\Services\SMPP\SmppRateLimiter;
 use App\Services\SMPP\SmppRecuperacaoService;
+use App\Services\SMPP\SmppTentativaService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
 
 class SmppWorker extends Command
 {
-  
-    protected $signature = 'smpp:worker-teste {--diagnostico} {--simular-envio}';
+    protected $signature = 'smpp:worker-teste
+        {--diagnostico : Testar apenas a ligação SMPP}
+        {--simular-envio : Verificar uma SMS sem enviar}
+        {--limite=5 : Número máximo de SMS por lote}
+        {--confirmar : Autorizar envios reais}';
 
-    protected $description = 'Worker SMPP Movitel - INFORDATA SMS';
+    protected $description =
+        'Worker SMPP Movitel - teste controlado de envio em lote';
 
     public function handle(
         SmppConnectionManager $manager,
         SmppDispatcher $dispatcher,
         SmppRecuperacaoService $recuperacaoService,
         SmppEnvioService $envioService,
-        SmppRateLimiter $rateLimiter
+        SmppRateLimiter $rateLimiter,
+        SmppTentativaService $tentativaService
     ): int {
 
-        /*
-        |--------------------------------------------------------------------------
-        | SIMULAÇÃO DE ENVIO
-        |--------------------------------------------------------------------------
-        |
-        | Não estabelece ligação SMPP.
-        | Não altera SMS, reservas ou tentativas.
-        | Não consome TPS.
-        |
-        */
+        $limite = (int) $this->option('limite');
+
+        if ($limite < 1 || $limite > 20) {
+            $this->error('O limite deve estar entre 1 e 20.');
+            return self::FAILURE;
+        }
+
         if ($this->option('simular-envio')) {
-
-            $this->info('INFORDATA SMS - Simulação de envio');
-            $this->line('----------------------------------');
-
             $sms = $envioService->proximaSms();
 
             if (!$sms) {
-                $this->info('Nenhuma SMS elegível encontrada.');
-
+                $this->info('Nenhuma SMS pendente elegível.');
                 return self::SUCCESS;
             }
 
             try {
                 $envioService->preparar((int) $sms->id);
-
-                $this->info('SMS validada para preparação.');
-
-                $this->table(
-                    ['Campo', 'Valor'],
-                    [
-                        ['SMS ID', $sms->id],
-                        ['Conta ID', $sms->conta_id],
-                        ['Telefone', $sms->telefone],
-                        ['Segmentos', $sms->segmentos],
-                        ['Estado', $sms->estado],
-                    ]
-                );
-
-                $this->warn(
-                    'Simulação concluída. Nenhuma SMS foi enviada.'
-                );
-
+                $this->info("SMS #{$sms->id} validada.");
+                $this->warn('Nenhuma SMS foi enviada.');
                 return self::SUCCESS;
-
             } catch (Throwable $e) {
-
-                $this->error(
-                    'SMS não elegível: ' . $e->getMessage()
-                );
-
+                $this->error($e->getMessage());
                 return self::FAILURE;
             }
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 1. MODO DIAGNÓSTICO
-        |--------------------------------------------------------------------------
-        |
-        | Mantemos o diagnóstico sem processamento de SMS.
-        |
-        */
-        if ($this->option('diagnostico')) {
+        if (!$this->option('diagnostico')
+            && !$this->option('confirmar')) {
 
-            $this->info('INFORDATA SMS - Diagnóstico SMPP');
-            $this->line('--------------------------------');
-
-            $lock = Cache::store('redis')->lock('smpp:movitel:worker', 120);
-
-            if (!$lock->get()) {
-                $this->warn('Já existe um worker SMPP activo.');
-
-                return self::FAILURE;
-            }
-
-            try {
-                $connection = $manager->getConnection();
-
-                if (!$connection->isBound()) {
-                    throw new RuntimeException(
-                        'A sessão SMPP não foi autenticada.'
-                    );
-                }
-
-                $this->info('Autenticação SMPP: OK');
-                $this->line('IP activo: ' . $manager->activeHost());
-                $this->line('Sessão: ' . $manager->sessionId());
-                $this->info('Nenhuma SMS foi enviada.');
-
-                return self::SUCCESS;
-
-            } catch (Throwable $e) {
-
-                $this->error(
-                    'Falha no diagnóstico SMPP: ' . $e->getMessage()
-                );
-
-                return self::FAILURE;
-
-            } finally {
-
-                try {
-                    $manager->disconnect();
-                } finally {
-                    $lock->release();
-                }
-            }
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | 2. BLOQUEIO EXCLUSIVO REDIS
-        |--------------------------------------------------------------------------
-        |
-        | Impede dois workers desta aplicação de estabelecerem
-        | sessões SMPP simultaneamente.
-        |
-        | Esta versão executa apenas um ciclo limitado,
-        | ainda não é um daemon de produção.
-        |
-        */
-        $lock = Cache::store('redis')->lock('smpp:movitel:worker', 120);
-
-        if (!$lock->get()) {
-
-            $this->warn(
-                'Já existe um worker SMPP activo.'
+            $this->error(
+                'Envio real não autorizado. Utilize --confirmar.'
             );
 
             return self::FAILURE;
         }
 
+        $lock = Cache::store('redis')
+            ->lock('smpp:movitel:worker', 300);
+
+        if (!$lock->get()) {
+            $this->error('Já existe uma sessão SMPP activa.');
+            return self::FAILURE;
+        }
+
         $sessionId = null;
-        $sessaoEncerrada = false;
-        $resultado = self::FAILURE;
+        $enviadas = 0;
+        $rejeitadas = 0;
+        $ignoradas = 0;
+        $resultado = self::SUCCESS;
 
         try {
-
-            /*
-            |--------------------------------------------------------------------------
-            | 3. ESTABELECER LIGAÇÃO
-            |--------------------------------------------------------------------------
-            */
-            $manager->getConnection();
+            $connection = $manager->getConnection();
 
             $sessionId = $manager->sessionId();
 
-            if (!$sessionId) {
+            if (!$sessionId || !$connection->isBound()) {
                 throw new RuntimeException(
-                    'Sessão SMPP não identificada.'
+                    'Sessão SMPP não autenticada.'
                 );
             }
 
             $dispatcher->clearSessionState();
 
-            $this->info(
-                'Sessão SMPP estabelecida.'
-            );
+            $this->info('Sessão SMPP estabelecida.');
+            $this->line('Host: ' . $manager->activeHost());
+            $this->line('Sessão: ' . $sessionId);
 
-            $this->line(
-                'IP activo: ' . $manager->activeHost()
-            );
-
-            Log::info('Worker SMPP iniciado', [
-                'session_id' => $sessionId,
-                'host' => $manager->activeHost(),
-                'worker_id' => $manager->workerId(),
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | 4. CICLO DE RECEPÇÃO
-            |--------------------------------------------------------------------------
-            |
-            | O dispatcher agora processa directamente:
-            |
-            | - enquire_link
-            | - enquire_link_resp
-            | - submit_sm_resp
-            | - deliver_sm
-            | - unbind
-            |
-            | Não precisamos de callbacks aqui.
-            |
-            */
-            $deadline = microtime(true) + 60;
-
-            while (microtime(true) < $deadline) {
-
-                /*
-                 * Ler e processar a próxima PDU.
-                 *
-                 * readPdu() devolve null quando ainda
-                 * não existe uma PDU completa.
-                 */
-                $dispatcher->processNext();
-
-                /*
-                 * Manter a sessão activa.
-                 */
-                $dispatcher->heartbeatIfNeeded();
-
-                /*
-                 * Detectar heartbeats sem resposta.
-                 */
-                $dispatcher->assertHeartbeatHealthy();
+            if ($this->option('diagnostico')) {
+                $this->info('Diagnóstico concluído.');
+                return self::SUCCESS;
             }
 
             /*
-            |--------------------------------------------------------------------------
-            | 5. TERMINAR CICLO
-            |--------------------------------------------------------------------------
-            */
+             * O lote é limitado e a sessão é exclusiva.
+             * Não fazemos polling indefinido.
+             */
+            $ids = DB::table('sms_outbox as o')
+                ->join('sms as s', 's.id', '=', 'o.sms_id')
+                ->where('o.estado', 'PENDENTE')
+                ->where('s.estado', 'PENDENTE')
+                ->whereNotExists(function ($query) {
+                    $query->selectRaw('1')
+                        ->from('smpp_tentativas_envio as t')
+                        ->whereColumn('t.sms_id', 's.id');
+                })
+                ->orderBy('o.id')
+                ->limit($limite)
+                ->pluck('s.id')
+                ->unique()
+                ->values();
+
             $this->info(
-                'Ciclo SMPP terminado.'
+                'SMS seleccionadas: ' . $ids->count()
             );
 
-            $resultado = self::SUCCESS;
+            foreach ($ids as $smsId) {
+
+                $smsId = (int) $smsId;
+                $tentativaId = null;
+                $submissaoIniciada = false;
+
+                try {
+
+                    /*
+                     * Validar SMS e reservas.
+                     */
+                    $sms = $envioService->preparar($smsId);
+
+                    /*
+                     * Validar Sender ID.
+                     */
+                    $senderRegisto = DB::table('sender_ids')
+                        ->where('id', $sms->sender_id)
+                        ->first();
+
+                    if (!$senderRegisto) {
+                        throw new RuntimeException(
+                            'Sender ID não encontrado.'
+                        );
+                    }
+
+                    if (
+                        $senderRegisto->estado !== 'APROVADO'
+                        || $senderRegisto->operadora !== 'MOVITEL'
+                        || !$senderRegisto->aprovado_operadora_em
+                    ) {
+                        throw new RuntimeException(
+                            'Sender ID não aprovado pela Movitel.'
+                        );
+                    }
+
+                    $sender = (string) $senderRegisto->sender;
+
+                    if (!preg_match(
+                        '/^[A-Za-z0-9]{1,11}$/',
+                        $sender
+                    )) {
+                        throw new RuntimeException(
+                            'Sender ID inválido.'
+                        );
+                    }
+
+                    /*
+                     * Normalizar telefone.
+                     */
+                    $telefone = preg_replace(
+                        '/\D+/',
+                        '',
+                        (string) $sms->telefone
+                    );
+
+                    if (preg_match(
+                        '/^8[2-7][0-9]{7}$/',
+                        $telefone
+                    )) {
+                        $telefone = '258' . $telefone;
+                    }
+
+                    if (!preg_match(
+                        '/^2588[2-7][0-9]{7}$/',
+                        $telefone
+                    )) {
+                        throw new RuntimeException(
+                            'Telefone inválido.'
+                        );
+                    }
+
+                    /*
+                     * Esperar disponibilidade de TPS
+                     * antes de criar a tentativa.
+                     *
+                     * O lote sequencial não deve
+                     * atingir normalmente o limite.
+                     */
+                    $tpsDisponivel = false;
+
+                    for ($i = 0; $i < 20; $i++) {
+                        if ($rateLimiter->acquire()) {
+                            $tpsDisponivel = true;
+                            break;
+                        }
+
+                        usleep(100000);
+                    }
+
+                    if (!$tpsDisponivel) {
+                        throw new RuntimeException(
+                            'TPS indisponível.'
+                        );
+                    }
+
+                    /*
+                     * Preparar PDU em memória.
+                     */
+                    $sequence = $connection->prepareSubmit(
+                        $sender,
+                        $telefone,
+                        (string) $sms->mensagem
+                    );
+
+                    /*
+                     * Persistir tentativa.
+                     */
+                    $tentativaId =
+                        $envioService->prepararTentativa(
+                            smsId: $smsId,
+                            sessionId: $sessionId,
+                            sequenceNumber: $sequence,
+                            host: (string) $manager->activeHost(),
+                            porta: (int) config(
+                                'services.smpp.port',
+                                8014
+                            ),
+                            workerId: $manager->workerId(),
+                            tentativaService: $tentativaService
+                        );
+
+                    /*
+                     * Marcar como SUBMETENDO antes
+                     * da escrita no socket.
+                     */
+                    $tentativaService->iniciarSubmissao(
+                        $tentativaId
+                    );
+
+                    $submissaoIniciada = true;
+
+                    /*
+                     * Transmitir exactamente uma vez.
+                     */
+                    $connection->sendPreparedSubmit(
+                        $sequence
+                    );
+
+                    $this->line(
+                        "SMS #{$smsId}: PDU transmitida."
+                    );
+
+                    /*
+                     * Aguardar confirmação.
+                     */
+                    $deadline = microtime(true) + 90;
+                    $respostaRecebida = false;
+
+                    while (microtime(true) < $deadline) {
+
+                        $dispatcher->processNext();
+
+                        $resposta = $dispatcher
+                            ->takeSubmitResponse($sequence);
+
+                        if ($resposta !== null) {
+                            $respostaRecebida = true;
+                            break;
+                        }
+
+                        $dispatcher->heartbeatIfNeeded();
+                        $dispatcher->assertHeartbeatHealthy();
+                    }
+
+                    if (!$respostaRecebida) {
+                        throw new RuntimeException(
+                            'Sem resposta definitiva da Movitel.'
+                        );
+                    }
+
+                    $smsActual = Sms::findOrFail($smsId);
+
+                    if (in_array(
+                        $smsActual->estado,
+                        ['ENVIADO', 'ENTREGUE'],
+                        true
+                    )) {
+                        $enviadas++;
+
+                        $this->info(
+                            "SMS #{$smsId}: ACEITE."
+                        );
+
+                    } else {
+                        $rejeitadas++;
+
+                        $this->warn(
+                            "SMS #{$smsId}: {$smsActual->estado}."
+                        );
+                    }
+
+                } catch (Throwable $e) {
+
+                    Log::error('SMPP LOTE ERRO', [
+                        'sms_id' => $smsId,
+                        'tentativa_id' => $tentativaId,
+                        'submissao_iniciada' => $submissaoIniciada,
+                        'erro' => $e->getMessage(),
+                    ]);
+
+                    $this->error(
+                        "SMS #{$smsId}: {$e->getMessage()}"
+                    );
+
+                    /*
+                     * Depois de SUBMETENDO, não sabemos
+                     * se a operadora recebeu a SMS.
+                     * Interrompemos imediatamente o lote.
+                     */
+                    if ($submissaoIniciada) {
+                        $resultado = self::FAILURE;
+                        break;
+                    }
+
+                    /*
+                     * Falhas antes da submissão não
+                     * autorizam novas tentativas.
+                     * Se uma tentativa já existe,
+                     * paramos para análise.
+                     */
+                    if ($tentativaId !== null) {
+                        $resultado = self::FAILURE;
+                        break;
+                    }
+
+                    $ignoradas++;
+                }
+            }
+
+            $this->newLine();
+            $this->info('RESUMO DO LOTE');
+            $this->line("Aceites: {$enviadas}");
+            $this->line("Rejeitadas: {$rejeitadas}");
+            $this->line("Ignoradas: {$ignoradas}");
+
+            return $resultado;
 
         } catch (Throwable $e) {
 
-            $this->error(
-                'Erro no worker SMPP: ' . $e->getMessage()
-            );
-
-            Log::error('Erro no worker SMPP', [
+            Log::error('SMPP WORKER LOTE ERRO', [
                 'session_id' => $sessionId,
                 'erro' => $e->getMessage(),
-                'exception' => get_class($e),
             ]);
 
-            $resultado = self::FAILURE;
+            $this->error($e->getMessage());
+
+            return self::FAILURE;
 
         } finally {
 
             /*
-            |--------------------------------------------------------------------------
-            | 6. ENCERRAR SESSÃO
-            |--------------------------------------------------------------------------
-            */
+             * Encerrar antes de recuperar tentativas.
+             */
             try {
-
                 $manager->disconnect();
-
-                $sessaoEncerrada = true;
-
             } catch (Throwable $e) {
-
-                Log::error(
-                    'Falha ao encerrar sessão SMPP',
-                    [
-                        'session_id' => $sessionId,
-                        'erro' => $e->getMessage(),
-                    ]
-                );
+                report($e);
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | 7. RECUPERAR TENTATIVAS SEM RESPOSTA
-            |--------------------------------------------------------------------------
-            |
-            | Apenas depois de encerrar a sessão.
-            |
-            | Não libertamos créditos nem reenviamos SMS.
-            |
-            */
-            if ($sessaoEncerrada && $sessionId) {
-
+            if ($sessionId) {
                 try {
-
                     $recuperacaoService->recuperarSessao(
                         $sessionId
                     );
-
                 } catch (Throwable $e) {
-
-                    Log::error(
-                        'Falha na recuperação SMPP',
-                        [
-                            'session_id' => $sessionId,
-                            'erro' => $e->getMessage(),
-                        ]
-                    );
+                    report($e);
                 }
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | 8. LIMPAR ESTADO DO DISPATCHER
-            |--------------------------------------------------------------------------
-            */
             $dispatcher->clearSessionState();
 
-            /*
-            |--------------------------------------------------------------------------
-            | 9. LIBERTAR BLOQUEIO REDIS
-            |--------------------------------------------------------------------------
-            */
             try {
-
                 $lock->release();
-
             } catch (Throwable $e) {
-
-                Log::error(
-                    'Falha ao libertar bloqueio Redis SMPP',
-                    [
-                        'erro' => $e->getMessage(),
-                    ]
-                );
+                report($e);
             }
         }
-
-        return $resultado;
     }
 }

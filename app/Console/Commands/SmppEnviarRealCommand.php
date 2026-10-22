@@ -36,6 +36,20 @@ class SmppEnviarRealCommand extends Command
         $smsId = (int) $this->option('sms-id');
         $sender = trim((string) $this->option('sender'));
 
+        if (!$this->option('confirmar')) {
+            $this->error(
+                'Envio real não autorizado. Utilize --confirmar.'
+            );
+
+            return self::FAILURE;
+        }
+
+        if ($smsId <= 0) {
+            $this->error('Identificador da SMS inválido.');
+
+            return self::FAILURE;
+        }
+
 
         if (!preg_match('/^[A-Za-z0-9]{1,11}$/', $sender)) {
             $this->error('Sender ID inválido.');
@@ -90,7 +104,7 @@ class SmppEnviarRealCommand extends Command
             // deve ter sido confirmada previamente.
 
             // 3. Normalizar número de Moçambique.
-            $telefone = preg_replace('/\D+/','',(string) $sms->telefone);
+            $telefone = preg_replace('/\D+/','', (string) $sms->telefone);
 
             if (preg_match('/^8[2-7][0-9]{7}$/', $telefone)) {
                 $telefone = '258' . $telefone;
