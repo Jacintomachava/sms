@@ -366,13 +366,23 @@ class SmppService
 
             if ($ready === false) {
 
-                // Um sinal do sistema pode interromper stream_select().
-                // Não interpretar imediatamente como falha da ligação.
-                if (function_exists('pcntl_signal_dispatch')) {
-                    pcntl_signal_dispatch();
+                /*
+                * Uma interrupção por sinal (EINTR) pode ocorrer
+                * quando o Supervisor envia SIGTERM.
+                *
+                * Outras falhas devem continuar a gerar erro.
+                */
+                $erro = error_get_last();
+                $mensagem = (string) ($erro['message'] ?? '');
+
+                if (stripos($mensagem, 'Interrupted system call') !== false || stripos($mensagem, 'EINTR') !== false) {
+                    return false;
                 }
 
-                return false;
+                throw new RuntimeException(
+                    'Erro ao verificar disponibilidade do socket SMPP: ' .
+                    ($mensagem ?: 'erro desconhecido')
+                );
             }
 
             if ($ready === 0) {
