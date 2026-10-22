@@ -154,8 +154,11 @@ class SmppWorker extends Command
                 $this->info(
                     "A receber DLRs durante {$duracao} segundos..."
                 );
+                
                 $deadline = microtime(true) + $duracao;
-                while (microtime(true) < $deadline) {
+
+                while (!$this->paragemSolicitada && microtime(true) < $deadline) {
+
                     $dispatcher->processNext();
                     $dispatcher->heartbeatIfNeeded();
                     $dispatcher->assertHeartbeatHealthy();
@@ -289,7 +292,7 @@ class SmppWorker extends Command
 
                         break;
                     }
-                    
+
                     /*
                      * Preparar PDU em memória.
                      */
