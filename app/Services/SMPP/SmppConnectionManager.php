@@ -58,6 +58,13 @@ class SmppConnectionManager
     public function getConnection(): SmppService
     {
         if ($this->connection !== null) {
+
+            if (!$this->connection->isBound()) {
+                throw new RuntimeException(
+                    'A sessão SMPP existente deixou de estar autenticada.'
+                );
+            }
+
             return $this->connection;
         }
 

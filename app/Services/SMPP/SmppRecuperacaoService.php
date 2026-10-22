@@ -129,4 +129,68 @@ class SmppRecuperacaoService
 
         }, 3);
     }
+
+    /**
+     * Recupera tentativas SUBMETENDO abandonadas
+     * após encerramento inesperado do worker.
+     *
+     * Executar apenas depois de adquirir
+     * o lock exclusivo do worker SMPP.
+     */
+    public function recuperarTentativasAbandonadas(?string $sessaoActual = null): array {
+
+        $query = SmppTentativaEnvio::query()->where('estado', 'SUBMETENDO');
+
+        if ($sessaoActual !== null) {
+            $query->where(
+                'session_id',
+                '!=',
+                $sessaoActual
+            );
+        }
+
+        $ids = $query
+            ->orderBy('id')
+            ->pluck('id');
+
+        $recuperadas = 0;
+        $ignoradas = 0;
+        $erros = [];
+
+        foreach ($ids as $tentativaId) {
+
+            try {
+
+                $alterada = $this->marcarTentativaIncerta((int) $tentativaId);
+
+                if ($alterada) {
+                    $recuperadas++;
+                } else {
+                    $ignoradas++;
+                }
+
+            } catch (\Throwable $e) {
+
+                $erros[] = [
+                    'tentativa_id' => $tentativaId,
+                    'erro' => $e->getMessage(),
+                ];
+
+                Log::error(
+                    'SMPP TENTATIVA ABANDONADA',
+                    [
+                        'tentativa_id' => $tentativaId,
+                        'erro' => $e->getMessage(),
+                    ]
+                );
+            }
+        }
+
+        return [
+            'recuperadas' => $recuperadas,
+            'ignoradas' => $ignoradas,
+            'erros' => $erros,
+        ];
+    }
+
 }
