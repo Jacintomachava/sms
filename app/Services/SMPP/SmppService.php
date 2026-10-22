@@ -365,9 +365,14 @@ class SmppService
             );
 
             if ($ready === false) {
-                throw new RuntimeException(
-                    'Erro ao verificar disponibilidade do socket SMPP.'
-                );
+
+                // Um sinal do sistema pode interromper stream_select().
+                // Não interpretar imediatamente como falha da ligação.
+                if (function_exists('pcntl_signal_dispatch')) {
+                    pcntl_signal_dispatch();
+                }
+
+                return false;
             }
 
             if ($ready === 0) {
