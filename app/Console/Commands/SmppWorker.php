@@ -18,6 +18,8 @@ use Throwable;
 
 class SmppWorker extends Command
 {
+    private bool $paragemSolicitada = false;
+
     protected $signature = 'smpp:worker-teste
         {--diagnostico : Testar apenas a ligação SMPP}
         {--simular-envio : Verificar uma SMS sem enviar}
@@ -37,6 +39,19 @@ class SmppWorker extends Command
         SmppRateLimiter $rateLimiter,
         SmppTentativaService $tentativaService
     ): int {
+
+        if (extension_loaded('pcntl')) {
+
+            pcntl_async_signals(true);
+
+            pcntl_signal(SIGTERM, function () {
+                $this->paragemSolicitada = true;
+            });
+
+            pcntl_signal(SIGINT, function () {
+                $this->paragemSolicitada = true;
+            });
+        }
 
         $limite = (int) $this->option('limite');
         $modoServico = (bool) $this->option('servico');
@@ -169,7 +184,14 @@ class SmppWorker extends Command
             $this->info(
                 'SMS seleccionadas: ' . $ids->count()
             );
+
             foreach ($ids as $smsId) {
+
+                if ($this->paragemSolicitada) {
+                    $this->warn('Paragem solicitada. Nenhuma nova SMS será submetida.');
+                    break;
+                }
+
                 // Nunca iniciar uma submissão se o tempo de sessão for insuficiente.
                 // Reservamos 100s para submit_sm_resp (90s) e encerramento.
                 if ($modoServico && microtime(true) + 100 >= $deadlineServico) {
@@ -370,7 +392,7 @@ class SmppWorker extends Command
 
                 $this->info('A aguardar DLRs da Movitel...');
 
-                while (microtime(true) < $deadlineServico) {
+                while (!$this->paragemSolicitada && microtime(true) < $deadlineServico) {
 
                     $dispatcher->processNext();
 
