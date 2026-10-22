@@ -277,6 +277,19 @@ class SmppWorker extends Command
                             'TPS indisponível.'
                         );
                     }
+
+                    /*
+                    * Não iniciar uma nova submissão
+                    * quando existir pedido de paragem.
+                    */
+                    if ($this->paragemSolicitada) {
+                        $this->warn(
+                            "SMS #{$smsId}: paragem solicitada antes da submissão."
+                        );
+
+                        break;
+                    }
+                    
                     /*
                      * Preparar PDU em memória.
                      */
