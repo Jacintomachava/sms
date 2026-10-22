@@ -2,23 +2,35 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Sms;
-use App\Services\SMPP\{SmppConnectionManager, SmppDispatcher, SmppEnvioService, SmppRateLimiter, SmppRecuperacaoService, SmppTentativaService};
+use App\Services\SMPP\SmppConnectionManager;
+use App\Services\SMPP\SmppDispatcher;
+use App\Services\SMPP\SmppEnvioService;
+use App\Services\SMPP\SmppRateLimiter;
+use App\Services\SMPP\SmppRecuperacaoService;
+use App\Services\SMPP\SmppTentativaService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\{Cache, DB, Log};
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
 
 /**
- * Worker de produção conservador: sessão única, polling contínuo,
- * uma submissão pendente de cada vez e ciclo de duração limitada.
- * NÃO é ainda a implementação pipelined de 20 submissões em trânsito.
+ * Uma sessão SMPP, submissões assíncronas em janela limitada e DLR na mesma ligação.
+ * Ciclos limitados a 180s porque o lock Redis existente expira em 300s.
+ * Supervisor reinicia o processo; não é permitido sobrepor workers.
  */
 class SmppWorkerProducao extends Command
 {
-    protected $signature = 'smpp:worker {--duracao=180 : Duração máxima do ciclo (1-180 segundos)} {--confirmar : Autorizar submissões reais}';
-    protected $description = 'Worker SMPP de produção com sessão exclusiva e recepção de DLR';
-    private bool $stop = false;
+    protected $signature = 'smpp:worker
+        {--confirmar : Autoriza transmissões reais e cobranças}
+        {--duracao=180 : Segundos por sessão (máximo 180)}
+        {--janela=10 : Máximo de submit_sm_resp pendentes (1 a 20)}
+        {--timeout-resposta=60 : Prazo de resposta SMPP (10 a 90 segundos)}
+        {--somente-dlr : Receber relatórios sem submeter novas SMS}';
+
+    protected $description = 'Worker SMPP de produção com janela assíncrona, sessão exclusiva e DLR';
+    private bool $parar = false;
 
     public function handle(
         SmppConnectionManager $manager,
@@ -29,93 +41,87 @@ class SmppWorkerProducao extends Command
         SmppTentativaService $tentativas
     ): int {
         $duracao = (int) $this->option('duracao');
-        if (!$this->option('confirmar') || $duracao < 1 || $duracao > 180) {
-            $this->error('Use --confirmar e --duracao entre 1 e 180.');
+        $janela = (int) $this->option('janela');
+        $timeout = (int) $this->option('timeout-resposta');
+        $somenteDlr = (bool) $this->option('somente-dlr');
+        if ($duracao < 30 || $duracao > 180 || $janela < 1 || $janela > 20 || $timeout < 10 || $timeout > 90) {
+            $this->error('Parâmetros inválidos: duração 30..180, janela 1..20, timeout 10..90.');
             return self::FAILURE;
         }
-        if (!extension_loaded('pcntl')) {
-            $this->error('A extensão pcntl é obrigatória para encerramento seguro.');
+        if (!$somenteDlr && !$this->option('confirmar')) {
+            $this->error('Envio real requer --confirmar.');
             return self::FAILURE;
         }
-        pcntl_async_signals(true);
-        pcntl_signal(SIGTERM, fn () => $this->stop = true);
-        pcntl_signal(SIGINT, fn () => $this->stop = true);
+        if (function_exists('pcntl_async_signals')) {
+            pcntl_async_signals(true);
+            pcntl_signal(SIGTERM, fn () => $this->parar = true);
+            pcntl_signal(SIGINT, fn () => $this->parar = true);
+        }
 
-        // flock protege contra dois processos no mesmo host, mesmo se Redis expirar.
-        $file = fopen(storage_path('framework/smpp-movitel-worker.lock'), 'c');
-        if (!$file || !flock($file, LOCK_EX | LOCK_NB)) {
-            $this->error('Já existe um worker SMPP neste servidor.');
+        // Exclusão compartilhada com smpp:worker-teste.
+        $lock = Cache::store('redis')->lock('smpp:movitel:worker', 300);
+        if (!$lock->get()) {
+            $this->error('Outro worker SMPP já detém a sessão.');
             return self::FAILURE;
         }
-        $lock = null;
-        $sessionId = null;
-        $exit = self::SUCCESS;
+
+        $sessao = null;
+        $pendentes = []; // sequence => ['sms_id', 'tentativa_id', 'enviado_em']
         $deadline = microtime(true) + $duracao;
-        $pending = null;
-        $ignoradas = [];
+        $resultado = self::SUCCESS;
+
         try {
-            $lock = Cache::store('redis')->lock('smpp:movitel:worker', 300);
-            if (!$lock->get()) {
-                throw new RuntimeException('Outra sessão SMPP detém o lock Redis.');
+            $recuperadas = $recuperacao->recuperarTentativasAbandonadas();
+            if (!empty($recuperadas['erros'])) {
+                throw new RuntimeException('Não foi possível reconciliar tentativas abandonadas.');
             }
             $connection = $manager->getConnection();
-            $sessionId = $manager->sessionId();
-            if (!$sessionId || !$connection->isBound()) {
+            $sessao = $manager->sessionId();
+            if (!$sessao || !$connection->isBound()) {
                 throw new RuntimeException('Sessão SMPP não autenticada.');
             }
             $dispatcher->clearSessionState();
-            $this->info('SMPP activo. Sessão: ' . $sessionId);
+            $this->info("SMPP activo. Sessão: {$sessao}; janela: {$janela}");
 
-            while (!$this->stop && microtime(true) < $deadline) {
-                // O dispatcher confirma/rejeita financeiramente antes de devolver a resposta.
-                try {
-                    $dispatcher->processNext();
-                } catch (Throwable $e) {
-                    if ($this->stop) {
-                        break; // SIGTERM pode interromper stream_select.
-                    }
-                    throw $e;
-                }
+            while (!$this->parar && microtime(true) < $deadline) {
+                // processNext pode devolver null quando não há PDU; também recebe DLRs.
+                $dispatcher->processNext();
                 $dispatcher->heartbeatIfNeeded();
                 $dispatcher->assertHeartbeatHealthy();
 
-                if ($pending !== null) {
-                    $response = $dispatcher->takeSubmitResponse($pending['seq']);
-                    if ($response !== null) {
-                        $this->line('Resposta da SMS #' . $pending['sms'] . ' recebida.');
-                        $pending = null;
-                    } elseif (microtime(true) > $pending['deadline']) {
-                        throw new RuntimeException('Resposta SMPP incerta para SMS #' . $pending['sms']);
+                foreach ($pendentes as $sequence => $info) {
+                    if ($dispatcher->takeSubmitResponse((int) $sequence) !== null) {
+                        unset($pendentes[$sequence]);
+                        $this->line("SMS #{$info['sms_id']}: resposta recebida.");
+                    } elseif (microtime(true) - $info['enviado_em'] > $timeout) {
+                        throw new RuntimeException("Timeout submit_sm_resp da SMS #{$info['sms_id']}.");
                     }
+                }
+
+                // Não criar novas submissões perto do fim do ciclo; drenar respostas.
+                if ($somenteDlr || microtime(true) + $timeout + 5 >= $deadline || count($pendentes) >= $janela) {
+                    usleep(30000);
                     continue;
                 }
 
-                // Não iniciar nova submissão perto do fim do ciclo.
-                if (microtime(true) + 100 >= $deadline) {
-                    continue; // Ainda recebemos DLRs até ao encerramento.
-                }
-                $smsId = DB::table('sms_outbox as o')
-                    ->join('sms as s', 's.id', '=', 'o.sms_id')
-                    ->where('o.estado', 'PENDENTE')
-                    ->where('s.estado', 'PENDENTE')
-                    ->when($ignoradas !== [], fn ($q) => $q->whereNotIn('s.id', $ignoradas))
-                    ->whereNotExists(function ($q) {
-                        $q->selectRaw('1')->from('smpp_tentativas_envio as t')
-                          ->whereColumn('t.sms_id', 's.id');
-                    })
-                    ->orderBy('o.id')->value('s.id');
-                if (!$smsId || !$limiter->acquire()) {
-                    usleep(100000);
+                $sms = $envio->proximaSms();
+                if (!$sms) {
+                    usleep(150000);
                     continue;
                 }
-                $attemptId = null;
+
+                $tentativaId = null;
+                $iniciada = false;
                 try {
-                    $sms = $envio->preparar((int) $smsId);
-                    $sender = DB::table('sender_ids')->where('id', $sms->sender_id)->first();
-                    if (!$sender || $sender->estado !== 'APROVADO'
-                        || $sender->operadora !== 'MOVITEL' || !$sender->aprovado_operadora_em
-                        || !preg_match('/^[A-Za-z0-9]{1,11}$/', (string) $sender->sender)) {
+                    $sms = $envio->preparar((int) $sms->id);
+                    $senderRow = DB::table('sender_ids')->where('id', $sms->sender_id)->first();
+                    if (!$senderRow || $senderRow->estado !== 'APROVADO'
+                        || $senderRow->operadora !== 'MOVITEL' || !$senderRow->aprovado_operadora_em) {
                         throw new RuntimeException('Sender ID não aprovado pela Movitel.');
+                    }
+                    $sender = (string) $senderRow->sender;
+                    if (!preg_match('/^[A-Za-z0-9]{1,11}$/', $sender)) {
+                        throw new RuntimeException('Sender ID inválido.');
                     }
                     $telefone = preg_replace('/\D+/', '', (string) $sms->telefone);
                     if (preg_match('/^8[2-7][0-9]{7}$/', $telefone)) {
@@ -124,47 +130,81 @@ class SmppWorkerProducao extends Command
                     if (!preg_match('/^2588[2-7][0-9]{7}$/', $telefone)) {
                         throw new RuntimeException('Telefone inválido.');
                     }
-                    if ($this->stop) {
-                        break;
+                    if (!$limiter->acquire()) {
+                        usleep(60000);
+                        continue;
                     }
-                    $seq = $connection->prepareSubmit((string) $sender->sender, $telefone, (string) $sms->mensagem);
-                    $attemptId = $envio->prepararTentativa(
-                        smsId: (int) $smsId, sessionId: $sessionId,
-                        sequenceNumber: $seq, host: (string) $manager->activeHost(),
-                        porta: (int) config('services.smpp.port', 8014),
-                        workerId: $manager->workerId(), tentativaService: $tentativas
+                    $sequence = $connection->prepareSubmit($sender, $telefone, (string) $sms->mensagem);
+                    $tentativaId = $envio->prepararTentativa(
+                        (int) $sms->id, $sessao, $sequence,
+                        (string) $manager->activeHost(), (int) config('services.smpp.port', 8014),
+                        $manager->workerId(), $tentativas
                     );
-                    $tentativas->iniciarSubmissao($attemptId);
-                    $connection->sendPreparedSubmit($seq);
-                    $pending = ['sms' => (int) $smsId, 'seq' => $seq, 'deadline' => microtime(true) + 90];
-                    $this->line('SMS #' . $smsId . ': PDU transmitida.');
+                    $tentativas->iniciarSubmissao($tentativaId);
+                    $iniciada = true;
+                    $connection->sendPreparedSubmit($sequence);
+                    $pendentes[$sequence] = [
+                        'sms_id' => (int) $sms->id,
+                        'tentativa_id' => $tentativaId,
+                        'enviado_em' => microtime(true),
+                    ];
+                    $this->line("SMS #{$sms->id}: PDU transmitida (seq {$sequence}).");
                 } catch (Throwable $e) {
-                    Log::error('SMPP ENVIO PRODUCAO', ['sms_id' => $smsId, 'tentativa_id' => $attemptId, 'erro' => $e->getMessage()]);
-                    if ($attemptId !== null) {
-                        throw $e; // nunca reenviar tentativa com resultado incerto
+                    Log::error('SMPP erro ao preparar/submeter', [
+                        'sms_id' => $sms->id, 'tentativa_id' => $tentativaId,
+                        'submissao_iniciada' => $iniciada, 'erro' => $e->getMessage(),
+                    ]);
+                    if ($iniciada || $tentativaId !== null) {
+                        // Estado potencialmente incerto: não prosseguir a transmitir.
+                        throw $e;
                     }
-                    // Falha pré-submissão: não bloquear toda a fila, mas não girar sobre a mesma SMS.
-                    $this->warn('SMS #' . $smsId . ': ' . $e->getMessage());
-                    $ignoradas[] = (int) $smsId;
+                    // SMS inválida permanece pendente para correcção manual; não criar tentativa.
+                    $this->warn("SMS #{$sms->id} inválida: {$e->getMessage()}");
                     usleep(500000);
                 }
             }
+
+            // Encerramento controlado: dar oportunidade às respostas pendentes.
+            $drenagem = microtime(true) + $timeout;
+            while ($pendentes && microtime(true) < $drenagem) {
+                $dispatcher->processNext();
+                $dispatcher->heartbeatIfNeeded();
+                $dispatcher->assertHeartbeatHealthy();
+                foreach ($pendentes as $seq => $info) {
+                    if ($dispatcher->takeSubmitResponse((int) $seq) !== null) {
+                        unset($pendentes[$seq]);
+                    }
+                }
+            }
+            if ($pendentes) {
+                throw new RuntimeException('Sessão terminou com respostas SMPP pendentes.');
+            }
         } catch (Throwable $e) {
-            $exit = self::FAILURE;
-            Log::error('SMPP WORKER PRODUCAO', ['session_id' => $sessionId, 'erro' => $e->getMessage()]);
+            $resultado = self::FAILURE;
+            Log::error('SMPP worker interrompido', ['erro' => $e->getMessage(), 'sessao' => $sessao]);
             $this->error($e->getMessage());
+            $manager->reportFailure($e);
         } finally {
-            try { $manager->disconnect(); } catch (Throwable $e) { report($e); }
-            if ($sessionId) {
-                try { $recuperacao->recuperarSessao($sessionId); } catch (Throwable $e) { report($e); $exit = self::FAILURE; }
+            // Depois de perder uma sessão, SUBMETENDO sem resposta fica INCERTO.
+            if ($sessao) {
+                try {
+                    $r = $recuperacao->recuperarSessao($sessao);
+                    if (!empty($r['erros'])) {
+                        $resultado = self::FAILURE;
+                        Log::critical('SMPP falha ao reconciliar sessão', ['erros' => $r['erros']]);
+                    }
+                } catch (Throwable $e) {
+                    $resultado = self::FAILURE;
+                    Log::critical('SMPP falha na recuperação final', ['erro' => $e->getMessage()]);
+                }
             }
+            $manager->disconnect();
             $dispatcher->clearSessionState();
-            if ($lock) {
-                try { $lock->release(); } catch (Throwable $e) { report($e); }
+            try { $lock->release(); } catch (Throwable $e) {
+                Log::critical('SMPP falha ao libertar lock', ['erro' => $e->getMessage()]);
+                $resultado = self::FAILURE;
             }
-            flock($file, LOCK_UN);
-            fclose($file);
         }
-        return $exit;
+        return $resultado;
     }
 }
