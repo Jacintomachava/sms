@@ -74,9 +74,14 @@ class SmppDlrService
             }
 
             // Evitar associação ambígua entre fornecedores ou SMS.
+            $messageId = strtoupper(trim((string) $dados['message_id']));
+
             $candidatos = DB::table('sms')
                 ->where('provider', 'MOVITEL')
-                ->where('provider_message_id', $dados['message_id'])
+                ->whereRaw(
+                    'UPPER(provider_message_id) = ?',
+                    [$messageId]
+                )
                 ->limit(2)
                 ->pluck('id');
 

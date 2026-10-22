@@ -114,20 +114,17 @@ class SmppDispatcher
                  * a excepção interrompe o processamento
                  * antes de responder à Movitel.
                  */
-                $this->dlrService->processar(
-                    $pdu,
-                    $this->manager->activeHost()
-                );
+                $reportId = $this->dlrService->processar($pdu, $this->manager->activeHost());
 
-                /*
-                 * Só confirmamos depois de a persistência
-                 * terminar com sucesso.
-                 */
-                $connection->respondDeliverSm(
-                    $sequence
-                );
+                $connection->respondDeliverSm($sequence);
 
-                break;
+                Log::info('SMPP DLR RECEBIDO E CONFIRMADO', [
+                    'report_id' => $reportId,
+                    'sequence_number' => $sequence,
+                    'host' => $this->manager->activeHost(),
+                ]);
+
+            break;
 
             /*
             |--------------------------------------------------------------------------

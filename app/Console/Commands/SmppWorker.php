@@ -18,9 +18,12 @@ use Throwable;
 
 class SmppWorker extends Command
 {
+
     protected $signature = 'smpp:worker-teste
         {--diagnostico : Testar apenas a ligação SMPP}
         {--simular-envio : Verificar uma SMS sem enviar}
+        {--receber-dlr : Receber DLR sem enviar SMS}
+        {--duracao=180 : Duração da recepção em segundos}
         {--limite=5 : Número máximo de SMS por lote}
         {--confirmar : Autorizar envios reais}';
 
@@ -62,8 +65,7 @@ class SmppWorker extends Command
             }
         }
 
-        if (!$this->option('diagnostico')
-            && !$this->option('confirmar')) {
+        if (!$this->option('diagnostico') && !$this->option('receber-dlr') && !$this->option('confirmar')) {
 
             $this->error(
                 'Envio real não autorizado. Utilize --confirmar.'
@@ -105,6 +107,41 @@ class SmppWorker extends Command
 
             if ($this->option('diagnostico')) {
                 $this->info('Diagnóstico concluído.');
+                return self::SUCCESS;
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | RECEPÇÃO DE DLR SEM ENVIO DE SMS
+            |--------------------------------------------------------------------------
+            */
+            if ($this->option('receber-dlr')) {
+
+                $duracao = (int) $this->option('duracao');
+
+                if ($duracao < 1 || $duracao > 240) {
+                    throw new RuntimeException(
+                        'A duração deve estar entre 1 e 240 segundos.'
+                    );
+                }
+
+                $this->info(
+                    "A receber DLRs durante {$duracao} segundos..."
+                );
+
+                $deadline = microtime(true) + $duracao;
+
+                while (microtime(true) < $deadline) {
+
+                    $dispatcher->processNext();
+
+                    $dispatcher->heartbeatIfNeeded();
+
+                    $dispatcher->assertHeartbeatHealthy();
+                }
+
+                $this->info('Recepção de DLR concluída.');
+
                 return self::SUCCESS;
             }
 
