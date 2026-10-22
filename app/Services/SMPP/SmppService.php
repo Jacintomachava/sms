@@ -356,32 +356,29 @@ class SmppService
             $except = null;
 
             // Esperar no máximo 1 segundo por dados.
-            $ready = @stream_select(
-                $read,
-                $write,
-                $except,
-                1,
-                0
-            );
+            $selectError = null;
+            set_error_handler(static function (int $severity, string $message) use (&$selectError): bool {
+                $selectError = $message;
+                return true;
+            });
+            try {
+                $ready = stream_select($read, $write, $except, 1, 0);
+            } finally {
+                restore_error_handler();
+            }
 
             if ($ready === false) {
-
-                /*
-                * Uma interrupção por sinal (EINTR) pode ocorrer
-                * quando o Supervisor envia SIGTERM.
-                *
-                * Outras falhas devem continuar a gerar erro.
-                */
-                $erro = error_get_last();
-                $mensagem = (string) ($erro['message'] ?? '');
-
-                if (stripos($mensagem, 'Interrupted system call') !== false || stripos($mensagem, 'EINTR') !== false) {
+                // SIGTERM/SIGINT pode interromper select(2). O ciclo exterior
+                // verifica a flag de paragem antes de qualquer nova submissão.
+                if ($selectError !== null && (
+                    stripos($selectError, 'Interrupted system call') !== false ||
+                    stripos($selectError, 'EINTR') !== false
+                )) {
                     return false;
                 }
-
                 throw new RuntimeException(
                     'Erro ao verificar disponibilidade do socket SMPP: ' .
-                    ($mensagem ?: 'erro desconhecido')
+                    ($selectError ?: 'erro desconhecido')
                 );
             }
 

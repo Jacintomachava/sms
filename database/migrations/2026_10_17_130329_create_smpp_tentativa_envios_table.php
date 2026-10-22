@@ -49,6 +49,7 @@ return new class extends Migration
                 ['session_id', 'sequence_number'],
                 'smpp_tentativas_sessao_seq_unique'
             );
+            
        });
     }
 
@@ -57,6 +58,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('smpp_tentativa_envio');
+        Schema::dropIfExists('smpp_tentativas_envio');
     }
 };
