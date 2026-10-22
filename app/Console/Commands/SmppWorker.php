@@ -119,7 +119,7 @@ class SmppWorker extends Command
             $this->info('Sessão SMPP estabelecida.');
             $this->line('Host: ' . $manager->activeHost());
             $this->line('Sessão: ' . $sessionId);
-            
+
             if ($this->option('diagnostico')) {
                 $this->info('Diagnóstico concluído.');
                 return self::SUCCESS;
@@ -365,6 +365,23 @@ class SmppWorker extends Command
                     $ignoradas++;
                 }
             }
+
+            if ($modoServico && $resultado === self::SUCCESS) {
+
+                $this->info('A aguardar DLRs da Movitel...');
+
+                while (microtime(true) < $deadlineServico) {
+
+                    $dispatcher->processNext();
+
+                    $dispatcher->heartbeatIfNeeded();
+
+                    $dispatcher->assertHeartbeatHealthy();
+                }
+
+                $this->info('Sessão de serviço concluída.');
+            }
+
             $this->newLine();
             $this->info('RESUMO DO LOTE');
             $this->line("Aceites: {$enviadas}");
