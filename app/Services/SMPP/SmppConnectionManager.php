@@ -121,6 +121,8 @@ class SmppConnectionManager
                 Log::info('SMPP conectado', [
                     'host' => $host,
                     'worker_id' => $this->workerId,
+                    'manager_object_id' => spl_object_id($this),
+                    'session_id' => $this->sessionId,
                 ]);
 
                 return $client;
