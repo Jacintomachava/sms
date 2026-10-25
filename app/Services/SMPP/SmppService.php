@@ -356,29 +356,32 @@ class SmppService
             $except = null;
 
             // Esperar no máximo 1 segundo por dados.
-            $selectError = null;
-            set_error_handler(static function (int $severity, string $message) use (&$selectError): bool {
-                $selectError = $message;
-                return true;
-            });
-            try {
-                $ready = stream_select($read, $write, $except, 1, 0);
-            } finally {
-                restore_error_handler();
-            }
+            $ready = @stream_select(
+                $read,
+                $write,
+                $except,
+                1,
+                0
+            );
 
             if ($ready === false) {
-                // SIGTERM/SIGINT pode interromper select(2). O ciclo exterior
-                // verifica a flag de paragem antes de qualquer nova submissão.
-                if ($selectError !== null && (
-                    stripos($selectError, 'Interrupted system call') !== false ||
-                    stripos($selectError, 'EINTR') !== false
-                )) {
+
+                /*
+                * Uma interrupção por sinal (EINTR) pode ocorrer
+                * quando o Supervisor envia SIGTERM.
+                *
+                * Outras falhas devem continuar a gerar erro.
+                */
+                $erro = error_get_last();
+                $mensagem = (string) ($erro['message'] ?? '');
+
+                if (stripos($mensagem, 'Interrupted system call') !== false || stripos($mensagem, 'EINTR') !== false) {
                     return false;
                 }
+
                 throw new RuntimeException(
                     'Erro ao verificar disponibilidade do socket SMPP: ' .
-                    ($selectError ?: 'erro desconhecido')
+                    ($mensagem ?: 'erro desconhecido')
                 );
             }
 
@@ -601,6 +604,68 @@ class SmppService
 
         $this->preparedSubmits[$sequence] = $body;
 
+        return $sequence;
+    }
+
+    /**
+     * Prepara UM segmento UDH sem o transmitir.
+     * A camada de worker deve persistir a tentativa ANTES de sendPreparedSubmit().
+     * Nunca usar para contornar a reserva financeira ou reenviar segmentos incertos.
+     *
+     * @param array{numero:int,total:int,esm_class:int,data_coding:int,short_message:string,sm_length:int} $segmento
+     */
+    public function prepareSegmentSubmit(string $sender, string $destination, array $segmento): int
+    {
+        if (!$this->isBound()) {
+            throw new RuntimeException('Sessão SMPP não autenticada.');
+        }
+        if ($sender === '' || strlen($sender) > 11 || !preg_match('/^[A-Za-z0-9]+$/D', $sender)) {
+            throw new \InvalidArgumentException('Sender ID inválido.');
+        }
+        if (!preg_match('/^[0-9]{8,15}$/D', $destination)) {
+            throw new \InvalidArgumentException('Número de destino inválido.');
+        }
+        foreach (['numero', 'total', 'esm_class', 'data_coding', 'short_message', 'sm_length'] as $campo) {
+            if (!array_key_exists($campo, $segmento)) {
+                throw new \InvalidArgumentException("Campo de segmento ausente: {$campo}");
+            }
+        }
+        $payload = $segmento['short_message'];
+        $comprimento = strlen($payload);
+        if ($comprimento < 1 || $comprimento > 140 || $comprimento !== $segmento['sm_length']) {
+            throw new \InvalidArgumentException('Comprimento inválido do segmento SMPP.');
+        }
+        $numero = $segmento['numero'];
+        $total = $segmento['total'];
+        if ($total < 1 || $total > 10 || $numero < 1 || $numero > $total) {
+            throw new \InvalidArgumentException('Numeração de segmento inválida.');
+        }
+        if (!in_array($segmento['data_coding'], [0, 8], true)) {
+            throw new \InvalidArgumentException('data_coding não suportado.');
+        }
+        if ($total > 1) {
+            if ($segmento['esm_class'] !== 0x40 || $comprimento < 7 ||
+                substr($payload, 0, 3) !== "\x05\x00\x03" ||
+                ord($payload[4]) !== $total || ord($payload[5]) !== $numero) {
+                throw new \InvalidArgumentException('UDH inválido para multipart.');
+            }
+        } elseif ($segmento['esm_class'] !== 0x00) {
+            throw new \InvalidArgumentException('esm_class inválido para SMS simples.');
+        }
+        if ($segmento['data_coding'] === 8 && (($comprimento - ($total > 1 ? 6 : 0)) % 2 !== 0)) {
+            throw new \InvalidArgumentException('UTF-16BE com número ímpar de bytes.');
+        }
+
+        $sequence = $this->nextSequence();
+        $body =
+            $this->cstring('') .
+            pack('CC', 5, 0) . $this->cstring($sender) .
+            pack('CC', 1, 1) . $this->cstring($destination) .
+            pack('CCC', $segmento['esm_class'], 0, 0) .
+            $this->cstring('') . $this->cstring('') .
+            pack('CCCC', 1, 0, $segmento['data_coding'], 0) .
+            pack('C', $comprimento) . $payload;
+        $this->preparedSubmits[$sequence] = $body;
         return $sequence;
     }
 
