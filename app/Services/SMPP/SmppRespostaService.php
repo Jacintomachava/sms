@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\SMPP;
 
 use App\Models\Sms;
@@ -7,11 +9,14 @@ use App\Models\SmppTentativaEnvio;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
+/**
+ * Regista cada submit_sm_resp e só confirma financeiramente a SMS
+ * quando TODOS os segmentos foram aceites.
+ * Rejeição parcial nunca liberta reservas automaticamente.
+ */
 class SmppRespostaService
 {
-    public function __construct(
-        private readonly SmsConfirmacaoService $confirmacao
-    ) {}
+    public function __construct(private readonly SmsConfirmacaoService $confirmacao) {}
 
     public function processar(
         string $sessionId,
@@ -19,164 +24,110 @@ class SmppRespostaService
         int $commandStatus,
         ?string $providerMessageId
     ): void {
-        if (
-            trim($sessionId) === '' ||
-            $sequenceNumber < 1 ||
-            $commandStatus < 0 ||
-            $commandStatus > 0xFFFFFFFF
-        ) {
-            throw new RuntimeException(
-                'Identificação ou estado da resposta SMPP inválido.'
-            );
+        if (trim($sessionId) === '' || $sequenceNumber < 1 ||
+            $commandStatus < 0 || $commandStatus > 0xFFFFFFFF) {
+            throw new RuntimeException('Identificação ou estado SMPP inválido.');
+        }
+        if ($commandStatus === 0 && ($providerMessageId === null || trim($providerMessageId) === '')) {
+            throw new RuntimeException('Resposta SMPP aceite sem message_id.');
         }
 
-        DB::transaction(function () use (
-            $sessionId,
-            $sequenceNumber,
-            $commandStatus,
-            $providerMessageId
-        ) {
-
-            /*
-            |--------------------------------------------------------------------------
-            | 1. LOCALIZAR TENTATIVA SEM BLOQUEIO
-            |--------------------------------------------------------------------------
-            */
-            $referencia = SmppTentativaEnvio::query()
+        DB::transaction(function () use ($sessionId, $sequenceNumber, $commandStatus, $providerMessageId) {
+            // Identificar antes de bloquear, preservando a ordem SMS -> tentativa -> segmentos.
+            $referenciaSegmento = DB::table('smpp_segmentos_envio')
                 ->where('session_id', $sessionId)
                 ->where('sequence_number', $sequenceNumber)
                 ->first();
-
-            if (!$referencia) {
-                throw new RuntimeException(
-                    'Tentativa SMPP não encontrada.'
-                );
+            if (!$referenciaSegmento) {
+                throw new RuntimeException('Segmento SMPP não encontrado para sessão/sequence.');
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | 2. BLOQUEAR SMS
-            |--------------------------------------------------------------------------
-            */
-            $sms = Sms::query()
-                ->whereKey($referencia->sms_id)
-                ->lockForUpdate()
-                ->firstOrFail();
+            $referenciaTentativa = SmppTentativaEnvio::query()
+                ->findOrFail($referenciaSegmento->smpp_tentativa_envio_id);
+            $sms = Sms::query()->whereKey($referenciaTentativa->sms_id)
+                ->lockForUpdate()->firstOrFail();
+            $tentativa = SmppTentativaEnvio::query()->whereKey($referenciaTentativa->id)
+                ->lockForUpdate()->firstOrFail();
+            $segmentos = DB::table('smpp_segmentos_envio')
+                ->where('smpp_tentativa_envio_id', $tentativa->id)
+                ->orderBy('numero_segmento')->lockForUpdate()->get();
+            $segmento = $segmentos->firstWhere('id', $referenciaSegmento->id);
 
-            /*
-            |--------------------------------------------------------------------------
-            | 3. BLOQUEAR E REVALIDAR TENTATIVA
-            |--------------------------------------------------------------------------
-            */
-            $tentativa = SmppTentativaEnvio::query()
-                ->whereKey($referencia->id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if (
-                (int) $tentativa->sms_id !== (int) $sms->id ||
+            if (!$segmento || (int)$tentativa->sms_id !== (int)$sms->id ||
                 $tentativa->session_id !== $sessionId ||
-                (int) $tentativa->sequence_number !== $sequenceNumber
-            ) {
-                throw new RuntimeException(
-                    'Identificação da tentativa SMPP inconsistente.'
-                );
+                $segmento->session_id !== $sessionId ||
+                (int)$segmento->sequence_number !== $sequenceNumber ||
+                $segmentos->count() !== (int)$sms->segmentos) {
+                throw new RuntimeException('Associação ou quantidade de segmentos inconsistente.');
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | 4. IDEMPOTÊNCIA
-            |--------------------------------------------------------------------------
-            */
-            if ($tentativa->estado === 'ACEITE') {
-
-                if (
-                    $commandStatus !== 0 ||
-                    $tentativa->provider_message_id !== $providerMessageId
-                ) {
-                    throw new RuntimeException(
-                        'Conflito com resposta SMPP já aceite.'
-                    );
+            // Respostas duplicadas são idempotentes, mas respostas contraditórias são erro.
+            if (in_array($segmento->estado, ['ACEITE', 'REJEITADO'], true)) {
+                $igual = $segmento->estado === ($commandStatus === 0 ? 'ACEITE' : 'REJEITADO')
+                    && (int)$segmento->command_status === $commandStatus
+                    && ($commandStatus !== 0 || $segmento->provider_message_id === $providerMessageId);
+                if (!$igual) {
+                    throw new RuntimeException('Resposta duplicada contraditória para segmento SMPP.');
                 }
-
                 return;
             }
-
-            if ($tentativa->estado === 'REJEITADA') {
-
-                if (
-                    $commandStatus === 0 ||
-                    (int) $tentativa->command_status !== $commandStatus
-                ) {
-                    throw new RuntimeException(
-                        'Conflito com resposta SMPP já rejeitada.'
-                    );
-                }
-
-                return;
+            if (!in_array($segmento->estado, ['SUBMETENDO', 'INCERTO'], true)) {
+                throw new RuntimeException('Segmento não foi iniciado; resposta não pode ser aplicada.');
+            }
+            if (!in_array($tentativa->estado, ['SUBMETENDO', 'INCERTA'], true)) {
+                throw new RuntimeException('Tentativa em estado incompatível com a resposta.');
             }
 
-            if (!in_array($tentativa->estado, [
-                'SUBMETENDO',
-                'INCERTA',
-            ], true)) {
-                throw new RuntimeException(
-                    'Estado da tentativa incompatível.'
-                );
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | 5. RESPOSTA ACEITE
-            |--------------------------------------------------------------------------
-            */
-            if ($commandStatus === 0) {
-
-                if (
-                    $providerMessageId === null ||
-                    trim($providerMessageId) === ''
-                ) {
-                    throw new RuntimeException(
-                        'Resposta aceite sem message_id.'
-                    );
-                }
-
-                $this->confirmacao->confirmarAceite(
-                    (int) $sms->id,
-                    $providerMessageId
-                );
-
-                $tentativa->update([
-                    'estado' => 'ACEITE',
-                    'command_status' => 0,
-                    'provider_message_id' => $providerMessageId,
-                    'respondida_em' => now(),
-                    'erro' => null,
-                ]);
-
-                return;
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | 6. RESPOSTA REJEITADA
-            |--------------------------------------------------------------------------
-            */
-            $this->confirmacao->libertarRejeitada(
-                (int) $sms->id
-            );
-
-            $tentativa->update([
-                'estado' => 'REJEITADA',
+            DB::table('smpp_segmentos_envio')->where('id', $segmento->id)->update([
+                'estado' => $commandStatus === 0 ? 'ACEITE' : 'REJEITADO',
                 'command_status' => $commandStatus,
-                'provider_message_id' => null,
-                'respondida_em' => now(),
-                'erro' => sprintf(
-                    'SMPP command_status: 0x%08X',
-                    $commandStatus
-                ),
+                'provider_message_id' => $commandStatus === 0 ? $providerMessageId : null,
+                'respondido_em' => now(),
+                'updated_at' => now(),
             ]);
 
+            $segmentos = DB::table('smpp_segmentos_envio')
+                ->where('smpp_tentativa_envio_id', $tentativa->id)
+                ->orderBy('numero_segmento')->get();
+            $aceites = $segmentos->where('estado', 'ACEITE');
+            $rejeitados = $segmentos->where('estado', 'REJEITADO');
+            $total = $segmentos->count();
+
+            if ($aceites->count() === $total) {
+                // Uma confirmação financeira para a SMS lógica inteira.
+                $idPrincipal = (string)$aceites->sortByDesc('numero_segmento')
+                    ->first()->provider_message_id;
+                $this->confirmacao->confirmarAceite((int)$sms->id, $idPrincipal);
+                $tentativa->update([
+                    'estado' => 'ACEITE', 'command_status' => 0,
+                    'provider_message_id' => $idPrincipal,
+                    'respondida_em' => now(), 'erro' => null,
+                ]);
+                return;
+            }
+
+            if ($rejeitados->count() === $total) {
+                // Todos foram explicitamente rejeitados; nenhum segmento aceite/incerto.
+                $this->confirmacao->libertarRejeitada((int)$sms->id);
+                $tentativa->update([
+                    'estado' => 'REJEITADA', 'command_status' => $commandStatus,
+                    'respondida_em' => now(),
+                    'erro' => 'Todos os segmentos rejeitados pelo SMSC.',
+                ]);
+                return;
+            }
+
+            if ($rejeitados->isNotEmpty()) {
+                // Mesmo uma rejeição parcial não autoriza libertação nem reenvio.
+                if ($sms->estado === 'PROCESSANDO') {
+                    $sms->update(['estado' => 'INCERTO']);
+                }
+                $tentativa->update([
+                    'estado' => 'INCERTA',
+                    'erro' => 'Resposta parcial/rejeição de segmento; requer reconciliação.',
+                ]);
+            }
+            // Enquanto faltarem respostas, manter reservas intactas.
         }, 3);
     }
 }

@@ -76,14 +76,26 @@ class SmppDlrService
             // Evitar associação ambígua entre fornecedores ou SMS.
             $messageId = strtoupper(trim((string) $dados['message_id']));
 
-            $candidatos = DB::table('sms')
+            // Localizar tanto IDs de SMS simples como IDs de qualquer
+            // segmento de SMS multipart. Não associar IDs ambíguos.
+            $idsSmsSimples = DB::table('sms')
                 ->where('provider', 'MOVITEL')
-                ->whereRaw(
-                    'UPPER(provider_message_id) = ?',
-                    [$messageId]
-                )
-                ->limit(2)
+                ->whereRaw('UPPER(provider_message_id) = ?', [$messageId])
                 ->pluck('id');
+
+            $idsSmsSegmentos = DB::table('smpp_segmentos_envio as seg')
+                ->join('smpp_tentativas_envio as tentativa',
+                    'tentativa.id', '=', 'seg.smpp_tentativa_envio_id')
+                ->join('sms', 'sms.id', '=', 'tentativa.sms_id')
+                ->whereRaw('UPPER(seg.provider_message_id) = ?', [$messageId])
+                ->where(function ($q) {
+                    $q->where('sms.provider', 'MOVITEL')
+                      ->orWhereNull('sms.provider');
+                })
+                ->pluck('tentativa.sms_id');
+
+            $candidatos = $idsSmsSimples->concat($idsSmsSegmentos)
+                ->unique()->values();
 
             if ($candidatos->count() !== 1) {
                 return $reportId;
@@ -107,6 +119,21 @@ class SmppDlrService
                 ->where('id', $reportId)
                 ->update([
                     'sms_id' => $sms->id,
+                    'updated_at' => now(),
+                ]);
+
+            // Associar o DLR aos segmentos que possuam este message_id.
+            // Não presumir que o ID corresponde ao último segmento.
+            DB::table('smpp_segmentos_envio')
+                ->whereIn('smpp_tentativa_envio_id', function ($query) use ($sms) {
+                    $query->select('id')
+                        ->from('smpp_tentativas_envio')
+                        ->where('sms_id', $sms->id);
+                })
+                ->whereRaw('UPPER(provider_message_id) = ?', [$messageId])
+                ->update([
+                    'dlr_estado' => $dados['estado'],
+                    'dlr_recebido_em' => now(),
                     'updated_at' => now(),
                 ]);
 

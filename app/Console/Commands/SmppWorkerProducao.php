@@ -8,6 +8,7 @@ use App\Services\SMPP\SmppEnvioService;
 use App\Services\SMPP\SmppRateLimiter;
 use App\Services\SMPP\SmppRecuperacaoService;
 use App\Services\SMPP\SmppTentativaService;
+use App\Services\SMPP\SmppUdhSegmentador;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -38,7 +39,8 @@ class SmppWorkerProducao extends Command
         SmppRecuperacaoService $recuperacao,
         SmppEnvioService $envio,
         SmppRateLimiter $limiter,
-        SmppTentativaService $tentativas
+        SmppTentativaService $tentativas,
+        SmppUdhSegmentador $segmentador
     ): int {
 
         $duracao = (int) $this->option('duracao');
@@ -109,100 +111,135 @@ class SmppWorkerProducao extends Command
             $dispatcher->clearSessionState();
             $this->info("SMPP activo. Sessão: {$sessao}; janela: {$janela}");
 
+            // Conservador: apenas UMA SMS lógica em curso por vez.
+            // A janela assíncrona continua disponível para os segmentos da mesma SMS.
+            $activa = null;
+            $ignoradas = [];
             while (!$this->parar && microtime(true) < $deadline) {
-                // processNext pode devolver null quando não há PDU; também recebe DLRs.
                 $dispatcher->processNext();
                 $dispatcher->heartbeatIfNeeded();
                 $dispatcher->assertHeartbeatHealthy();
 
                 foreach ($pendentes as $sequence => $info) {
-                    if ($dispatcher->takeSubmitResponse((int) $sequence) !== null) {
+                    $resposta = $dispatcher->takeSubmitResponse((int) $sequence);
+                    if ($resposta !== null) {
                         unset($pendentes[$sequence]);
-                        $this->line("SMS #{$info['sms_id']}: resposta recebida.");
+                        if ((int) $resposta['status'] !== 0) {
+                            // Não transmitir outros segmentos após rejeição conhecida.
+                            if ($activa !== null) {
+                                $activa['falha'] = true;
+                            }
+                        }
                     } elseif (microtime(true) - $info['enviado_em'] > $timeout) {
                         throw new RuntimeException("Timeout submit_sm_resp da SMS #{$info['sms_id']}.");
                     }
                 }
 
-                // Não criar novas submissões perto do fim do ciclo; drenar respostas.
+                if ($activa !== null && $activa['falha']) {
+                    // A recuperação marcará como incertos os segmentos submetidos
+                    // ainda sem resposta. PREPARADO permanece sem transmissão.
+                    throw new RuntimeException('Rejeição parcial de segmentos; requer reconciliação.');
+                }
+
+                if ($activa !== null && $activa['indice'] >= count($activa['partes']) && !$pendentes) {
+                    $this->info("SMS #{$activa['sms_id']}: todas as respostas processadas.");
+                    $activa = null;
+                }
+
                 if ($somenteDlr || microtime(true) + $timeout + 5 >= $deadline || count($pendentes) >= $janela) {
                     usleep(30000);
                     continue;
                 }
 
-                $sms = $envio->proximaSms();
-                if (!$sms) {
-                    usleep(150000);
-                    continue;
-                }
-
-                $tentativaId = null;
-                $iniciada = false;
-
-                try {
-
-                    $sms = $envio->preparar((int) $sms->id);
-                    $senderRow = DB::table('sender_ids')->where('id', $sms->sender_id)->first();
-
-                    if (!$senderRow || $senderRow->estado !== 'APROVADO'
-                        || $senderRow->operadora !== 'MOVITEL' || !$senderRow->aprovado_operadora_em) {
-                        throw new RuntimeException('Sender ID não aprovado pela Movitel.');
-                    }
-
-                    $sender = (string) $senderRow->sender;
-                    if (!preg_match('/^[A-Za-z0-9]{1,11}$/', $sender)) {
-                        throw new RuntimeException('Sender ID inválido.');
-                    }
-
-                    $telefone = preg_replace('/\D+/', '', (string) $sms->telefone);
-                    if (preg_match('/^8[2-7][0-9]{7}$/', $telefone)) {
-                        $telefone = '258' . $telefone;
-                    }
-
-                    if (!preg_match('/^2588[2-7][0-9]{7}$/', $telefone)) {
-                        throw new RuntimeException('Telefone inválido.');
-                    }
-
-                    if (!$limiter->acquire()) {
-                        usleep(60000);
+                if ($activa === null) {
+                    $sms = $envio->proximaSms($ignoradas);
+                    if (!$sms) {
+                        usleep(150000);
                         continue;
                     }
+                    $tentativaId = null;
+                    try {
+                        $sms = $envio->preparar((int) $sms->id);
+                        $senderRow = DB::table('sender_ids')->where('id', $sms->sender_id)->first();
+                        if (!$senderRow || $senderRow->estado !== 'APROVADO' ||
+                            $senderRow->operadora !== 'MOVITEL' || !$senderRow->aprovado_operadora_em) {
+                            throw new RuntimeException('Sender ID não aprovado pela Movitel.');
+                        }
+                        $sender = (string) $senderRow->sender;
+                        if (!preg_match('/^[A-Za-z0-9]{1,11}$/D', $sender)) {
+                            throw new RuntimeException('Sender ID inválido.');
+                        }
+                        $telefone = preg_replace('/\D+/', '', (string) $sms->telefone);
+                        if (preg_match('/^8[2-7][0-9]{7}$/D', $telefone)) {
+                            $telefone = '258' . $telefone;
+                        }
+                        if (!preg_match('/^2588[2-7][0-9]{7}$/D', $telefone)) {
+                            throw new RuntimeException('Telefone inválido.');
+                        }
 
-                    $sequence = $connection->prepareSubmit($sender, $telefone, (string) $sms->mensagem);
-                    $tentativaId = $envio->prepararTentativa(
-                        (int) $sms->id, $sessao, $sequence,
-                        (string) $manager->activeHost(), (int) config('services.smpp.port', 8014),
-                        $manager->workerId(), $tentativas
-                    );
-
-                    $tentativas->iniciarSubmissao($tentativaId);
-                    $iniciada = true;
-                    $connection->sendPreparedSubmit($sequence);
-
-                    $pendentes[$sequence] = [
-                        'sms_id' => (int) $sms->id,
-                        'tentativa_id' => $tentativaId,
-                        'enviado_em' => microtime(true),
-                    ];
-
-                    $this->line("SMS #{$sms->id}: PDU transmitida (seq {$sequence}).");
-
-                } catch (Throwable $e) {
-
-                    Log::error('SMPP erro ao preparar/submeter', [
-                        'sms_id' => $sms->id, 'tentativa_id' => $tentativaId,
-                        'submissao_iniciada' => $iniciada, 'erro' => $e->getMessage(),
-                    ]);
-
-                    if ($iniciada || $tentativaId !== null) {
-                        // Estado potencialmente incerto: não prosseguir a transmitir.
-                        throw $e;
+                        $referenciaUdh = random_int(0, 255);
+                        $partes = $segmentador->preparar((string) $sms->mensagem, $referenciaUdh);
+                        if (count($partes) !== (int) $sms->segmentos) {
+                            throw new RuntimeException('Quantidade de segmentos incompatível com reservas.');
+                        }
+                        $sequences = [];
+                        foreach ($partes as $parte) {
+                            $sequences[] = [
+                                'numero_segmento' => (int) $parte['numero'],
+                                'sequence_number' => $connection->prepareSegmentSubmit($sender, $telefone, $parte),
+                            ];
+                        }
+                        $tentativaId = (int) $tentativas->prepararSegmentos(
+                            (int) $sms->id, $sessao, (string) $manager->activeHost(),
+                            (int) config('services.smpp.port', 8014), $manager->workerId(),
+                            $sequences, count($partes) > 1 ? $referenciaUdh : null
+                        )->id;
+                        $activa = [
+                            'sms_id' => (int) $sms->id,
+                            'tentativa_id' => $tentativaId,
+                            'partes' => $partes,
+                            'sequences' => $sequences,
+                            'indice' => 0,
+                            'falha' => false,
+                        ];
+                    } catch (Throwable $e) {
+                        Log::error('SMPP falha ao preparar SMS', [
+                            'sms_id' => $sms->id, 'tentativa_id' => $tentativaId,
+                            'erro' => $e->getMessage(),
+                        ]);
+                        if ($tentativaId !== null) {
+                            throw $e;
+                        }
+                        $ignoradas[] = (int) $sms->id;
+                        $this->warn("SMS #{$sms->id} ignorada neste ciclo: {$e->getMessage()}");
+                        continue;
                     }
-
-                    // SMS inválida permanece pendente para correcção manual; não criar tentativa.
-                    $this->warn("SMS #{$sms->id} inválida: {$e->getMessage()}");
-                    usleep(500000);
                 }
+
+                // Cada PDU consome um token TPS, não cada SMS lógica.
+                if (!$limiter->acquire()) {
+                    usleep(60000);
+                    continue;
+                }
+                $i = $activa['indice'];
+                $parte = $activa['partes'][$i];
+                $sequence = $activa['sequences'][$i]['sequence_number'];
+                $tentativas->iniciarSegmento($activa['tentativa_id'], (int) $parte['numero']);
+                // O estado SUBMETENDO foi persistido ANTES da transmissão.
+                $connection->sendPreparedSubmit($sequence);
+                $pendentes[$sequence] = [
+                    'sms_id' => $activa['sms_id'],
+                    'tentativa_id' => $activa['tentativa_id'],
+                    'enviado_em' => microtime(true),
+                ];
+                $activa['indice']++;
+                $this->line("SMS #{$activa['sms_id']}: segmento {$parte['numero']}/{$parte['total']} enviado (seq {$sequence}).");
+            }
+
+            // Se a sessão terminou com segmentos ainda não iniciados,
+            // não permitir finalização silenciosa da tentativa.
+            if ($activa !== null && $activa['indice'] < count($activa['partes'])) {
+                throw new RuntimeException('Ciclo encerrado com SMS multipart incompleta.');
             }
 
             // Encerramento controlado: dar oportunidade às respostas pendentes.
