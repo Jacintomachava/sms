@@ -232,14 +232,24 @@ class SmppWorkerProducao extends Command
                             ->where('estado', 'PENDENTE')
                             ->first();
 
-                        // Evitar repetir a mesma SMS durante a sessão.
-                        if (in_array($smsIdTeste, $ignoradas, true)) {
-                            break;
-                        }
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Modo de teste: uma única SMS
+                            |--------------------------------------------------------------------------
+                            |
+                            | Depois de processar a SMS seleccionada, continuar a receber
+                            | DLR até terminar a duração da sessão.
+                            |
+                            | Nunca seleccionar outra SMS nem reenviar a mesma.
+                            |
+                            */
 
-                        if (!$sms) {
-                            break;
-                        }
+                            if (in_array($smsIdTeste, $ignoradas, true) || !$sms) {
+
+                                usleep(150000);
+
+                                continue;
+                            }
 
                     } else {
 
