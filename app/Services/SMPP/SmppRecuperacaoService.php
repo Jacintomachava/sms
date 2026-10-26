@@ -463,4 +463,102 @@ class SmppRecuperacaoService
 
         return $resultado;
     }
+
+
+    /**
+     * Cancela uma tentativa preparada que nunca iniciou
+     * a transmissão de qualquer segmento.
+     *
+     * ATENÇÃO:
+     * O chamador deve garantir que o worker anterior
+     * terminou e não pode continuar a transmitir.
+     *
+     * Não altera reservas nem cria nova tentativa.
+     */
+    public function cancelarPreparadaSemEnvio(int $tentativaId): bool {
+
+        return DB::transaction(function () use ($tentativaId): bool {
+
+            $referencia = SmppTentativaEnvio::query()
+                ->findOrFail($tentativaId);
+
+            /*
+            * Ordem dos locks:
+            * SMS -> tentativa -> segmentos.
+            */
+            $sms = Sms::query()
+                ->whereKey($referencia->sms_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $tentativa = SmppTentativaEnvio::query()
+                ->whereKey($tentativaId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($tentativa->estado === 'CANCELADA_SEM_ENVIO') {
+                return false;
+            }
+
+            if (
+                $sms->estado !== 'PENDENTE' ||
+                $tentativa->estado !== 'PREPARADA'
+            ) {
+                throw new RuntimeException(
+                    'Tentativa não elegível para cancelamento sem envio.'
+                );
+            }
+
+            $segmentos = DB::table('smpp_segmentos_envio')
+                ->where('smpp_tentativa_envio_id', $tentativaId)
+                ->orderBy('numero_segmento')
+                ->lockForUpdate()
+                ->get();
+
+            if ($segmentos->count() !== (int) $sms->segmentos) {
+                throw new RuntimeException(
+                    'Quantidade de segmentos incompatível.'
+                );
+            }
+
+            foreach ($segmentos as $segmento) {
+
+                if (
+                    $segmento->estado !== 'PREPARADO' ||
+                    $segmento->submetido_em !== null ||
+                    $segmento->respondido_em !== null ||
+                    $segmento->provider_message_id !== null
+                ) {
+                    throw new RuntimeException(
+                        'Existe evidência de segmento iniciado.'
+                    );
+                }
+            }
+
+            /*
+            * Não libertar reservas.
+            * Serão reutilizadas numa futura tentativa.
+            */
+            $tentativa->update([
+                'estado' => 'CANCELADA_SEM_ENVIO',
+                'erro' => 'Tentativa cancelada sem transmissão de PDUs.',
+            ]);
+
+            DB::table('sms')
+                ->where('id', $sms->id)
+                ->update([
+                    'proxima_tentativa_em' => now()->addMinutes(5),
+                    'updated_at' => now(),
+                ]);
+
+            Log::info('SMPP tentativa cancelada sem envio', [
+                'sms_id' => $sms->id,
+                'tentativa_id' => $tentativaId,
+            ]);
+
+            return true;
+
+        }, 3);
+    }
+
 }

@@ -74,48 +74,44 @@ class SmppRetryService
          */
         foreach ($tentativas as $tentativa) {
 
+            if ($tentativa->estado !== 'CANCELADA_SEM_ENVIO') {
+                return $this->resultado(
+                    false,
+                    'TENTATIVA_ANTERIOR_NAO_CANCELADA'
+                );
+            }
+
             $segmentos = DB::table('smpp_segmentos_envio')
-                ->where(
-                    'smpp_tentativa_envio_id',
-                    $tentativa->id
-                )
+                ->where('smpp_tentativa_envio_id', $tentativa->id)
                 ->get();
 
             if ($segmentos->isEmpty()) {
                 return $this->resultado(
                     false,
-                    'SEM_EVIDENCIA_DE_SEGMENTOS'
+                    'TENTATIVA_SEM_SEGMENTOS'
                 );
             }
 
-            /*
-             * Qualquer segmento iniciado bloqueia
-             * o retry nesta primeira versão.
-             */
             foreach ($segmentos as $segmento) {
 
-                if ($segmento->estado !== 'PREPARADO') {
+                if (
+                    $segmento->estado !== 'PREPARADO' ||
+                    $segmento->submetido_em !== null ||
+                    $segmento->respondido_em !== null ||
+                    $segmento->provider_message_id !== null
+                ) {
                     return $this->resultado(
                         false,
-                        'SEGMENTO_INICIADO_OU_RESULTADO_INCERTO'
+                        'SEGMENTO_ANTERIOR_INICIADO'
                     );
                 }
-
-                if ($segmento->submetido_em !== null) {
-                    return $this->resultado(
-                        false,
-                        'SEGMENTO_COM_REGISTO_DE_SUBMISSAO'
-                    );
-                }
-            }
-
-            if ($tentativa->estado !== 'PREPARADA') {
-                return $this->resultado(
-                    false,
-                    'TENTATIVA_NAO_PREPARADA'
-                );
             }
         }
+
+        return $this->resultado(
+            true,
+            'RETRY_SEM_ENVIO_ANTERIOR'
+        );
 
         return $this->resultado(
             false,
