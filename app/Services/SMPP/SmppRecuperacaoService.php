@@ -20,16 +20,19 @@ class SmppRecuperacaoService
     public function recuperarSessao(string $sessionId): array
     {
         if (trim($sessionId) === '') {
-            throw new RuntimeException('Identificador da sessão SMPP inválido.');
+            throw new RuntimeException(
+                'Identificador da sessão SMPP inválido.'
+            );
         }
 
-        return $this->recuperarIds(
-            SmppTentativaEnvio::query()
-                ->where('session_id', $sessionId)
-                ->where('estado', 'SUBMETENDO')
-                ->orderBy('id')->pluck('id')->all(),
-            $sessionId
-        );
+        $ids = SmppTentativaEnvio::query()
+            ->where('session_id', $sessionId)
+            ->whereIn('estado', ['SUBMETENDO', 'INCERTA'])
+            ->orderBy('id')
+            ->pluck('id')
+            ->all();
+
+        return $this->recuperarIds($ids, $sessionId);
     }
 
     /**
@@ -37,7 +40,8 @@ class SmppRecuperacaoService
      */
     public function recuperarTentativasAbandonadas(?string $sessaoActual = null): array
     {
-        $query = SmppTentativaEnvio::query()->where('estado', 'SUBMETENDO');
+        $query = SmppTentativaEnvio::query()->whereIn('estado', ['SUBMETENDO', 'INCERTA']);
+
         if ($sessaoActual !== null) {
             if (trim($sessaoActual) === '') {
                 throw new RuntimeException('Sessão actual inválida.');
@@ -93,12 +97,14 @@ class SmppRecuperacaoService
                 throw new RuntimeException('Associação SMS/tentativa inconsistente.');
             }
 
-            if (in_array($tentativa->estado, ['ACEITE', 'REJEITADA', 'INCERTA'], true)) {
+            if (in_array($tentativa->estado, ['ACEITE', 'REJEITADA'], true)) {
                 return false;
             }
-            if ($tentativa->estado !== 'SUBMETENDO') {
+
+            if (!in_array($tentativa->estado, ['SUBMETENDO', 'INCERTA'], true)) {
                 return false;
             }
+
             if (!in_array($sms->estado, ['PROCESSANDO', 'INCERTO'], true)) {
                 throw new RuntimeException('Estado da SMS incompatível com recuperação.');
             }
