@@ -142,8 +142,44 @@ class SmppWorkerProducao extends Command
                 }
 
                 if ($activa !== null && $activa['indice'] >= count($activa['partes']) && !$pendentes) {
-                    $this->info("SMS #{$activa['sms_id']}: todas as respostas processadas.");
-                    $activa = null;
+                    
+                    $smsFinal = DB::table('sms')
+                        ->where('id', $activa['sms_id'])
+                        ->first();
+
+                    if (!$smsFinal) {
+                        throw new RuntimeException(
+                            'SMS não encontrada após processamento SMPP.'
+                        );
+                    }
+
+                    if (in_array($smsFinal->estado, [
+                        'ENVIADO',
+                        'ENTREGUE',
+                        'REJEITADO',
+                        'FALHADO',
+                    ], true)) {
+
+                        $this->info(
+                            "SMS #{$activa['sms_id']}: finalizada com estado {$smsFinal->estado}."
+                        );
+
+                        $activa = null;
+
+                    } elseif ($smsFinal->estado === 'INCERTO') {
+
+                        $this->warn(
+                            "SMS #{$activa['sms_id']}: resultado incerto; encaminhada para reconciliação."
+                        );
+
+                        $activa = null;
+
+                    } else {
+
+                        throw new RuntimeException(
+                            "SMS #{$activa['sms_id']} terminou respostas, mas permanece no estado {$smsFinal->estado}."
+                        );
+                    }
                 }
 
                 if ($somenteDlr || microtime(true) + $timeout + 5 >= $deadline || count($pendentes) >= $janela) {
