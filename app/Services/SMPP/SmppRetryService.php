@@ -134,4 +134,73 @@ class SmppRetryService
             'intervalo_minutos' => self::INTERVALO_MINUTOS,
         ];
     }
+
+    /**
+     * Verifica, numa transacção, se uma SMS pode
+     * ser considerada para uma nova tentativa.
+     *
+     * Não cria tentativas e não transmite PDUs.
+     */
+    public function autorizar(int $smsId): array
+    {
+        return DB::transaction(function () use ($smsId): array {
+
+            $sms = DB::table('sms')
+                ->where('id', $smsId)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$sms) {
+                return $this->resultado(
+                    false,
+                    'SMS_NAO_ENCONTRADA'
+                );
+            }
+
+            if ($sms->estado !== 'PENDENTE') {
+                return $this->resultado(
+                    false,
+                    'SMS_NAO_PENDENTE'
+                );
+            }
+
+            $tentativas = DB::table('smpp_tentativas_envio')
+                ->where('sms_id', $smsId)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+
+            if ($tentativas->count() >= self::MAX_TENTATIVAS) {
+                return $this->resultado(
+                    false,
+                    'LIMITE_TENTATIVAS'
+                );
+            }
+
+            /*
+            * Primeira tentativa.
+            */
+            if ($tentativas->isEmpty()) {
+                return $this->resultado(
+                    true,
+                    'PRIMEIRA_TENTATIVA'
+                );
+            }
+
+            /*
+            * Nesta fase, bloqueamos o retry.
+            *
+            * Uma tentativa PREPARADA pode ainda
+            * pertencer a um worker activo.
+            *
+            * A autorização definitiva exigirá
+            * comprovação de encerramento da sessão.
+            */
+            return $this->resultado(
+                false,
+                'RETRY_AGUARDA_ENCERRAMENTO_SEGURO'
+            );
+
+        }, 3);
+    }
 }
