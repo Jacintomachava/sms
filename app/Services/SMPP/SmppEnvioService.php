@@ -12,7 +12,10 @@ use RuntimeException;
 /** Validação e selecção. Não transmite PDUs nem movimenta créditos. */
 class SmppEnvioService
 {
-    public function __construct(private readonly SmppUdhSegmentador $segmentador) {}
+
+    public function __construct(private readonly SmppUdhSegmentador $segmentador, private readonly SmppRetryService $retryService) {
+
+    }
 
     public function proximaSms(array $ignorarSmsIds = []): ?Sms
     {
@@ -66,11 +69,34 @@ class SmppEnvioService
     public function preparar(int $smsId): Sms
     {
         $sms = Sms::query()->findOrFail($smsId);
+
+        /*
+        * Valida mensagem, encoding e segmentos.
+        */
         $this->validar($sms);
+
+        /*
+        * Confirma reservas existentes.
+        * Não cria novas reservas.
+        */
         $this->verificarReservas($sms);
-        if (DB::table('smpp_tentativas_envio')->where('sms_id', $smsId)->exists()) {
-            throw new RuntimeException('Esta SMS já possui uma tentativa SMPP.');
+
+        /*
+        * Avaliação de elegibilidade.
+        *
+        * ATENÇÃO:
+        * Esta avaliação não substitui a verificação
+        * transaccional durante a criação da tentativa.
+        */
+        $autorizacao = $this->retryService->autorizar($smsId);
+
+        if (!$autorizacao['permitido']) {
+            throw new RuntimeException(
+                'SMS não elegível para envio SMPP: '
+                . $autorizacao['motivo']
+            );
         }
+
         return $sms;
     }
 
