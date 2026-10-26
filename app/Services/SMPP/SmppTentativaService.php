@@ -103,8 +103,79 @@ class SmppTentativaService
                 (int) $reservas->where('tipo', 'STOCK')->sum('quantidade') !== $total) {
                 throw new RuntimeException('Reservas financeiras não correspondem aos segmentos.');
             }
-            if (SmppTentativaEnvio::query()->where('sms_id', $smsId)->exists()) {
-                throw new RuntimeException('A SMS já possui uma tentativa SMPP; reenvio automático proibido.');
+
+           /*
+            |--------------------------------------------------------------------------
+            | CONTROLO TRANSACCIONAL DE TENTATIVAS
+            |--------------------------------------------------------------------------
+            |
+            | A SMS já está bloqueada com lockForUpdate().
+            | Todas as tentativas desta SMS devem ser criadas através
+            | deste mesmo serviço, respeitando o bloqueio da SMS.
+            |
+            | Nenhuma tentativa anterior pode ter iniciado transmissão.
+            |
+            */
+
+            $maxTentativas = 5;
+
+            $tentativasAnteriores = SmppTentativaEnvio::query()
+                ->where('sms_id', $smsId)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+
+            $totalTentativas = $tentativasAnteriores->count();
+
+            /*
+            * Limite máximo de cinco tentativas.
+            */
+            if ($totalTentativas >= $maxTentativas) {
+                throw new RuntimeException(
+                    'Limite máximo de cinco tentativas SMPP atingido.'
+                );
+            }
+
+            /*
+            * Respeitar o intervalo entre tentativas.
+            */
+            if ($sms->proxima_tentativa_em !== null && $sms->proxima_tentativa_em > now()->toDateTimeString()) {
+                throw new RuntimeException(
+                    'A SMS ainda não atingiu o horário da próxima tentativa.'
+                );
+            }
+
+            /*
+            * Verificar todas as tentativas anteriores.
+            */
+            foreach ($tentativasAnteriores as $anterior) {
+
+                if ($anterior->estado !== 'CANCELADA_SEM_ENVIO') {
+                    throw new RuntimeException(
+                        'Existe tentativa anterior não cancelada sem envio.'
+                    );
+                }
+
+                $segmentosAnteriores = DB::table('smpp_segmentos_envio')
+                    ->where('smpp_tentativa_envio_id', $anterior->id)
+                    ->orderBy('numero_segmento')
+                    ->lockForUpdate()
+                    ->get();
+
+                if ($segmentosAnteriores->count() !== $total) {
+                    throw new RuntimeException(
+                        'Quantidade de segmentos anteriores incompatível.'
+                    );
+                }
+
+                foreach ($segmentosAnteriores as $segmentoAnterior) {
+
+                    if ($segmentoAnterior->estado !== 'PREPARADO' || $segmentoAnterior->submetido_em !== null || $segmentoAnterior->respondido_em !== null || $segmentoAnterior->provider_message_id !== null) {
+                        throw new RuntimeException(
+                            'Existe segmento anterior iniciado. Retry proibido.'
+                        );
+                    }
+                }
             }
 
             $primeiro = collect($segmentos)->firstWhere('numero_segmento', 1);
@@ -132,7 +203,29 @@ class SmppTentativaService
                     'updated_at' => now(),
                 ]);
             }
+
+            /*
+            |--------------------------------------------------------------------------
+            | ACTUALIZAR CONTADOR DE TENTATIVAS
+            |--------------------------------------------------------------------------
+            |
+            | O contador corresponde ao número real de tentativas
+            | SMPP criadas para esta SMS.
+            |
+            | Não movimentar créditos nem alterar reservas.
+            |
+            */
+
+            DB::table('sms')
+                ->where('id', $smsId)
+                ->update([
+                    'tentativas_envio' => $totalTentativas + 1,
+                    'proxima_tentativa_em' => null,
+                    'updated_at' => now(),
+                ]);
+
             return $tentativa;
+            
         }, 3);
     }
 
