@@ -14,12 +14,16 @@ class SmppReconciliacaoService
 
     public function executar(int $limite = 100): array
     {
+        $descobertas = $this->descobrirIncertas();
+
         $resultado = [
+            'descobertas' => $descobertas,
             'analisadas' => 0,
             'resolvidas' => 0,
             'reagendadas' => 0,
             'manuais' => 0,
             'erros' => [],
+            
         ];
 
         $ids = DB::table('sms_reconciliacoes')
@@ -237,4 +241,64 @@ class SmppReconciliacaoService
 
         }, 3);
     }
+
+    /**
+     * Descobre SMS incertas ainda sem registo de reconciliação.
+     *
+     * Não envia mensagens nem altera reservas.
+     */
+    public function descobrirIncertas(int $limite = 500): int
+    {
+        $criadas = 0;
+
+        $smsIds = DB::table('sms')
+            ->where('estado', 'INCERTO')
+            ->whereNotIn('id', function ($query) {
+                $query->select('sms_id')
+                    ->from('sms_reconciliacoes');
+            })
+            ->orderBy('id')
+            ->limit(max(1, min($limite, 500)))
+            ->pluck('id');
+
+        foreach ($smsIds as $smsId) {
+
+            DB::transaction(function () use ($smsId, &$criadas) {
+
+                $sms = DB::table('sms')
+                    ->where('id', $smsId)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$sms || $sms->estado !== 'INCERTO') {
+                    return;
+                }
+
+                $tentativa = DB::table('smpp_tentativas_envio')
+                    ->where('sms_id', $smsId)
+                    ->orderByDesc('id')
+                    ->first();
+
+                $inserida = DB::table('sms_reconciliacoes')
+                    ->insertOrIgnore([
+                        'sms_id' => $smsId,
+                        'smpp_tentativa_envio_id' => $tentativa?->id,
+                        'estado' => 'PENDENTE',
+                        'tentativas' => 0,
+                        'proxima_verificacao_em' => now(),
+                        'motivo' => 'DESCOBERTA_AUTOMATICA',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                if ($inserida === 1) {
+                    $criadas++;
+                }
+
+            }, 3);
+        }
+
+        return $criadas;
+    }
+
 }

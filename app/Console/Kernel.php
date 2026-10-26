@@ -24,6 +24,8 @@ class Kernel extends ConsoleKernel
         |
         */
         $schedule->command('pagamentos:reconciliar-creditos')->everyMinute()->withoutOverlapping(10);
+
+        $schedule->command('smpp:reconciliar --limite=100')->everyFiveMinutes()->withoutOverlapping(10)->appendOutputTo(storage_path('logs/smpp-reconciliacao.log'));
         
     }
 
