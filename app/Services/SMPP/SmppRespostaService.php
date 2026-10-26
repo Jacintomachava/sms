@@ -118,15 +118,31 @@ class SmppRespostaService
             }
 
             if ($rejeitados->isNotEmpty()) {
-                // Mesmo uma rejeição parcial não autoriza libertação nem reenvio.
+
                 if ($sms->estado === 'PROCESSANDO') {
-                    $sms->update(['estado' => 'INCERTO']);
+                    $sms->update([
+                        'estado' => 'INCERTO',
+                    ]);
                 }
+
                 $tentativa->update([
                     'estado' => 'INCERTA',
                     'erro' => 'Resposta parcial/rejeição de segmento; requer reconciliação.',
                 ]);
+
+                DB::table('sms_reconciliacoes')
+                    ->insertOrIgnore([
+                        'sms_id' => $sms->id,
+                        'smpp_tentativa_envio_id' => $tentativa->id,
+                        'estado' => 'PENDENTE',
+                        'tentativas' => 0,
+                        'proxima_verificacao_em' => now(),
+                        'motivo' => 'REJEICAO_PARCIAL',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
             }
+            
             // Enquanto faltarem respostas, manter reservas intactas.
         }, 3);
     }
