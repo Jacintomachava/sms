@@ -95,7 +95,21 @@ class SmppWorkerProducao extends Command
 
         $sessao = null;
         $pendentes = []; // sequence => ['sms_id', 'tentativa_id', 'enviado_em']
-        $deadline = microtime(true) + $duracao;
+
+        $inicioSessao = microtime(true);
+
+        $deadline = $inicioSessao + $duracao;
+        /*
+        |--------------------------------------------------------------------------
+        | Limite de segurança do lock Redis
+        |--------------------------------------------------------------------------
+        |
+        | O lock dura 300 segundos.
+        | Reservamos 60 segundos para encerramento e recuperação.
+        |
+        */
+        $limiteSeguranca = $inicioSessao + 240;
+
         $resultado = self::SUCCESS;
 
         try {
@@ -115,7 +129,15 @@ class SmppWorkerProducao extends Command
             // A janela assíncrona continua disponível para os segmentos da mesma SMS.
             $activa = null;
             $ignoradas = [];
+
             while (!$this->parar && microtime(true) < $deadline) {
+
+                if (microtime(true) >= $limiteSeguranca) {
+                    throw new RuntimeException(
+                        'Limite de segurança da sessão SMPP atingido.'
+                    );
+                }
+
                 $dispatcher->processNext();
                 $dispatcher->heartbeatIfNeeded();
                 $dispatcher->assertHeartbeatHealthy();
@@ -278,7 +300,15 @@ class SmppWorkerProducao extends Command
 
             // Encerramento controlado: dar oportunidade às respostas pendentes.
             $drenagem = microtime(true) + $timeout;
+
             while ($pendentes && microtime(true) < $drenagem) {
+
+                if (microtime(true) >= $limiteSeguranca) {
+                    throw new RuntimeException(
+                        'Limite de segurança atingido durante a drenagem SMPP.'
+                    );
+                }
+
                 $dispatcher->processNext();
                 $dispatcher->heartbeatIfNeeded();
                 $dispatcher->assertHeartbeatHealthy();
