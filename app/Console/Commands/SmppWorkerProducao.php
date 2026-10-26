@@ -23,12 +23,13 @@ use Throwable;
  */
 class SmppWorkerProducao extends Command
 {
-    protected $signature = 'smpp:worker
+   protected $signature = 'smpp:worker
         {--confirmar : Autoriza transmissões reais e cobranças}
         {--duracao=180 : Segundos por sessão (máximo 180)}
         {--janela=10 : Máximo de submit_sm_resp pendentes (1 a 20)}
         {--timeout-resposta=60 : Prazo de resposta SMPP (10 a 90 segundos)}
-        {--somente-dlr : Receber relatórios sem submeter novas SMS}';
+        {--somente-dlr : Receber relatórios sem submeter novas SMS}
+        {--sms-id= : Processar exclusivamente uma SMS específica}';
 
     protected $description = 'Worker SMPP de produção com janela assíncrona, sessão exclusiva e DLR';
     private bool $parar = false;
@@ -47,6 +48,20 @@ class SmppWorkerProducao extends Command
         $janela = (int) $this->option('janela');
         $timeout = (int) $this->option('timeout-resposta');
         $somenteDlr = (bool) $this->option('somente-dlr');
+        $smsIdTeste = $this->option('sms-id');
+
+        if ($smsIdTeste !== null) {
+            if (
+                !ctype_digit((string) $smsIdTeste) ||
+                (int) $smsIdTeste <= 0
+            ) {
+                $this->error('O identificador da SMS é inválido.');
+
+                return self::FAILURE;
+            }
+
+            $smsIdTeste = (int) $smsIdTeste;
+        }
 
         if ($duracao < 30 || $duracao > 180 || $janela < 1 || $janela > 20 || $timeout < 10 || $timeout > 90) {
             $this->error('Parâmetros inválidos: duração 30..180, janela 1..20, timeout 10..90.');
@@ -208,7 +223,31 @@ class SmppWorkerProducao extends Command
                 }
 
                 if ($activa === null) {
-                    $sms = $envio->proximaSms($ignoradas);
+
+                    if ($smsIdTeste !== null) {
+
+                        // Nunca seleccionar outra SMS durante o teste.
+                        $sms = \App\Models\Sms::query()
+                            ->where('id', $smsIdTeste)
+                            ->where('estado', 'PENDENTE')
+                            ->first();
+
+                        // Evitar repetir a mesma SMS durante a sessão.
+                        if (in_array($smsIdTeste, $ignoradas, true)) {
+                            break;
+                        }
+
+                        if (!$sms) {
+                            break;
+                        }
+
+                    } else {
+
+                        $sms = $envio->proximaSms($ignoradas);
+
+                    }
+
+
                     if (!$sms) {
                         usleep(150000);
                         continue;
@@ -271,6 +310,8 @@ class SmppWorkerProducao extends Command
                         continue;
                     }
                 }
+
+
 
                 // Cada PDU consome um token TPS, não cada SMS lógica.
                 if (!$limiter->acquire()) {
