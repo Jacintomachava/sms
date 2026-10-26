@@ -11,10 +11,6 @@ use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
 
-/**
- * Recuperação conservadora: não retransmite PDUs nem movimenta reservas.
- * Exige que o worker detenha o lock exclusivo antes de recuperar abandonadas.
- */
 class SmppRecuperacaoService
 {
     public function recuperarSessao(string $sessionId): array
@@ -35,39 +31,59 @@ class SmppRecuperacaoService
         return $this->recuperarIds($ids, $sessionId);
     }
 
-    /**
-     * Recupera tentativas abandonadas. Chamar somente com lock exclusivo do worker.
-     */
-    public function recuperarTentativasAbandonadas(?string $sessaoActual = null): array
-    {
-        $query = SmppTentativaEnvio::query()->whereIn('estado', ['SUBMETENDO', 'INCERTA']);
+    public function recuperarTentativasAbandonadas(
+        ?string $sessaoActual = null
+    ): array {
+
+        $query = SmppTentativaEnvio::query()
+            ->whereIn('estado', ['SUBMETENDO', 'INCERTA']);
 
         if ($sessaoActual !== null) {
+
             if (trim($sessaoActual) === '') {
                 throw new RuntimeException('Sessão actual inválida.');
             }
+
             $query->where('session_id', '!=', $sessaoActual);
         }
 
-        return $this->recuperarIds($query->orderBy('id')->pluck('id')->all(), $sessaoActual);
+        $ids = $query
+            ->orderBy('id')
+            ->pluck('id')
+            ->all();
+
+        return $this->recuperarIds($ids, $sessaoActual);
     }
 
-    private function recuperarIds(array $ids, ?string $sessionId): array
-    {
+    private function recuperarIds(
+        array $ids,
+        ?string $sessionId
+    ): array {
+
         $recuperadas = 0;
         $ignoradas = 0;
         $erros = [];
 
         foreach ($ids as $id) {
+
             try {
-                if ($this->marcarTentativaIncerta((int) $id)) {
+
+                $resultado = $this->recuperarTentativa((int) $id);
+
+                if ($resultado) {
                     $recuperadas++;
                 } else {
                     $ignoradas++;
                 }
+
             } catch (Throwable $e) {
-                $erros[] = ['tentativa_id' => (int) $id, 'erro' => $e->getMessage()];
-                Log::error('Falha na recuperação SMPP multipart', [
+
+                $erros[] = [
+                    'tentativa_id' => (int) $id,
+                    'erro' => $e->getMessage(),
+                ];
+
+                Log::error('Falha na recuperação SMPP', [
                     'tentativa_id' => (int) $id,
                     'session_id' => $sessionId,
                     'erro' => $e->getMessage(),
@@ -75,79 +91,247 @@ class SmppRecuperacaoService
             }
         }
 
-        return compact('recuperadas', 'ignoradas', 'erros');
+        return compact(
+            'recuperadas',
+            'ignoradas',
+            'erros'
+        );
     }
 
-    /**
-     * Ordem dos locks: SMS -> tentativa -> segmentos.
-     * Apenas segmentos SUBMETENDO tornam-se INCERTO; ACEITE/REJEITADO
-     * permanecem intactos. Segmentos PREPARADO não são considerados enviados.
-     */
-    public function marcarTentativaIncerta(int $tentativaId): bool
-    {
-        return DB::transaction(function () use ($tentativaId): bool {
-            $referencia = SmppTentativaEnvio::query()->findOrFail($tentativaId);
+    public function marcarTentativaIncerta(
+        int $tentativaId
+    ): bool {
+        return $this->recuperarTentativa($tentativaId);
+    }
 
-            $sms = Sms::query()->whereKey($referencia->sms_id)
-                ->lockForUpdate()->firstOrFail();
-            $tentativa = SmppTentativaEnvio::query()->whereKey($tentativaId)
-                ->lockForUpdate()->firstOrFail();
+    private function recuperarTentativa(
+        int $tentativaId
+    ): bool {
+
+        return DB::transaction(function () use ($tentativaId): bool {
+
+            $referencia = SmppTentativaEnvio::query()
+                ->findOrFail($tentativaId);
+
+            /*
+             * Ordem dos locks:
+             * SMS -> tentativa -> segmentos.
+             */
+            $sms = Sms::query()
+                ->whereKey($referencia->sms_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $tentativa = SmppTentativaEnvio::query()
+                ->whereKey($tentativaId)
+                ->lockForUpdate()
+                ->firstOrFail();
 
             if ((int) $tentativa->sms_id !== (int) $sms->id) {
-                throw new RuntimeException('Associação SMS/tentativa inconsistente.');
+                throw new RuntimeException(
+                    'Associação SMS/tentativa inconsistente.'
+                );
             }
 
-            if (in_array($tentativa->estado, ['ACEITE', 'REJEITADA'], true)) {
+            /*
+             * SMS já finalizada:
+             * não alterar nem recuperar novamente.
+             */
+            if (in_array($sms->estado, [
+                'FALHADO',
+                'REJEITADO',
+                'ENVIADO',
+                'ENTREGUE',
+                'EXPIRADO',
+            ], true)) {
+
                 return false;
             }
 
-            if (!in_array($tentativa->estado, ['SUBMETENDO', 'INCERTA'], true)) {
+            if (!in_array($tentativa->estado, [
+                'SUBMETENDO',
+                'INCERTA',
+            ], true)) {
+
                 return false;
             }
 
-            if (!in_array($sms->estado, ['PROCESSANDO', 'INCERTO'], true)) {
-                throw new RuntimeException('Estado da SMS incompatível com recuperação.');
+            if (!in_array($sms->estado, [
+                'PROCESSANDO',
+                'INCERTO',
+            ], true)) {
+
+                throw new RuntimeException(
+                    'Estado da SMS incompatível com recuperação.'
+                );
             }
 
+            /*
+             * Bloquear segmentos.
+             */
             $segmentos = DB::table('smpp_segmentos_envio')
-                ->where('smpp_tentativa_envio_id', $tentativaId)
-                ->orderBy('numero_segmento')->lockForUpdate()->get();
+                ->where(
+                    'smpp_tentativa_envio_id',
+                    $tentativaId
+                )
+                ->orderBy('numero_segmento')
+                ->lockForUpdate()
+                ->get();
 
-            if ($segmentos->count() !== (int) $sms->segmentos || $segmentos->isEmpty()) {
-                throw new RuntimeException('Segmentos ausentes ou quantidade incompatível.');
+            /*
+             * Tentativa antiga sem segmentos.
+             *
+             * Não presumir rejeição.
+             * Encaminhar para reconciliação.
+             */
+            if ($segmentos->isEmpty()) {
+
+                if (
+                    $tentativa->estado === 'INCERTA' &&
+                    $sms->estado === 'INCERTO'
+                ) {
+
+                    $this->registarReconciliacao(
+                        $sms->id,
+                        $tentativaId,
+                        'LEGADO_SEM_SEGMENTOS'
+                    );
+
+                    return false;
+                }
+
+                throw new RuntimeException(
+                    'Tentativa sem segmentos; estado incompatível.'
+                );
             }
+
+            if (
+                $segmentos->count() !==
+                (int) $sms->segmentos
+            ) {
+
+                throw new RuntimeException(
+                    'Quantidade de segmentos incompatível.'
+                );
+            }
+
             foreach ($segmentos as $segmento) {
-                if ($segmento->session_id !== $tentativa->session_id) {
-                    throw new RuntimeException('Sessão SMPP inconsistente no segmento.');
+
+                if (
+                    $segmento->session_id !==
+                    $tentativa->session_id
+                ) {
+
+                    throw new RuntimeException(
+                        'Sessão SMPP inconsistente no segmento.'
+                    );
                 }
+
                 if (!in_array($segmento->estado, [
-                    'PREPARADO', 'SUBMETENDO', 'INCERTO', 'ACEITE', 'REJEITADO'
+                    'PREPARADO',
+                    'SUBMETENDO',
+                    'INCERTO',
+                    'ACEITE',
+                    'REJEITADO',
                 ], true)) {
-                    throw new RuntimeException('Estado de segmento desconhecido.');
+
+                    throw new RuntimeException(
+                        'Estado de segmento desconhecido.'
+                    );
                 }
             }
 
+            /*
+             * Se já está INCERTA, apenas garantir
+             * o registo para reconciliação.
+             */
+            if (
+                $tentativa->estado === 'INCERTA' &&
+                $sms->estado === 'INCERTO'
+            ) {
+
+                $this->registarReconciliacao(
+                    $sms->id,
+                    $tentativaId,
+                    'RESULTADO_SMPP_INCERTO'
+                );
+
+                return false;
+            }
+
+            /*
+             * Segmentos em submissão:
+             * não sabemos se chegaram à Movitel.
+             */
             $incertos = DB::table('smpp_segmentos_envio')
-                ->where('smpp_tentativa_envio_id', $tentativaId)
+                ->where(
+                    'smpp_tentativa_envio_id',
+                    $tentativaId
+                )
                 ->where('estado', 'SUBMETENDO')
-                ->update(['estado' => 'INCERTO', 'updated_at' => now()]);
+                ->update([
+                    'estado' => 'INCERTO',
+                    'updated_at' => now(),
+                ]);
 
             if ($sms->estado === 'PROCESSANDO') {
-                $sms->update(['estado' => 'INCERTO']);
+
+                $sms->update([
+                    'estado' => 'INCERTO',
+                ]);
             }
 
             $tentativa->update([
                 'estado' => 'INCERTA',
-                'erro' => 'Sessão SMPP encerrada sem confirmação de todos os segmentos; reconciliação necessária.',
+                'erro' =>
+                    'Sessão SMPP encerrada sem confirmação de todos os segmentos.',
             ]);
 
-            Log::warning('Tentativa SMPP marcada INCERTA', [
-                'tentativa_id' => $tentativaId,
-                'sms_id' => $sms->id,
-                'segmentos_sem_resposta' => $incertos,
-            ]);
+            /*
+             * Criar entrada de reconciliação.
+             */
+            $this->registarReconciliacao(
+                $sms->id,
+                $tentativaId,
+                'SESSAO_INTERROMPIDA'
+            );
+
+            Log::warning(
+                'Tentativa SMPP recuperada como INCERTA',
+                [
+                    'tentativa_id' => $tentativaId,
+                    'sms_id' => $sms->id,
+                    'segmentos_sem_resposta' => $incertos,
+                ]
+            );
 
             return true;
+
         }, 3);
+    }
+
+    private function registarReconciliacao(
+        int $smsId,
+        int $tentativaId,
+        string $motivo
+    ): void {
+
+        /*
+         * A tabela sms_reconciliacoes possui
+         * índice UNIQUE em sms_id.
+         *
+         * Evitamos criar reconciliações duplicadas.
+         */
+        DB::table('sms_reconciliacoes')
+            ->insertOrIgnore([
+                'sms_id' => $smsId,
+                'smpp_tentativa_envio_id' => $tentativaId,
+                'estado' => 'PENDENTE',
+                'tentativas' => 0,
+                'proxima_verificacao_em' => now(),
+                'motivo' => $motivo,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
     }
 }
