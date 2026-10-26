@@ -142,10 +142,8 @@ class SmppWorkerProducao extends Command
                 }
 
                 if ($activa !== null && $activa['indice'] >= count($activa['partes']) && !$pendentes) {
-                    
-                    $smsFinal = DB::table('sms')
-                        ->where('id', $activa['sms_id'])
-                        ->first();
+
+                    $smsFinal = DB::table('sms')->where('id', $activa['sms_id'])->first();
 
                     if (!$smsFinal) {
                         throw new RuntimeException(
@@ -284,11 +282,32 @@ class SmppWorkerProducao extends Command
                 $dispatcher->processNext();
                 $dispatcher->heartbeatIfNeeded();
                 $dispatcher->assertHeartbeatHealthy();
+
                 foreach ($pendentes as $seq => $info) {
-                    if ($dispatcher->takeSubmitResponse((int) $seq) !== null) {
-                        unset($pendentes[$seq]);
+
+                    $resposta = $dispatcher->takeSubmitResponse((int) $seq);
+
+                    if ($resposta === null) {
+                        continue;
+                    }
+
+                    unset($pendentes[$seq]);
+
+                    if ((int) $resposta['status'] !== 0) {
+
+                        Log::warning('SMPP resposta rejeitada durante drenagem', [
+                            'sms_id' => $info['sms_id'],
+                            'tentativa_id' => $info['tentativa_id'],
+                            'sequence_number' => $seq,
+                            'command_status' => (int) $resposta['status'],
+                        ]);
+
+                        if ($activa !== null) {
+                            $activa['falha'] = true;
+                        }
                     }
                 }
+
             }
 
             if ($pendentes) {
