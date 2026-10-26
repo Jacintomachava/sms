@@ -9,7 +9,7 @@ use Throwable;
 
 class SmppWorkerCommand extends Command
 {
-    protected $signature = 'smpp:worker
+    protected $signature = 'smpp:worker-legado
         {--diagnostico : Apenas verifica a sessão SMPP}';
 
     protected $description =
