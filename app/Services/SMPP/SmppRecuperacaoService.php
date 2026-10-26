@@ -334,4 +334,133 @@ class SmppRecuperacaoService
                 'updated_at' => now(),
             ]);
     }
+
+    /**
+     * Identifica tentativas PREPARADA potencialmente abandonadas.
+     *
+     * Apenas diagnóstico:
+     * - Não altera estados.
+     * - Não cria novas tentativas.
+     * - Não envia SMS.
+     * - Não movimenta reservas.
+     *
+     * Deve ser executado apenas num contexto em que
+     * a sessão SMPP anterior esteja comprovadamente encerrada.
+     */
+    public function diagnosticarPreparadas(int $limite = 100): array
+    {
+        if ($limite < 1 || $limite > 1000) {
+            throw new RuntimeException('Limite inválido.');
+        }
+
+        $tentativas = SmppTentativaEnvio::query()
+            ->where('estado', 'PREPARADA')
+            ->orderBy('id')
+            ->limit($limite)
+            ->get();
+
+        $resultado = [
+            'analisadas' => 0,
+            'candidatas' => [],
+            'bloqueadas' => [],
+        ];
+
+        foreach ($tentativas as $tentativa) {
+
+            $resultado['analisadas']++;
+
+            $sms = DB::table('sms')
+                ->where('id', $tentativa->sms_id)
+                ->first();
+
+            if (!$sms || $sms->estado !== 'PENDENTE') {
+
+                $resultado['bloqueadas'][] = [
+                    'tentativa_id' => $tentativa->id,
+                    'sms_id' => $tentativa->sms_id,
+                    'motivo' => 'SMS_NAO_PENDENTE',
+                ];
+
+                continue;
+            }
+
+            $segmentos = DB::table('smpp_segmentos_envio')
+                ->where(
+                    'smpp_tentativa_envio_id',
+                    $tentativa->id
+                )
+                ->get();
+
+            if (
+                $segmentos->count() !== (int) $sms->segmentos
+            ) {
+
+                $resultado['bloqueadas'][] = [
+                    'tentativa_id' => $tentativa->id,
+                    'sms_id' => $sms->id,
+                    'motivo' => 'SEGMENTOS_INCOMPATÍVEIS',
+                ];
+
+                continue;
+            }
+
+            $todosPreparados = $segmentos->every(
+                fn ($segmento) =>
+                    $segmento->estado === 'PREPARADO'
+                    && $segmento->submetido_em === null
+                    && $segmento->respondido_em === null
+                    && $segmento->provider_message_id === null
+            );
+
+            if (!$todosPreparados) {
+
+                $resultado['bloqueadas'][] = [
+                    'tentativa_id' => $tentativa->id,
+                    'sms_id' => $sms->id,
+                    'motivo' => 'SEGMENTO_INICIADO',
+                ];
+
+                continue;
+            }
+
+            $reservas = DB::table('sms_reservas')
+                ->where('sms_id', $sms->id)
+                ->get();
+
+            $reservasValidas =
+                $reservas->isNotEmpty()
+                && $reservas->every(
+                    fn ($reserva) =>
+                        $reserva->estado === 'RESERVADA'
+                        && (int) $reserva->quantidade > 0
+                )
+                && (int) $reservas
+                    ->where('tipo', 'CLIENTE')
+                    ->sum('quantidade') === (int) $sms->segmentos
+                && (int) $reservas
+                    ->where('tipo', 'STOCK')
+                    ->sum('quantidade') === (int) $sms->segmentos;
+
+            if (!$reservasValidas) {
+
+                $resultado['bloqueadas'][] = [
+                    'tentativa_id' => $tentativa->id,
+                    'sms_id' => $sms->id,
+                    'motivo' => 'RESERVAS_INVALIDAS',
+                ];
+
+                continue;
+            }
+
+            $resultado['candidatas'][] = [
+                'tentativa_id' => $tentativa->id,
+                'sms_id' => $sms->id,
+                'segmentos' => $sms->segmentos,
+                'criada_em' => $tentativa->created_at,
+                'motivo' => 'PREPARADA_SEM_SUBMISSAO_REGISTADA',
+            ];
+        }
+
+        return $resultado;
+    }
 }
