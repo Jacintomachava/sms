@@ -21,11 +21,54 @@ class SmppEnvioService
     {
         $query = SmsOutbox::query()
             ->where('estado', 'PENDENTE')
-            ->whereHas('sms', fn ($q) => $q->where('estado', 'PENDENTE'))
-            ->whereNotIn('sms_id', DB::table('smpp_tentativas_envio')->select('sms_id'));
+
+            /*
+            * A SMS deve estar pendente.
+            */
+            ->whereHas('sms', function ($q) {
+
+                $q->where('estado', 'PENDENTE')
+                    /*
+                    * Respeitar o intervalo mínimo.
+                    */
+                    ->where(function ($sub) {
+                        $sub->whereNull('proxima_tentativa_em')
+                            ->orWhere(
+                                'proxima_tentativa_em',
+                                '<=',
+                                now()
+                            );
+                    })
+
+                    /*
+                    * Não ultrapassar cinco tentativas.
+                    */
+                    ->where('tentativas_envio', '<', 5);
+            })
+
+            /*
+            * Não pode existir tentativa anterior
+            * com estado diferente de CANCELADA_SEM_ENVIO.
+            *
+            * Isto permite:
+            * - Primeira tentativa;
+            * - Retry de tentativas canceladas sem envio.
+            */
+            ->whereNotIn(
+                'sms_id',
+                DB::table('smpp_tentativas_envio')
+                    ->select('sms_id')
+                    ->where(
+                        'estado',
+                        '!=',
+                        'CANCELADA_SEM_ENVIO'
+                    )
+            );
+
         if ($ignorarSmsIds !== []) {
             $query->whereNotIn('sms_id', $ignorarSmsIds);
         }
+
         return $query->orderBy('id')->first()?->sms;
     }
 
