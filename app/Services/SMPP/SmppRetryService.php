@@ -118,8 +118,8 @@ class SmppRetryService
         }
 
         return $this->resultado(
-            true,
-            'TENTATIVAS_ANTERIORES_NAO_INICIADAS'
+            false,
+            'AGUARDA_CONFIRMACAO_DE_ABANDONO'
         );
     }
 
