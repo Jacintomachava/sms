@@ -7,6 +7,7 @@ use App\Models\Carteira;
 use App\Models\SenderId;
 use App\Models\Sms;
 use App\Services\SmsService;
+use App\Services\SmsCriacaoService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
@@ -187,7 +188,8 @@ class SmsController extends Controller
         ]);
     }
 
-    public function send(Request $request, SmsService $smsService) {
+    public function send(Request $request, SmsCriacaoService $smsCriacaoService){
+
         try {
 
             $validated = $request->validate([
@@ -240,7 +242,7 @@ class SmsController extends Controller
              * Vamos ajustar SmsService para aceitar
              * ?int $userId.
              */
-            $sms = $smsService->enviar($contaId, $sender->id, $validated['to'], $validated['message'], $origem, null);
+            $sms = $smsCriacaoService->criar(contaId: $contaId, senderId: $sender->id, telefone: $validated['to'], mensagem: $validated['message'], userId: null, origem: 'API');
 
             $saldo = Carteira::where('conta_id', $contaId)->value('saldo_sms');
 
@@ -255,7 +257,7 @@ class SmsController extends Controller
                     'encoding' => $sms->encoding,
                     'characters' => $sms->caracteres,
                     'segments' => $sms->segmentos,
-                    'sms_status' => 'SENT',
+                    'sms_status' => $this->publicSmsStatus($sms->estado),
                     'balance' =>(int) ($saldo ?? 0),
                     'created_at' => $sms->created_at->toIso8601String(),
                 ],

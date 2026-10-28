@@ -26,12 +26,18 @@ class SmsCriacaoService
         int $senderId,
         string $telefone,
         string $mensagem,
-        ?int $userId = null
+        ?int $userId = null,
+        string $origem = 'PAINEL'
     ): Sms {
+
         $telefone = trim($telefone);
         $mensagem = trim($mensagem);
 
-        if (!preg_match('/^(?:\+?258)?(82|83|84|85|86|87)[0-9]{7}$/', $telefone)) {
+        if (!in_array($origem, ['PAINEL', 'API', 'CAMPANHA'], true)) {
+            throw new RuntimeException('Origem da SMS inválida.');
+        }
+
+        if (!preg_match('/^(?:\+?258)?(82|83|84|85|86|87|88)[0-9]{7}$/', $telefone)) {
             throw ValidationException::withMessages([
                 'telefone' => 'Número de telefone moçambicano inválido.',
             ]);
@@ -103,7 +109,8 @@ class SmsCriacaoService
             $encoding,
             $caracteres,
             $segmentos,
-            $userId
+            $userId,
+            $origem
         ) {
             /*
              * 1. Validar conta e remetente.
@@ -156,7 +163,7 @@ class SmsCriacaoService
             $sms->custeado_por = 'CLIENTE';
             $sms->facturavel_cliente = true;
 
-            $sms->origem = 'PAINEL';
+            $sms->origem = $origem;
             $sms->estado = 'PENDENTE';
             $sms->provider = 'MOVITEL';
             $sms->criado_por = $userId;
