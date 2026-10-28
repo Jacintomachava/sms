@@ -10,6 +10,7 @@ use RuntimeException;
 class LimiteSmsService
 {
     public function validarEnvio(Conta $conta, int $novosSegmentos): void {
+        // Chamar dentro da transacção, com a linha da conta bloqueada.
 
         /*
         |--------------------------------------------------------------------------
@@ -76,7 +77,7 @@ class LimiteSmsService
             ->where('periodo_fim', $fim)
             ->first();
 
-        $consumoActual = (int) ($ciclo?->segmentos ?? 0);
+        $consumoActual = (int) ($ciclo?->segmentos ?? 0) + (int) ($ciclo?->segmentos_reservados ?? 0);
         $consumoDepois = $consumoActual + $novosSegmentos;
 
         /*

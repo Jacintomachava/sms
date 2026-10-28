@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\SMPP;
 
 use App\Models\Sms;
+use App\Models\Conta;
 use App\Models\SmsOutbox;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -92,20 +93,32 @@ class SmppEnvioService
         }
     }
 
+    /** Verificação somente leitura; a reserva foi criada transaccionalmente. */
     public function verificarReservas(Sms $sms): void
     {
-        $reservas = DB::table('sms_reservas')->where('sms_id', $sms->id)
-            ->orderBy('id')->get();
-        if ($reservas->isEmpty() || $reservas->contains(
-            fn ($r) => $r->estado !== 'RESERVADA' || (int) $r->quantidade < 1 ||
-                !in_array($r->tipo, ['CLIENTE', 'STOCK'], true)
-        )) {
-            throw new RuntimeException('Reservas financeiras inválidas.');
-        }
+        $conta = Conta::query()->findOrFail($sms->conta_id);
+        $reservas = DB::table('sms_reservas')->where('sms_id', $sms->id)->orderBy('id')->get();
         $segmentos = (int) $sms->segmentos;
-        if ((int) $reservas->where('tipo', 'CLIENTE')->sum('quantidade') !== $segmentos ||
-            (int) $reservas->where('tipo', 'STOCK')->sum('quantidade') !== $segmentos) {
-            throw new RuntimeException('Reservas financeiras insuficientes.');
+        if ($segmentos < 1 || $reservas->isEmpty() || $reservas->contains(
+            fn ($r) => $r->estado !== 'RESERVADA' || (int) $r->quantidade < 1
+        )) throw new RuntimeException('Reservas financeiras inválidas.');
+        $stock = $reservas->where('tipo', 'STOCK');
+        if ((int) $stock->sum('quantidade') !== $segmentos) {
+            throw new RuntimeException('Stock reservado insuficiente.');
+        }
+        if ($conta->tipo_cobranca === 'PRE_PAGO') {
+            $financeiro = $reservas->where('tipo', 'CLIENTE');
+        } elseif ($conta->tipo_cobranca === 'POS_PAGO') {
+            $financeiro = $reservas->where('tipo', 'POS_PAGO');
+            if ($financeiro->count() !== 1 || !$financeiro->first()->ciclo_consumo_sms_id ||
+                !DB::table('ciclos_consumo_sms')->where('id', $financeiro->first()->ciclo_consumo_sms_id)
+                    ->where('conta_id', $conta->id)->exists()) {
+                throw new RuntimeException('Ciclo de reserva pós-paga inválido.');
+            }
+        } else throw new RuntimeException('Tipo de cobrança não suportado.');
+        if ((int) $financeiro->sum('quantidade') !== $segmentos ||
+            $reservas->count() !== $financeiro->count() + $stock->count()) {
+            throw new RuntimeException('Reservas financeiras inconsistentes.');
         }
     }
 

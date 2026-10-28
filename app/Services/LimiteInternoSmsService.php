@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Services;
 
 use App\Models\Conta;
@@ -10,6 +9,7 @@ use RuntimeException;
 class LimiteInternoSmsService
 {
     public function validarEnvio(Conta $conta, int $novosSegmentos ): void {
+        // Chamar dentro da transacção, com a linha da conta bloqueada.
 
         if ($conta->tipo_cobranca !== 'POS_PAGO') {
             return;
@@ -45,7 +45,7 @@ class LimiteInternoSmsService
                 ->where('periodo_fim', $fim)
                 ->first();
 
-        $consumoActual = $ciclo?->segmentos ?? 0;
+        $consumoActual = (int) ($ciclo?->segmentos ?? 0) + (int) ($ciclo?->segmentos_reservados ?? 0);
         $consumoDepois = $consumoActual + $novosSegmentos;
 
         if ($consumoDepois > $limite->limite_sms) {

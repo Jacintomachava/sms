@@ -44,10 +44,7 @@ class SmsCriacaoService
         }
 
         // Guardar sempre no formato nacional.
-        $telefone = substr(
-            preg_replace('/\D/', '', $telefone),
-            -9
-        );
+        $telefone = substr(preg_replace('/\D/', '', $telefone), -9);
 
         if ($mensagem === '') {
             throw ValidationException::withMessages([
@@ -67,31 +64,21 @@ class SmsCriacaoService
          * A validação definitiva deve usar o
          * mesmo codificador do SmppService.
          */
-        $gsm7 = preg_match(
-            '/^[A-Za-z0-9 @£$¥èéùìòÇØøÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ!"#¤%&\'()*+,\-.\/:;<=>?¡ÄÖÑÜ§¿äöñüà\r\n]*$/u',
-            $mensagem
-        ) === 1;
+        $gsm7 = preg_match('/^[A-Za-z0-9 @£$¥èéùìòÇØøÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ!"#¤%&\'()*+,\-.\/:;<=>?¡ÄÖÑÜ§¿äöñüà\r\n]*$/u', $mensagem) === 1;
 
         $caracteres = mb_strlen($mensagem, 'UTF-8');
 
         $encoding = $gsm7 ? 'GSM7' : 'UNICODE';
 
         if ($gsm7) {
-            $segmentos = $caracteres <= 160
-                ? 1
-                : (int) ceil($caracteres / 153);
-        } else {
-            $unidadesUtf16 = strlen(
-                mb_convert_encoding(
-                    $mensagem,
-                    'UTF-16LE',
-                    'UTF-8'
-                )
-            ) / 2;
 
-            $segmentos = $unidadesUtf16 <= 70
-                ? 1
-                : (int) ceil($unidadesUtf16 / 67);
+            $segmentos = $caracteres <= 160 ? 1 : (int) ceil($caracteres / 153);
+
+        } else {
+
+            $unidadesUtf16 = strlen(mb_convert_encoding($mensagem, 'UTF-16LE', 'UTF-8')) / 2;
+            $segmentos = $unidadesUtf16 <= 70 ? 1 : (int) ceil($unidadesUtf16 / 67);
+
         }
 
         if ($segmentos < 1 || $segmentos > 10) {
@@ -115,9 +102,7 @@ class SmsCriacaoService
             /*
              * 1. Validar conta e remetente.
              */
-            $conta = DB::table('contas')
-                ->where('id', $contaId)
-                ->first();
+            $conta = DB::table('contas')->where('id', $contaId)->first();
 
             if (!$conta) {
                 throw new RuntimeException(
@@ -125,10 +110,8 @@ class SmsCriacaoService
                 );
             }
 
-            if ($conta->tipo_cobranca !== 'PRE_PAGO') {
-                throw new RuntimeException(
-                    'Este fluxo suporta apenas contas pré-pagas.'
-                );
+            if (!in_array($conta->tipo_cobranca, ['PRE_PAGO', 'POS_PAGO'], true)) {
+                throw new RuntimeException('Tipo de cobrança não suportado.');
             }
 
             /*
