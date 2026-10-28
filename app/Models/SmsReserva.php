@@ -13,6 +13,7 @@ class SmsReserva extends Model
         'sms_id',
         'carteira_lote_sms_id',
         'compra_stock_sms_id',
+        'ciclo_consumo_sms_id',
         'tipo',
         'quantidade',
         'estado',
@@ -35,5 +36,10 @@ class SmsReserva extends Model
     public function loteStock(): BelongsTo
     {
         return $this->belongsTo(CompraStockSms::class,'compra_stock_sms_id');
+    }
+
+    public function cicloConsumo(): BelongsTo
+    {
+        return $this->belongsTo(CicloConsumoSms::class,'ciclo_consumo_sms_id');
     }
 }
