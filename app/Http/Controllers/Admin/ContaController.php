@@ -188,7 +188,7 @@ class ContaController extends Controller
 
             return response()->json([
                 'status' => 0,
-                'message' => 'Não foi possível criar a conta.',
+                'message' => 'Não foi possível criar a conta.'. $e->getMessage(),
             ], 500);
         }
     }
