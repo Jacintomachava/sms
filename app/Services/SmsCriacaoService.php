@@ -123,9 +123,22 @@ class SmsCriacaoService
              * estrutura das tabelas de aprovação
              * e associação de senders às contas.
              */
-            if ($senderId <= 0) {
+            $senderAutorizado = DB::table('sender_ids as s')
+                ->join(
+                    'conta_sender_ids as cs',
+                    'cs.sender_id',
+                    '=',
+                    's.id'
+                )
+                ->where('s.id', $senderId)
+                ->where('s.estado', 'APROVADO')
+                ->where('cs.conta_id', $contaId)
+                ->where('cs.estado', 'ACTIVO')
+                ->exists();
+
+            if (!$senderAutorizado) {
                 throw new RuntimeException(
-                    'Remetente inválido.'
+                    'Remetente não autorizado para esta conta.'
                 );
             }
 
