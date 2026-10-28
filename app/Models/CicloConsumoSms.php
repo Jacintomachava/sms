@@ -15,6 +15,7 @@ class CicloConsumoSms extends Model
         'periodo_fim',
         'quantidade_sms',
         'segmentos',
+        'segmentos_reservados',
         'preco_unitario',
         'valor_estimado',
         'moeda',
