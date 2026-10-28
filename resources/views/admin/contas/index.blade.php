@@ -192,6 +192,25 @@
 
 
 
+{{-- Scroll do modal: mantém o formulário dentro da altura disponível do ecrã. --}}
+<style>
+    #modalCriarConta .modal-dialog {
+        max-height: calc(100dvh - 1rem);
+    }
+    #modalCriarConta .modal-content {
+        max-height: calc(100dvh - 1rem);
+        min-height: 0;
+    }
+    #modalCriarConta .modal-body {
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+    @media (max-width: 575.98px) {
+        #modalCriarConta .modal-dialog { margin: .5rem; }
+    }
+</style>
+
 {{-- =============================================================
      MODAL CRIAR CONTA
 ============================================================= --}}
@@ -205,7 +224,9 @@
     <div
         class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
 
-        <div class="modal-content">
+        {{-- O form é o próprio modal-content: o Bootstrap mantém o header/footer fixos e dá scroll ao body. --}}
+        <form class="modal-content" id="formCriarConta" novalidate>
+            @csrf
 
             {{-- =================================================
                  HEADER
@@ -228,16 +249,6 @@
                 </button>
 
             </div>
-
-
-            {{-- =================================================
-                 FORM
-            ================================================== --}}
-            <form
-                id="formCriarConta"
-                novalidate>
-
-                @csrf
 
 
                 <div class="modal-body">
@@ -779,9 +790,7 @@
 
                 </div>
 
-            </form>
-
-        </div>
+        </form>
 
     </div>
 
