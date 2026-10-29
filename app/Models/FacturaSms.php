@@ -19,6 +19,9 @@ class FacturaSms extends Model
         'preco_unitario',
         'subtotal',
         'valor_total',
+        'percentagem_multa',
+        'valor_multa',
+        'multa_aplicada_em',
         'moeda',
         'data_emissao',
         'data_vencimento',
@@ -46,6 +49,10 @@ class FacturaSms extends Model
 
         'paga_em' => 'datetime',
         'cancelada_em' => 'datetime',
+
+        'percentagem_multa' => 'decimal:2',
+        'valor_multa' => 'decimal:2',
+        'multa_aplicada_em' => 'datetime',
     ];
 
     public function conta()
@@ -88,13 +95,14 @@ class FacturaSms extends Model
         return $this->pagamentos()->sum('factura_pagamentos.valor_aplicado');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | SALDO EM DÍVIDA
-    |--------------------------------------------------------------------------
-    */
-    public function getSaldoPendenteAttribute()
+    public function getTotalComMultaAttribute(): float
     {
-        return max(0, round((float) $this->valor_total- (float) $this->total_pago, 2));
+        return round((float) $this->valor_total + (float) $this->valor_multa, 2);
     }
+
+    public function getSaldoPendenteAttribute(): float
+    {
+        return max(0, round($this->total_com_multa - $this->total_pago, 2));
+    }
+    
 }

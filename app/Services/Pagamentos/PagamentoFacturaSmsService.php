@@ -220,11 +220,8 @@ class PagamentoFacturaSmsService
                     ->where('factura_sms_id', $facturaId)
                     ->sum('valor_aplicado');
 
-                $saldo = bcsub(
-                    (string) $factura->valor_total,
-                    (string) $totalPago,
-                    2
-                );
+                $totalComMulta = bcadd((string) $factura->valor_total, (string) ($factura->valor_multa ?? '0'), 2);
+                $saldo = bcsub($totalComMulta, (string) $totalPago, 2);
 
                 if (bccomp($valorAplicado, $saldo, 2) > 0) {
                     throw new RuntimeException(
@@ -277,13 +274,7 @@ class PagamentoFacturaSmsService
                     ->where('factura_sms_id', $facturaId)
                     ->sum('valor_aplicado');
 
-                if (
-                    bccomp(
-                        (string) $totalPago,
-                        (string) $factura->valor_total,
-                        2
-                    ) === 0
-                ) {
+                if (bccomp((string) $totalPago, (string) $factura->valor_total, 2) === 0) {
                     $factura->update([
                         'estado' => 'PAGA',
                         'paga_em' => now(),
