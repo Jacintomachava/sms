@@ -163,9 +163,8 @@ class FacturaSmsController extends Controller
     | HISTÓRICO DE PAGAMENTOS
     |--------------------------------------------------------------------------
     */
-    public function pagamentos(Request $request)
+   public function pagamentos(Request $request)
     {
-
         $query = Pagamento::query()
             ->with(['conta', 'facturas'])
             ->where('tipo', 'FACTURA');
@@ -174,14 +173,27 @@ class FacturaSmsController extends Controller
             $query->where('conta_id', $request->conta_id);
         }
 
+        if ($request->filled('forma_pagamento')) {
+            $query->where(
+                'forma_pagamento',
+                $request->forma_pagamento
+            );
+        }
+
         $pagamentos = $query
             ->orderByDesc('pago_em')
             ->paginate(20)
             ->withQueryString();
 
+        $contas = Conta::query()
+            ->where('tipo_cobranca', 'POS_PAGO')
+            ->orderBy('nome')
+            ->get(['id', 'nome']);
+
         return view(
             'admin.facturas.pagamentos',
-            compact('pagamentos')
+            compact('pagamentos', 'contas')
         );
     }
+    
 }
