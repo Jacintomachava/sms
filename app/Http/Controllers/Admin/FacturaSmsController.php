@@ -242,4 +242,51 @@ class FacturaSmsController extends Controller
         return $pdf->download($nomeFicheiro);
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | NOVO PAGAMENTO DE VÁRIAS FACTURAS
+    |--------------------------------------------------------------------------
+    */
+    public function novoPagamento(Request $request)
+    {
+        $contas = Conta::query()
+            ->where('tipo_cobranca', 'POS_PAGO')
+            ->where('estado', 'ACTIVA')
+            ->orderBy('nome')
+            ->get(['id', 'nome']);
+
+        $contaId = $request->integer('conta_id');
+
+        $facturas = collect();
+
+        if ($contaId > 0) {
+
+            $facturas = FacturaSms::query()
+                ->where('conta_id', $contaId)
+                ->whereIn('estado', ['PENDENTE', 'VENCIDA'])
+                ->withSum(
+                    'pagamentos as total_pago',
+                    'factura_pagamentos.valor_aplicado'
+                )
+                ->orderBy('data_emissao')
+                ->get()
+                ->filter(function ($factura) {
+
+                    $saldo = bcsub(
+                        (string) $factura->valor_total,
+                        (string) ($factura->total_pago ?? '0.00'),
+                        2
+                    );
+
+                    return bccomp($saldo, '0.00', 2) > 0;
+                })
+                ->values();
+        }
+
+        return view(
+            'admin.facturas.novo-pagamento',
+            compact('contas', 'contaId', 'facturas')
+        );
+    }
+
 }

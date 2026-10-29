@@ -12,6 +12,12 @@
             </p>
         </div>
 
+        <a href="{{ route('admin.pagamentos.novo') }}"
+            class="btn btn-success">
+            <i class="fas fa-money-bill-wave"></i>
+            Registar Pagamento
+        </a>
+
         <a href="{{ route('admin.pagamentos.index') }}"
            class="btn btn-outline-primary">
             <i class="fas fa-history"></i>
