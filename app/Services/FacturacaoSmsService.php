@@ -35,6 +35,28 @@ class FacturacaoSmsService
             }
 
             /*
+            |--------------------------------------------------------------------------
+            | VERIFICAR RESERVAS PENDENTES
+            |--------------------------------------------------------------------------
+            |
+            | O ciclo só pode ser fechado quando todas as SMS
+            | reservadas tiverem sido aceites ou rejeitadas.
+            |
+            | As SMS pendentes continuam no ciclo original,
+            | mesmo que a confirmação chegue no mês seguinte.
+            |
+            */
+            if ((int) $ciclo->segmentos_reservados > 0) {
+
+                throw new RuntimeException(
+                    'Não é possível fechar o ciclo. Existem '
+                    . $ciclo->segmentos_reservados
+                    . ' segmentos pendentes de confirmação.'
+                );
+            }
+            
+
+            /*
              * Não permitimos fechar um ciclo ainda em curso.
              *
              * Exemplo:
