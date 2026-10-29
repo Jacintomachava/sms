@@ -67,4 +67,34 @@ class FacturaSms extends Model
     {
         return $this->belongsTo(User::class,'cancelado_por');
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | PAGAMENTOS DA FACTURA
+    |--------------------------------------------------------------------------
+    */
+    public function pagamentos()
+    {
+        return $this->belongsToMany(Pagamento::class,'factura_pagamentos','factura_sms_id','pagamento_id')->withPivot('valor_aplicado')->withTimestamps();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | TOTAL PAGO
+    |--------------------------------------------------------------------------
+    */
+    public function getTotalPagoAttribute()
+    {
+        return $this->pagamentos()->sum('factura_pagamentos.valor_aplicado');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SALDO EM DÍVIDA
+    |--------------------------------------------------------------------------
+    */
+    public function getSaldoPendenteAttribute()
+    {
+        return max(0, round((float) $this->valor_total- (float) $this->total_pago, 2));
+    }
 }

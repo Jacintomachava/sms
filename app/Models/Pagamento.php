@@ -57,4 +57,14 @@ class Pagamento extends Model
             'confirmado_por'
         );
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FACTURAS ASSOCIADAS AO PAGAMENTO
+    |--------------------------------------------------------------------------
+    */
+    public function facturas()
+    {
+        return $this->belongsToMany(FacturaSms::class,'factura_pagamentos','pagamento_id','factura_sms_id')->withPivot('valor_aplicado')->withTimestamps();
+    }
 }
