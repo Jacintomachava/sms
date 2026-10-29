@@ -283,7 +283,7 @@
 
 @endsection
 
-@section('scripts')
+@section('script')
 
 <script>
 $(function () {
