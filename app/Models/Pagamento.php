@@ -17,6 +17,7 @@ class Pagamento extends Model
         'transacao_pagamento_id',
         'tipo',
         'forma_pagamento',
+        'chave_idempotencia',
         'valor',
         'moeda',
         'referencia',

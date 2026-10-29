@@ -26,15 +26,23 @@ class PagamentoFacturaSmsService
         string $formaPagamento,
         array $facturas,
         ?string $referencia = null,
-        ?int $userId = null
+        ?int $userId = null,
+        ?string $chaveIdempotencia = null
     ): Pagamento {
+
+        if (!$chaveIdempotencia || strlen($chaveIdempotencia) > 100) {
+            throw new RuntimeException(
+                'Chave de idempotência obrigatória ou inválida.'
+            );
+        }
 
         return DB::transaction(function () use (
             $contaId,
             $formaPagamento,
             $facturas,
             $referencia,
-            $userId
+            $userId,
+            $chaveIdempotencia
         ) {
 
             /*
@@ -75,6 +83,19 @@ class PagamentoFacturaSmsService
                 throw new RuntimeException(
                     'A conta não utiliza cobrança pós-paga.'
                 );
+            }
+
+            $pagamentoExistente = Pagamento::query()->where('chave_idempotencia', $chaveIdempotencia)->lockForUpdate()->first();
+
+            if ($pagamentoExistente) {
+
+                if ((int) $pagamentoExistente->conta_id !== $contaId) {
+                    throw new RuntimeException(
+                        'A chave de idempotência pertence a outra conta.'
+                    );
+                }
+
+                return $pagamentoExistente;
             }
 
             /*
@@ -211,6 +232,7 @@ class PagamentoFacturaSmsService
                 'valor' => $totalPagamento,
                 'moeda' => $moeda,
                 'referencia' => $referencia,
+                'chave_idempotencia' => $chaveIdempotencia,
                 'pago_em' => now(),
                 'confirmado_por' => $userId,
             ]);
