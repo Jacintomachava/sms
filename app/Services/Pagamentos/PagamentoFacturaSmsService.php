@@ -270,11 +270,11 @@ class PagamentoFacturaSmsService
                     'valor_aplicado' => $valorAplicado,
                 ]);
 
-                $totalPago = DB::table('factura_pagamentos')
-                    ->where('factura_sms_id', $facturaId)
-                    ->sum('valor_aplicado');
+                $totalPago = DB::table('factura_pagamentos')->where('factura_sms_id', $facturaId)->sum('valor_aplicado');
 
-                if (bccomp((string) $totalPago, (string) $factura->valor_total, 2) === 0) {
+                $totalComMulta = bcadd((string) $factura->valor_total, (string) ($factura->valor_multa ?? '0'), 2);
+
+                if (bccomp((string) $totalPago, $totalComMulta, 2) >= 0) {
                     $factura->update([
                         'estado' => 'PAGA',
                         'paga_em' => now(),
