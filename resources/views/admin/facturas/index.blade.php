@@ -173,6 +173,11 @@
                                         Ver
                                     </a>
 
+                                    <a href="{{ route('admin.facturas.pdf', $factura->id) }}"
+                                        class="btn btn-sm btn-outline-danger">
+                                        PDF
+                                    </a>
+
                                     @if(
                                         in_array($factura->estado, ['PENDENTE', 'VENCIDA'])
                                         && $saldo > 0

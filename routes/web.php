@@ -108,5 +108,6 @@ Route::middleware(['auth', 'platform'])->prefix('admin')->name('admin.')->group(
     Route::get('/facturas/{factura}', [FacturaSmsController::class,'show'])->name('facturas.show');
     Route::post('/pagamentos', [FacturaSmsController::class,'registarPagamento'])->name('pagamentos.store');
     Route::get('/pagamentos', [FacturaSmsController::class,'pagamentos'])->name('pagamentos.index');
+    Route::get('/facturas/{factura}/pdf', [FacturaSmsController::class,'pdf'])->name('facturas.pdf');
 
 });

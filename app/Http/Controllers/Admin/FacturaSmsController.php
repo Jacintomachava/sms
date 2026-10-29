@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Conta;
 use App\Models\FacturaSms;
 use App\Models\Pagamento;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\Pagamentos\PagamentoFacturaSmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -195,5 +196,50 @@ class FacturaSmsController extends Controller
             compact('pagamentos', 'contas')
         );
     }
-    
+
+    /*
+    |--------------------------------------------------------------------------
+    | GERAR PDF DA FACTURA
+    |--------------------------------------------------------------------------
+    */
+    public function pdf(FacturaSms $factura)
+    {
+        $factura->load([
+            'conta',
+            'pagamentos',
+        ]);
+
+        $totalPago = '0.00';
+
+        foreach ($factura->pagamentos as $pagamento) {
+            $totalPago = bcadd(
+                $totalPago,
+                (string) $pagamento->pivot->valor_aplicado,
+                2
+            );
+        }
+
+        $saldo = bcsub(
+            (string) $factura->valor_total,
+            $totalPago,
+            2
+        );
+
+        if (bccomp($saldo, '0.00', 2) < 0) {
+            $saldo = '0.00';
+        }
+
+        $pdf = Pdf::loadView('admin.facturas.pdf', [
+            'factura' => $factura,
+            'totalPago' => $totalPago,
+            'saldo' => $saldo,
+        ])->setPaper('a4', 'portrait');
+
+        $nomeFicheiro = 'Factura-' .
+            Str::slug($factura->numero) .
+            '.pdf';
+
+        return $pdf->download($nomeFicheiro);
+    }
+
 }

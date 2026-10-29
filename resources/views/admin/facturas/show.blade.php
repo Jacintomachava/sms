@@ -13,10 +13,17 @@
             </p>
         </div>
 
+        <a href="{{ route('admin.facturas.pdf', $factura->id) }}"
+            class="btn btn-danger">
+            <i class="fas fa-file-pdf"></i>
+            Descarregar PDF
+        </a>
+
         <a href="{{ route('admin.facturas.index') }}"
            class="btn btn-outline-secondary">
             Voltar às Facturas
         </a>
+
     </div>
 
     @php
