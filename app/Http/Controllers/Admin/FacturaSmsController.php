@@ -154,7 +154,7 @@ class FacturaSmsController extends Controller
 
             return response()->json([
                 'status' => 0,
-                'message' => 'Não foi possível registar o pagamento.',
+                'message' => 'Não foi possível registar o pagamento.'. $e->getMessage(),
             ], 422);
         }
     }
