@@ -6,21 +6,10 @@ use App\Models\Conta;
 use App\Models\FacturaSms;
 use App\Models\Pagamento;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use RuntimeException;
 
 class PagamentoFacturaSmsService
 {
-    /**
-     * Regista um pagamento confirmado e distribui
-     * o valor por uma ou várias facturas.
-     *
-     * $facturas:
-     * [
-     *     ['factura_id' => 1, 'valor' => '2000.00'],
-     *     ['factura_id' => 2, 'valor' => '1000.00'],
-     * ]
-     */
     public function registar(
         int $contaId,
         string $formaPagamento,
@@ -30,16 +19,85 @@ class PagamentoFacturaSmsService
         ?string $chaveIdempotencia = null
     ): Pagamento {
 
-        if (!$chaveIdempotencia || strlen($chaveIdempotencia) > 100) {
+        /*
+        |--------------------------------------------------------------------------
+        | VALIDAR CHAVE DE IDEMPOTÊNCIA
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            !is_string($chaveIdempotencia) ||
+            trim($chaveIdempotencia) === '' ||
+            strlen($chaveIdempotencia) > 100
+        ) {
             throw new RuntimeException(
                 'Chave de idempotência obrigatória ou inválida.'
             );
         }
 
+        $formasPermitidas = [
+            'MPESA',
+            'CASH',
+            'DEPOSITO',
+            'TRANSFERENCIA',
+        ];
+
+        if (!in_array($formaPagamento, $formasPermitidas, true)) {
+            throw new RuntimeException('Forma de pagamento inválida.');
+        }
+
+        if (empty($facturas)) {
+            throw new RuntimeException('Nenhuma factura informada.');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | NORMALIZAR DISTRIBUIÇÃO
+        |--------------------------------------------------------------------------
+        */
+
+        $valores = [];
+
+        foreach ($facturas as $item) {
+
+            $facturaId = (int) ($item['factura_id'] ?? 0);
+            $valor = $item['valor'] ?? null;
+
+            if ($facturaId <= 0) {
+                throw new RuntimeException('Factura inválida.');
+            }
+
+            if (isset($valores[$facturaId])) {
+                throw new RuntimeException(
+                    "Factura {$facturaId} duplicada na operação."
+                );
+            }
+
+            if (
+                !is_string($valor) ||
+                !preg_match('/^\d+(\.\d{1,2})?$/', $valor) ||
+                bccomp($valor, '0', 2) <= 0
+            ) {
+                throw new RuntimeException(
+                    "Valor inválido para a factura {$facturaId}."
+                );
+            }
+
+            $valores[$facturaId] = bcadd($valor, '0', 2);
+        }
+
+        ksort($valores, SORT_NUMERIC);
+
+        /*
+        |--------------------------------------------------------------------------
+        | TRANSAÇÃO
+        |--------------------------------------------------------------------------
+        */
+
         return DB::transaction(function () use (
             $contaId,
             $formaPagamento,
-            $facturas,
+            $valores,
             $referencia,
             $userId,
             $chaveIdempotencia
@@ -47,33 +105,10 @@ class PagamentoFacturaSmsService
 
             /*
             |--------------------------------------------------------------------------
-            | VALIDAR FORMA DE PAGAMENTO
-            |--------------------------------------------------------------------------
-            */
-            $formasPermitidas = [
-                'MPESA',
-                'CASH',
-                'DEPOSITO',
-                'TRANSFERENCIA',
-            ];
-
-            if (!in_array($formaPagamento, $formasPermitidas, true)) {
-                throw new RuntimeException(
-                    'Forma de pagamento inválida.'
-                );
-            }
-
-            if (empty($facturas)) {
-                throw new RuntimeException(
-                    'Nenhuma factura foi informada.'
-                );
-            }
-
-            /*
-            |--------------------------------------------------------------------------
             | BLOQUEAR CONTA
             |--------------------------------------------------------------------------
             */
+
             $conta = Conta::query()
                 ->whereKey($contaId)
                 ->lockForUpdate()
@@ -85,62 +120,51 @@ class PagamentoFacturaSmsService
                 );
             }
 
-            $pagamentoExistente = Pagamento::query()->where('chave_idempotencia', $chaveIdempotencia)->lockForUpdate()->first();
-
-            if ($pagamentoExistente) {
-
-                if ((int) $pagamentoExistente->conta_id !== $contaId) {
-                    throw new RuntimeException(
-                        'A chave de idempotência pertence a outra conta.'
-                    );
-                }
-
-                return $pagamentoExistente;
-            }
-
             /*
             |--------------------------------------------------------------------------
-            | VALIDAR FACTURAS INFORMADAS
+            | VERIFICAR PAGAMENTO EXISTENTE
             |--------------------------------------------------------------------------
             */
-            $valores = [];
 
-            foreach ($facturas as $item) {
+            $existente = Pagamento::query()
+                ->where('chave_idempotencia', $chaveIdempotencia)
+                ->lockForUpdate()
+                ->first();
 
-                $facturaId = (int) ($item['factura_id'] ?? 0);
-                $valor = $item['valor'] ?? null;
-
-                if ($facturaId <= 0) {
-                    throw new RuntimeException(
-                        'Identificador de factura inválido.'
-                    );
-                }
-
-                if (isset($valores[$facturaId])) {
-                    throw new RuntimeException(
-                        "Factura {$facturaId} informada duas vezes."
-                    );
-                }
+            if ($existente) {
 
                 if (
-                    !is_string($valor) ||
-                    !preg_match('/^\d+(\.\d{1,2})?$/', $valor) ||
-                    bccomp($valor, '0', 2) <= 0
+                    (int) $existente->conta_id !== $contaId ||
+                    $existente->tipo !== 'FACTURA' ||
+                    $existente->forma_pagamento !== $formaPagamento ||
+                    $existente->referencia !== $referencia
                 ) {
                     throw new RuntimeException(
-                        "Valor inválido para a factura {$facturaId}."
+                        'Chave de idempotência utilizada noutra operação.'
                     );
                 }
 
-                $valores[$facturaId] = bcadd($valor, '0', 2);
+                $distribuicaoOriginal = DB::table('factura_pagamentos')
+                    ->where('pagamento_id', $existente->id)
+                    ->orderBy('factura_sms_id')
+                    ->pluck('valor_aplicado', 'factura_sms_id')
+                    ->map(fn ($valor) => bcadd((string) $valor, '0', 2))
+                    ->all();
+
+                if ($distribuicaoOriginal != $valores) {
+                    throw new RuntimeException(
+                        'A distribuição não corresponde à operação original.'
+                    );
+                }
+
+                return $existente;
             }
 
             /*
             |--------------------------------------------------------------------------
-            | BLOQUEAR FACTURAS EM ORDEM FIXA
+            | BLOQUEAR FACTURAS
             |--------------------------------------------------------------------------
             */
-            ksort($valores, SORT_NUMERIC);
 
             $facturasBloqueadas = FacturaSms::query()
                 ->whereIn('id', array_keys($valores))
@@ -155,13 +179,14 @@ class PagamentoFacturaSmsService
                 );
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | VALIDAR SALDOS E CALCULAR TOTAL
-            |--------------------------------------------------------------------------
-            */
             $totalPagamento = '0.00';
             $moeda = null;
+
+            /*
+            |--------------------------------------------------------------------------
+            | VALIDAR SALDOS
+            |--------------------------------------------------------------------------
+            */
 
             foreach ($valores as $facturaId => $valorAplicado) {
 
@@ -169,7 +194,7 @@ class PagamentoFacturaSmsService
 
                 if ((int) $factura->conta_id !== $contaId) {
                     throw new RuntimeException(
-                        'A factura não pertence à conta informada.'
+                        'Factura não pertence à conta.'
                     );
                 }
 
@@ -179,7 +204,7 @@ class PagamentoFacturaSmsService
                     true
                 )) {
                     throw new RuntimeException(
-                        "A factura {$factura->numero} não está disponível para pagamento."
+                        "Factura {$factura->numero} indisponível para pagamento."
                     );
                 }
 
@@ -187,7 +212,7 @@ class PagamentoFacturaSmsService
                     $moeda = $factura->moeda;
                 } elseif ($moeda !== $factura->moeda) {
                     throw new RuntimeException(
-                        'Não é permitido misturar moedas no mesmo pagamento.'
+                        'Não é permitido misturar moedas.'
                     );
                 }
 
@@ -203,7 +228,7 @@ class PagamentoFacturaSmsService
 
                 if (bccomp($valorAplicado, $saldo, 2) > 0) {
                     throw new RuntimeException(
-                        "O valor informado ultrapassa o saldo da factura {$factura->numero}."
+                        "Valor superior ao saldo da factura {$factura->numero}."
                     );
                 }
 
@@ -216,13 +241,10 @@ class PagamentoFacturaSmsService
 
             /*
             |--------------------------------------------------------------------------
-            | REGISTAR PAGAMENTO
+            | CRIAR PAGAMENTO
             |--------------------------------------------------------------------------
-            |
-            | Este método deve ser chamado apenas depois
-            | da confirmação efectiva do recebimento.
-            |
             */
+
             $pagamento = Pagamento::create([
                 'conta_id' => $contaId,
                 'compra_sms_id' => null,
@@ -242,6 +264,7 @@ class PagamentoFacturaSmsService
             | DISTRIBUIR PAGAMENTO
             |--------------------------------------------------------------------------
             */
+
             foreach ($valores as $facturaId => $valorAplicado) {
 
                 $factura = $facturasBloqueadas[$facturaId];
@@ -269,6 +292,7 @@ class PagamentoFacturaSmsService
             }
 
             return $pagamento->fresh();
+
         }, 3);
     }
 }
