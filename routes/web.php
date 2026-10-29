@@ -13,6 +13,7 @@ use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\Admin\ContaController;
 use App\Http\Controllers\Admin\CompraStockSmsController;
 use App\Http\Controllers\Admin\TarifaSmsController;
+use App\Http\Controllers\Admin\FacturaSmsController;
 use App\Http\Controllers\CompraSmsController;
 use App\Http\Controllers\FinanceiroController;
 use App\Http\Controllers\Admin\SenderIdController as AdminSenderIdController;
@@ -95,13 +96,6 @@ Route::middleware(['auth', 'platform'])->prefix('admin')->name('admin.')->group(
     Route::post('/sender-ids/{sender}/suspender',[AdminSenderIdController::class, 'suspender'])->name('sender-ids.suspender');
     Route::post('/sender-ids/{sender}/reactivar',[AdminSenderIdController::class, 'reactivar'])->name('sender-ids.reactivar');
 
-    Route::get('/sender-ids', [AdminSenderIdController::class,'index'])->name('sender-ids.index');
-    Route::post('/sender-ids/{sender}/enviar-operadora',[AdminSenderIdController::class,'enviarOperadora'])->name('sender-ids.enviar-operadora');
-    Route::post('/sender-ids/{sender}/aprovar',[AdminSenderIdController::class,'aprovar'])->name('sender-ids.aprovar');
-    Route::post('/sender-ids/{sender}/rejeitar',[AdminSenderIdController::class,'rejeitar'])->name('sender-ids.rejeitar');
-    Route::post('/sender-ids/{sender}/suspender', [AdminSenderIdController::class,'suspender'])->name('sender-ids.suspender');
-    Route::post('/sender-ids/{sender}/reactivar', [AdminSenderIdController::class, 'reactivar'])->name('sender-ids.reactivar');
-
     Route::get('/tarifas-sms', [TarifaSmsController::class, 'index'])->name('tarifas-sms.index');
     Route::post('/tarifas-sms', [TarifaSmsController::class, 'store'])->name('tarifas-sms.store');
     Route::put('/tarifas-sms/{tarifa}',[TarifaSmsController::class, 'update'])->name('tarifas-sms.update');
@@ -109,5 +103,10 @@ Route::middleware(['auth', 'platform'])->prefix('admin')->name('admin.')->group(
 
     Route::get('/contas', [ContaController::class, 'index'])->name('contas.index');
     Route::post('/contas', [ContaController::class, 'store'])->name('contas.store');
+
+    Route::get('/facturas', [FacturaSmsController::class,'index'])->name('facturas.index');
+    Route::get('/facturas/{factura}', [FacturaSmsController::class,'show'])->name('facturas.show');
+    Route::post('/pagamentos', [FacturaSmsController::class,'registarPagamento'])->name('pagamentos.store');
+    Route::get('/pagamentos', [FacturaSmsController::class,'pagamentos'])->name('pagamentos.index');
 
 });
