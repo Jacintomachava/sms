@@ -60,10 +60,8 @@ class SuspensaoFinanceiraSmsService
             }
 
             // Reactivar apenas suspensões financeiras automáticas.
-            if (
-                $conta->estado === 'SUSPENSA' &&
-                $conta->motivo_suspensao === 'FACTURAS_EM_ATRASO'
-            ) {
+            if ($conta->estado === 'SUSPENSA' && $conta->motivo_suspensao === 'FACTURAS_EM_ATRASO') {
+                
                 $conta->update([
                     'estado' => 'ACTIVA',
                     'motivo_suspensao' => null,
