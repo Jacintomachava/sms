@@ -12,11 +12,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
-
         /*
         |--------------------------------------------------------------------------
-        | Reconciliação automática de pagamentos SMS
+        | RECONCILIAÇÃO AUTOMÁTICA DE PAGAMENTOS
         |--------------------------------------------------------------------------
         |
         | Executa a cada minuto.
@@ -25,8 +23,31 @@ class Kernel extends ConsoleKernel
         */
         $schedule->command('pagamentos:reconciliar-creditos')->everyMinute()->withoutOverlapping(10);
 
+        /*
+        |--------------------------------------------------------------------------
+        | RECONCILIAÇÃO AUTOMÁTICA SMPP
+        |--------------------------------------------------------------------------
+        |
+        | Executa a cada 5 minutos.
+        | Reconcilia mensagens pendentes com a Movitel.
+        |
+        */
         $schedule->command('smpp:reconciliar --limite=100')->everyFiveMinutes()->withoutOverlapping(10)->appendOutputTo(storage_path('logs/smpp-reconciliacao.log'));
-        
+
+        /*
+        |--------------------------------------------------------------------------
+        | FACTURAÇÃO AUTOMÁTICA PÓS-PAGO
+        |--------------------------------------------------------------------------
+        |
+        | Executa diariamente às 00h30, horário de Moçambique.
+        |
+        | 1. Procura ciclos de meses anteriores.
+        | 2. Ignora ciclos com SMS pendentes.
+        | 3. Fecha os ciclos elegíveis.
+        | 4. Emite as respectivas facturas.
+        |
+        */
+        $schedule->command('sms:facturar-ciclos')->dailyAt('00:30')->timezone('Africa/Maputo')->withoutOverlapping(120)->appendOutputTo(storage_path('logs/facturacao-sms.log'));
     }
 
     /**

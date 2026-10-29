@@ -54,7 +54,7 @@ class FacturacaoSmsService
                     . ' segmentos pendentes de confirmação.'
                 );
             }
-            
+
 
             /*
              * Não permitimos fechar um ciclo ainda em curso.
@@ -63,7 +63,7 @@ class FacturacaoSmsService
              * ciclo Setembro termina 30/09.
              * Pode ser fechado a partir de 01/10.
              */
-            if (now()->startOfDay()->lte($ciclo->periodo_fim->copy()->endOfDay())) {
+            if (today()->lte($ciclo->periodo_fim)) {
 
                 throw new RuntimeException(
                     'O período deste ciclo ainda não terminou.'
