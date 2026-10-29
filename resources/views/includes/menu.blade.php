@@ -250,6 +250,23 @@
                     </a>
                 </li>
 
+                <li class="sidebar-list">
+                    <i class="fa fa-thumb-tack"></i>
+
+                    <label class="badge badge-light-primary">1</label>
+
+                    <a
+                        class="sidebar-link sidebar-title"
+                        href="{{ route('admin.facturas.index') }}"
+                    >
+                        <svg class="stroke-icon">
+                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-icons') }}"></use>
+                        </svg>
+
+                        <span class="lan-3">Facturas</span>
+                    </a>
+                </li>
+
             @endif
 
         </ul>
