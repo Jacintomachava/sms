@@ -23,6 +23,8 @@ class Conta extends Model
         'tipo_cobranca',
         'tarifa_sms_id',
         'estado',
+        'motivo_suspensao',
+        'suspensa_em',
     ];
 
     public function users()
