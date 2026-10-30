@@ -103,10 +103,15 @@ class SmppTentativaService
             | Inclui tentativas canceladas sem envio.
             |
             */
-            $totalTentativas = DB::table('smpp_tentativas_envio')
+            // Bloqueia e carrega as tentativas anteriores na mesma transacção.
+            // A linha da SMS já está bloqueada acima.
+            $tentativasAnteriores = DB::table('smpp_tentativas_envio')
                 ->where('sms_id', $sms->id)
-                ->count();
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
 
+            $totalTentativas = $tentativasAnteriores->count();
             $maxTentativas = 5;
 
             if ($totalTentativas >= $maxTentativas) {
