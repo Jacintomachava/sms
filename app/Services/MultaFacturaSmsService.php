@@ -72,8 +72,25 @@ class MultaFacturaSmsService
     {
         return DB::transaction(function () use ($facturaId) {
 
+            // Identificar a conta sem bloquear a factura.
+            $contaId = FacturaSms::query()
+                ->whereKey($facturaId)
+                ->value('conta_id');
+
+            if (!$contaId) {
+                throw new \RuntimeException('Factura não encontrada.');
+            }
+
+            // Primeiro bloquear a conta.
+            \App\Models\Conta::query()
+                ->whereKey($contaId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            // Depois bloquear a factura.
             $factura = FacturaSms::query()
                 ->whereKey($facturaId)
+                ->where('conta_id', $contaId)
                 ->lockForUpdate()
                 ->firstOrFail();
 

@@ -36,9 +36,37 @@ class SmsReservaService
                 throw new RuntimeException('Número de segmentos inválido.');
             }
 
-            // Serializar reservas da mesma conta, inclusive na criação do ciclo.
-            $conta = Conta::query()->whereKey($sms->conta_id)->lockForUpdate()->firstOrFail();
+           // Serializar reservas da mesma conta, inclusive na criação do ciclo.
+            $conta = Conta::query()
+                ->whereKey($sms->conta_id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
+            /*
+            |--------------------------------------------------------------------------
+            | VALIDAR ESTADO DA CONTA
+            |--------------------------------------------------------------------------
+            | Impede reservas para contas suspensas ou bloqueadas.
+            | Aplica-se ao pré-pago e ao pós-pago.
+            */
+            if ($conta->estado !== 'ACTIVA') {
+
+                if ($conta->estado === 'SUSPENSA' && $conta->motivo_suspensao === 'FACTURAS_EM_ATRASO') {
+                    throw new RuntimeException(
+                        'Conta suspensa por facturas em atraso. Regularize os pagamentos.'
+                    );
+                }
+
+                throw new RuntimeException(
+                    'Conta suspensa ou bloqueada. Não é permitido enviar SMS.'
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | VALIDAR COBRANÇA
+            |--------------------------------------------------------------------------
+            */
             if ($conta->tipo_cobranca === 'PRE_PAGO') {
                 $this->reservarPrePago($sms, $quantidade);
             } elseif ($conta->tipo_cobranca === 'POS_PAGO') {

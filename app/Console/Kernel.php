@@ -48,6 +48,9 @@ class Kernel extends ConsoleKernel
         |
         */
         $schedule->command('sms:facturar-ciclos')->dailyAt('00:30')->timezone('Africa/Maputo')->withoutOverlapping(120)->appendOutputTo(storage_path('logs/facturacao-sms.log'));
+
+        $schedule->command('sms:processar-multas')->dailyAt('01:00')->timezone('Africa/Maputo')->withoutOverlapping();
+        
     }
 
     /**
