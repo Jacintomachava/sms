@@ -69,9 +69,14 @@ class SmppRetryService
         }
 
         /*
-         * Não basta o estado da tentativa.
-         * Precisamos de analisar todos os segmentos.
-         */
+        |--------------------------------------------------------------------------
+        | VALIDAR TENTATIVAS ANTERIORES
+        |--------------------------------------------------------------------------
+        |
+        | Só permitimos uma nova tentativa quando todas
+        | as anteriores foram canceladas sem transmissão.
+        |
+        */
         foreach ($tentativas as $tentativa) {
 
             if ($tentativa->estado !== 'CANCELADA_SEM_ENVIO') {
@@ -83,12 +88,13 @@ class SmppRetryService
 
             $segmentos = DB::table('smpp_segmentos_envio')
                 ->where('smpp_tentativa_envio_id', $tentativa->id)
+                ->orderBy('numero_segmento')
                 ->get();
 
-            if ($segmentos->isEmpty()) {
+            if ($segmentos->count() !== (int) $sms->segmentos) {
                 return $this->resultado(
                     false,
-                    'TENTATIVA_SEM_SEGMENTOS'
+                    'SEGMENTOS_ANTERIORES_INCOMPATIVEIS'
                 );
             }
 
@@ -112,13 +118,11 @@ class SmppRetryService
             true,
             'RETRY_SEM_ENVIO_ANTERIOR'
         );
-
-        return $this->resultado(
-            false,
-            'AGUARDA_CONFIRMACAO_DE_ABANDONO'
-        );
     }
 
+    /**
+     * Resultado padronizado.
+     */
     private function resultado(
         bool $permitido,
         string $motivo
@@ -132,43 +136,121 @@ class SmppRetryService
     }
 
     /**
-     * Avalia uma nova tentativa sob bloqueio transaccional.
+     * Autoriza uma tentativa SMPP.
      *
-     * IMPORTANTE:
-     * Este método apenas verifica condições.
-     * Não reserva créditos, não cria tentativas e não envia PDUs.
+     * Suporta:
      *
-     * A criação definitiva da tentativa terá de repetir
-     * estas verificações na mesma transacção.
+     * PRE_PAGO:
+     * - CLIENTE
+     * - STOCK
+     *
+     * POS_PAGO:
+     * - POS_PAGO
+     * - STOCK
+     *
+     * Não transmite mensagens nem movimenta créditos.
      */
     public function autorizar(int $smsId): array
     {
         return DB::transaction(function () use ($smsId): array {
 
+            /*
+            |--------------------------------------------------------------------------
+            | 1. BLOQUEAR SMS
+            |--------------------------------------------------------------------------
+            */
             $sms = DB::table('sms')
                 ->where('id', $smsId)
                 ->lockForUpdate()
                 ->first();
 
             if (!$sms) {
-                return $this->resultado(false, 'SMS_NAO_ENCONTRADA');
+                return $this->resultado(
+                    false,
+                    'SMS_NAO_ENCONTRADA'
+                );
             }
 
             if ($sms->estado !== 'PENDENTE') {
-                return $this->resultado(false, 'SMS_NAO_PENDENTE');
+                return $this->resultado(
+                    false,
+                    'SMS_NAO_PENDENTE'
+                );
             }
 
             if ($sms->custeado_por !== 'CLIENTE') {
-                return $this->resultado(false, 'FINANCIAMENTO_NAO_SUPORTADO');
+                return $this->resultado(
+                    false,
+                    'FINANCIAMENTO_NAO_SUPORTADO'
+                );
             }
 
+            /*
+            |--------------------------------------------------------------------------
+            | 2. VERIFICAR INTERVALO
+            |--------------------------------------------------------------------------
+            */
             if (
                 $sms->proxima_tentativa_em !== null &&
                 $sms->proxima_tentativa_em > now()->toDateTimeString()
             ) {
-                return $this->resultado(false, 'AGUARDAR_INTERVALO');
+                return $this->resultado(
+                    false,
+                    'AGUARDAR_INTERVALO'
+                );
             }
 
+            /*
+            |--------------------------------------------------------------------------
+            | 3. VALIDAR CONTA
+            |--------------------------------------------------------------------------
+            */
+            $conta = DB::table('contas')
+                ->where('id', $sms->conta_id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$conta) {
+                return $this->resultado(
+                    false,
+                    'CONTA_NAO_ENCONTRADA'
+                );
+            }
+
+            if ($conta->estado !== 'ACTIVA') {
+                return $this->resultado(
+                    false,
+                    'CONTA_INACTIVA'
+                );
+            }
+
+            if (
+                !in_array(
+                    $conta->tipo_cobranca,
+                    ['PRE_PAGO', 'POS_PAGO'],
+                    true
+                )
+            ) {
+                return $this->resultado(
+                    false,
+                    'COBRANCA_NAO_SUPORTADA'
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | 4. IDENTIFICAR RESERVA FINANCEIRA
+            |--------------------------------------------------------------------------
+            */
+            $tipoFinanceiro = $conta->tipo_cobranca === 'POS_PAGO'
+                ? 'POS_PAGO'
+                : 'CLIENTE';
+
+            /*
+            |--------------------------------------------------------------------------
+            | 5. VALIDAR TENTATIVAS ANTERIORES
+            |--------------------------------------------------------------------------
+            */
             $tentativas = DB::table('smpp_tentativas_envio')
                 ->where('sms_id', $smsId)
                 ->orderBy('id')
@@ -176,7 +258,10 @@ class SmppRetryService
                 ->get();
 
             if ($tentativas->count() >= self::MAX_TENTATIVAS) {
-                return $this->resultado(false, 'LIMITE_TENTATIVAS');
+                return $this->resultado(
+                    false,
+                    'LIMITE_TENTATIVAS'
+                );
             }
 
             foreach ($tentativas as $tentativa) {
@@ -189,12 +274,18 @@ class SmppRetryService
                 }
 
                 $segmentos = DB::table('smpp_segmentos_envio')
-                    ->where('smpp_tentativa_envio_id', $tentativa->id)
+                    ->where(
+                        'smpp_tentativa_envio_id',
+                        $tentativa->id
+                    )
                     ->orderBy('numero_segmento')
                     ->lockForUpdate()
                     ->get();
 
-                if ($segmentos->count() !== (int) $sms->segmentos) {
+                if (
+                    $segmentos->count() !==
+                    (int) $sms->segmentos
+                ) {
                     return $this->resultado(
                         false,
                         'SEGMENTOS_ANTERIORES_INCOMPATIVEIS'
@@ -217,29 +308,71 @@ class SmppRetryService
                 }
             }
 
+            /*
+            |--------------------------------------------------------------------------
+            | 6. BLOQUEAR RESERVAS
+            |--------------------------------------------------------------------------
+            */
             $reservas = DB::table('sms_reservas')
                 ->where('sms_id', $smsId)
                 ->orderBy('id')
                 ->lockForUpdate()
                 ->get();
 
+            $total = (int) $sms->segmentos;
+
+            if ($total < 1 || $reservas->isEmpty()) {
+                return $this->resultado(
+                    false,
+                    'RESERVAS_INVALIDAS'
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | 7. VALIDAR TIPOS E ESTADOS
+            |--------------------------------------------------------------------------
+            */
             if (
-                $reservas->isEmpty() ||
                 $reservas->contains(
                     fn ($r) =>
                         $r->estado !== 'RESERVADA' ||
                         (int) $r->quantidade < 1 ||
-                        !in_array($r->tipo, ['CLIENTE', 'STOCK'], true)
+                        !in_array(
+                            $r->tipo,
+                            [$tipoFinanceiro, 'STOCK'],
+                            true
+                        )
                 )
             ) {
-                return $this->resultado(false, 'RESERVAS_INVALIDAS');
+                return $this->resultado(
+                    false,
+                    'RESERVAS_INVALIDAS'
+                );
             }
 
-            $total = (int) $sms->segmentos;
+            /*
+            |--------------------------------------------------------------------------
+            | 8. VALIDAR QUANTIDADES
+            |--------------------------------------------------------------------------
+            */
+            $financeiras = $reservas->where(
+                'tipo',
+                $tipoFinanceiro
+            );
+
+            $stock = $reservas->where(
+                'tipo',
+                'STOCK'
+            );
 
             if (
-                (int) $reservas->where('tipo', 'CLIENTE')->sum('quantidade') !== $total ||
-                (int) $reservas->where('tipo', 'STOCK')->sum('quantidade') !== $total
+                $financeiras->isEmpty() ||
+                $stock->isEmpty() ||
+                (int) $financeiras->sum('quantidade') !== $total ||
+                (int) $stock->sum('quantidade') !== $total ||
+                $reservas->count() !==
+                    $financeiras->count() + $stock->count()
             ) {
                 return $this->resultado(
                     false,
@@ -247,6 +380,58 @@ class SmppRetryService
                 );
             }
 
+            /*
+            |--------------------------------------------------------------------------
+            | 9. VALIDAR CICLO POS_PAGO
+            |--------------------------------------------------------------------------
+            */
+            if ($tipoFinanceiro === 'POS_PAGO') {
+
+                if ($financeiras->count() !== 1) {
+                    return $this->resultado(
+                        false,
+                        'RESERVA_POS_PAGO_INVALIDA'
+                    );
+                }
+
+                $reserva = $financeiras->first();
+
+                if (!$reserva->ciclo_consumo_sms_id) {
+                    return $this->resultado(
+                        false,
+                        'CICLO_POS_PAGO_INEXISTENTE'
+                    );
+                }
+
+                $ciclo = DB::table('ciclos_consumo_sms')
+                    ->where(
+                        'id',
+                        $reserva->ciclo_consumo_sms_id
+                    )
+                    ->where(
+                        'conta_id',
+                        $conta->id
+                    )
+                    ->lockForUpdate()
+                    ->first();
+
+                if (
+                    !$ciclo ||
+                    $ciclo->estado !== 'ABERTO' ||
+                    (int) $ciclo->segmentos_reservados < $total
+                ) {
+                    return $this->resultado(
+                        false,
+                        'CICLO_POS_PAGO_INVALIDO'
+                    );
+                }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | 10. AUTORIZAR
+            |--------------------------------------------------------------------------
+            */
             return $this->resultado(
                 true,
                 $tentativas->isEmpty()
