@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\ContaController;
 use App\Http\Controllers\Admin\CompraStockSmsController;
 use App\Http\Controllers\Admin\TarifaSmsController;
 use App\Http\Controllers\Admin\FacturaSmsController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\CompraSmsController;
 use App\Http\Controllers\FinanceiroController;
 use App\Http\Controllers\Admin\SenderIdController as AdminSenderIdController;
@@ -110,5 +111,7 @@ Route::middleware(['auth', 'platform'])->prefix('admin')->name('admin.')->group(
     Route::get('/pagamentos', [FacturaSmsController::class,'pagamentos'])->name('pagamentos.index');
     Route::get('/facturas/{factura}/pdf', [FacturaSmsController::class,'pdf'])->name('facturas.pdf');
     Route::get('/pagamentos/novo', [FacturaSmsController::class,'novoPagamento'])->name('pagamentos.novo');
+
+    Route::get('/admin/dashboard', [DashboardController::class, 'index'])->middleware(['auth'])->name('admin.dashboard');
 
 });

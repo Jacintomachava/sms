@@ -175,6 +175,24 @@
 
 
                 <li class="sidebar-list">
+                    <i class="fa fa-thumb-tack"></i>
+
+                    <label class="badge badge-light-primary">1</label>
+
+                    <a
+                        class="sidebar-link sidebar-title"
+                        href="{{ route('admin.dashboard') }}"
+                    >
+                        <svg class="stroke-icon">
+                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-icons') }}"></use>
+                        </svg>
+
+                        <span class="lan-3">home</span>
+                    </a>
+                </li>
+
+
+                <li class="sidebar-list">
                     <a  class="sidebar-link sidebar-title" href="javascript:void(0)">
                         <svg class="stroke-icon">
                             <use href="{{ asset('assets/svg/icon-sprite.svg#stroke-ecommerce') }}"></use>
