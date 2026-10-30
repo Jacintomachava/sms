@@ -94,11 +94,21 @@ class SmppTentativaService
             // Valida PRE_PAGO (CLIENTE + STOCK) ou POS_PAGO (POS_PAGO + STOCK).
             $this->validarReservas($sms);
 
+            /*
+            |--------------------------------------------------------------------------
+            | VALIDAR LIMITE DE TENTATIVAS SMPP
+            |--------------------------------------------------------------------------
+            |
+            | Conta todas as tentativas anteriores desta SMS.
+            | Inclui tentativas canceladas sem envio.
+            |
+            */
+            $totalTentativas = DB::table('smpp_tentativas_envio')
+                ->where('sms_id', $sms->id)
+                ->count();
+
             $maxTentativas = 5;
 
-            /*
-            * Limite máximo de cinco tentativas.
-            */
             if ($totalTentativas >= $maxTentativas) {
                 throw new RuntimeException(
                     'Limite máximo de cinco tentativas SMPP atingido.'
