@@ -94,6 +94,8 @@ class SmppTentativaService
             // Valida PRE_PAGO (CLIENTE + STOCK) ou POS_PAGO (POS_PAGO + STOCK).
             $this->validarReservas($sms);
 
+            $maxTentativas = 5;
+
             /*
             * Limite máximo de cinco tentativas.
             */
