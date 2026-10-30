@@ -5,6 +5,7 @@ namespace App\Services\Pagamentos;
 use App\Models\Conta;
 use App\Models\FacturaSms;
 use App\Models\Pagamento;
+use App\Services\MultaFacturaSmsService;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -177,6 +178,17 @@ class PagamentoFacturaSmsService
                 throw new RuntimeException(
                     'Uma ou mais facturas não foram encontradas.'
                 );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | APLICAR MULTAS PENDENTES ANTES DO PAGAMENTO
+            |--------------------------------------------------------------------------
+            */
+            $servicoMulta = app(MultaFacturaSmsService::class);
+
+            foreach ($facturasBloqueadas as $factura) {
+                $servicoMulta->aplicarEmFacturaBloqueada($factura);
             }
 
             $totalPagamento = '0.00';
