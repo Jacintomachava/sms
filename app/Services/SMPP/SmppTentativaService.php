@@ -91,41 +91,8 @@ class SmppTentativaService
                 throw new RuntimeException('Financiamento ainda não suportado neste fluxo.');
             }
 
-            $reservas = DB::table('sms_reservas')->where('sms_id', $smsId)
-                ->orderBy('id')->lockForUpdate()->get();
-            if ($reservas->isEmpty() || $reservas->contains(
-                fn ($r) => $r->estado !== 'RESERVADA' || (int) $r->quantidade < 1 ||
-                    !in_array($r->tipo, ['CLIENTE', 'STOCK'], true)
-            )) {
-                throw new RuntimeException('Reservas da SMS inválidas.');
-            }
-            if ((int) $reservas->where('tipo', 'CLIENTE')->sum('quantidade') !== $total ||
-                (int) $reservas->where('tipo', 'STOCK')->sum('quantidade') !== $total) {
-                throw new RuntimeException('Reservas financeiras não correspondem aos segmentos.');
-            }
-
-           /*
-            |--------------------------------------------------------------------------
-            | CONTROLO TRANSACCIONAL DE TENTATIVAS
-            |--------------------------------------------------------------------------
-            |
-            | A SMS já está bloqueada com lockForUpdate().
-            | Todas as tentativas desta SMS devem ser criadas através
-            | deste mesmo serviço, respeitando o bloqueio da SMS.
-            |
-            | Nenhuma tentativa anterior pode ter iniciado transmissão.
-            |
-            */
-
-            $maxTentativas = 5;
-
-            $tentativasAnteriores = SmppTentativaEnvio::query()
-                ->where('sms_id', $smsId)
-                ->orderBy('id')
-                ->lockForUpdate()
-                ->get();
-
-            $totalTentativas = $tentativasAnteriores->count();
+            // Valida PRE_PAGO (CLIENTE + STOCK) ou POS_PAGO (POS_PAGO + STOCK).
+            $this->validarReservas($sms);
 
             /*
             * Limite máximo de cinco tentativas.
@@ -269,16 +236,8 @@ class SmppTentativaService
             if (!$segmento || $segmento->estado !== 'PREPARADO') {
                 throw new RuntimeException('Segmento inexistente ou já iniciado; reenvio proibido.');
             }
-            $reservas = DB::table('sms_reservas')->where('sms_id', $sms->id)
-                ->where('estado', 'RESERVADA')
-                ->selectRaw('tipo, SUM(quantidade) AS total')->groupBy('tipo')
-                ->pluck('total', 'tipo');
-            $total = (int) $sms->segmentos;
-            if ($total < 1 || $sms->custeado_por !== 'CLIENTE' ||
-                (int) ($reservas['CLIENTE'] ?? 0) !== $total ||
-                (int) ($reservas['STOCK'] ?? 0) !== $total) {
-                throw new RuntimeException('Reservas financeiras incompatíveis.');
-            }
+            $this->validarReservas($sms);
+
             DB::table('smpp_segmentos_envio')->where('id', $segmento->id)->update([
                 'estado' => 'SUBMETENDO',
                 'submetido_em' => now(),
@@ -294,4 +253,80 @@ class SmppTentativaService
             }
         }, 3);
     }
+
+    /**
+     * Verifica a cobertura financeira e de stock de todos os segmentos.
+     * Chamar sempre com a linha SMS bloqueada (lockForUpdate).
+     * Ordem de bloqueio: SMS -> conta -> reservas -> ciclo (consulta).
+     */
+    private function validarReservas(object $sms): void
+    {
+        $total = (int) $sms->segmentos;
+
+        if ($total < 1 || $sms->custeado_por !== 'CLIENTE') {
+            throw new RuntimeException('SMS sem financiamento válido.');
+        }
+
+        $conta = DB::table('contas')
+            ->where('id', $sms->conta_id)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$conta || !in_array($conta->tipo_cobranca, ['PRE_PAGO', 'POS_PAGO'], true)) {
+            throw new RuntimeException('Conta ou modalidade de cobrança inválida.');
+        }
+
+        $tipoFinanceiro = $conta->tipo_cobranca === 'POS_PAGO'
+            ? 'POS_PAGO'
+            : 'CLIENTE';
+
+        $reservas = DB::table('sms_reservas')
+            ->where('sms_id', $sms->id)
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+
+        if ($reservas->isEmpty() || $reservas->contains(
+            fn ($r) => $r->estado !== 'RESERVADA'
+                || (int) $r->quantidade < 1
+                || !in_array($r->tipo, [$tipoFinanceiro, 'STOCK'], true)
+        )) {
+            throw new RuntimeException('Reservas da SMS inválidas.');
+        }
+
+        $financeiras = $reservas->where('tipo', $tipoFinanceiro);
+        $stock = $reservas->where('tipo', 'STOCK');
+
+        if (
+            (int) $financeiras->sum('quantidade') !== $total
+            || (int) $stock->sum('quantidade') !== $total
+        ) {
+            throw new RuntimeException('Reservas financeiras não correspondem aos segmentos.');
+        }
+
+        if ($tipoFinanceiro === 'POS_PAGO') {
+            if ($financeiras->count() !== 1) {
+                throw new RuntimeException('A SMS pós-paga deve ter uma única reserva financeira.');
+            }
+
+            $reserva = $financeiras->first();
+            if (!$reserva->ciclo_consumo_sms_id) {
+                throw new RuntimeException('Reserva pós-paga sem ciclo de consumo.');
+            }
+
+            $ciclo = DB::table('ciclos_consumo_sms')
+                ->where('id', $reserva->ciclo_consumo_sms_id)
+                ->first();
+
+            if (
+                !$ciclo
+                || (int) $ciclo->conta_id !== (int) $sms->conta_id
+                || $ciclo->estado !== 'ABERTO'
+                || (int) $ciclo->segmentos_reservados < $total
+            ) {
+                throw new RuntimeException('Ciclo pós-pago inválido ou sem reserva suficiente.');
+            }
+        }
+    }
+
 }

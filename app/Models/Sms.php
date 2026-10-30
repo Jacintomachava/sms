@@ -27,6 +27,9 @@ class Sms extends Model
         'entregue_em',
         'falhado_em',
         'criado_por',
+        'finalidade',
+        'custeado_por',
+        'facturavel_cliente',
     ];
 
     protected $casts = [
@@ -36,6 +39,8 @@ class Sms extends Model
         'enviado_em' => 'datetime',
         'entregue_em' => 'datetime',
         'falhado_em' => 'datetime',
+
+        'facturavel_cliente' => 'boolean',
     ];
 
     public function conta()

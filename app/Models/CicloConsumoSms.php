@@ -31,6 +31,7 @@ class CicloConsumoSms extends Model
         'preco_unitario' => 'decimal:4',
         'valor_estimado' => 'decimal:2',
         'fechado_em' => 'datetime',
+        'segmentos_reservados' => 'integer',
     ];
 
     public function conta()
