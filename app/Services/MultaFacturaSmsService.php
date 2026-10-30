@@ -47,15 +47,25 @@ class MultaFacturaSmsService
         );
 
         if (bccomp($saldoNoVencimento, '0', 2) <= 0) {
+
+            $factura->update([
+                'percentagem_multa' => '0.00',
+                'valor_multa' => '0.00',
+                'multa_aplicada_em' => now(),
+            ]);
+
             return false;
         }
 
         /*
-         * Multa fixa de 40%, aplicada uma única vez.
-         */
-        $multa = bcdiv(
-            bcmul($saldoNoVencimento, '40', 2),
-            '100',
+        |--------------------------------------------------------------------------
+        | MULTA DE 40% SOBRE O SALDO NO VENCIMENTO
+        |--------------------------------------------------------------------------
+        | Arredondamento para duas casas decimais.
+        */
+        $multa = bcadd(
+            bcmul($saldoNoVencimento, '0.40', 4),
+            '0.005',
             2
         );
 

@@ -8,6 +8,7 @@ use App\Models\Sms;
 use App\Models\SmsReserva;
 use App\Services\TarifaSmsService;
 use App\Services\LimiteInternoSmsService;
+use App\Services\SuspensaoFinanceiraSmsService;
 use App\Services\LimiteSmsService;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -18,10 +19,26 @@ class SmsReservaService
         private TarifaSmsService $tarifas,
         private LimiteInternoSmsService $limiteInterno,
         private LimiteSmsService $limiteCliente,
+        private SuspensaoFinanceiraSmsService $suspensaoFinanceira,
     ) {}
 
     public function reservar(int $smsId): void
     {
+        /*
+        |--------------------------------------------------------------------------
+        | VERIFICAR SUSPENSÃO FINANCEIRA
+        |--------------------------------------------------------------------------
+        | Esta verificação é feita numa transacção própria.
+        | Assim, se a conta for suspensa, a alteração fica gravada.
+        */
+        $smsContaId = Sms::query()->whereKey($smsId)->value('conta_id');
+
+        if (!$smsContaId) {
+            throw new RuntimeException('SMS não encontrado.');
+        }
+
+        $this->suspensaoFinanceira->verificar((int) $smsContaId);
+
         DB::transaction(function () use ($smsId) {
             // Ordem de bloqueios: SMS -> conta -> recursos financeiros -> stock.
             $sms = Sms::query()->lockForUpdate()->findOrFail($smsId);
@@ -46,12 +63,13 @@ class SmsReservaService
             |--------------------------------------------------------------------------
             | VALIDAR ESTADO DA CONTA
             |--------------------------------------------------------------------------
-            | Impede reservas para contas suspensas ou bloqueadas.
-            | Aplica-se ao pré-pago e ao pós-pago.
             */
             if ($conta->estado !== 'ACTIVA') {
 
-                if ($conta->estado === 'SUSPENSA' && $conta->motivo_suspensao === 'FACTURAS_EM_ATRASO') {
+                if (
+                    $conta->estado === 'SUSPENSA' &&
+                    $conta->motivo_suspensao === 'FACTURAS_EM_ATRASO'
+                ) {
                     throw new RuntimeException(
                         'Conta suspensa por facturas em atraso. Regularize os pagamentos.'
                     );
@@ -77,6 +95,7 @@ class SmsReservaService
 
             // O stock da Movitel é sempre reservado, mesmo no pós-pago.
             $this->reservarStock($sms, $quantidade);
+            
         }, 3);
     }
 
