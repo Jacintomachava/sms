@@ -181,7 +181,7 @@
 
                     <a
                         class="sidebar-link sidebar-title"
-                        href="{{ route('admin.dashboard') }}"
+                        href="{{ route('admin.dashboard.home') }}"
                     >
                         <svg class="stroke-icon">
                             <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-icons') }}"></use>

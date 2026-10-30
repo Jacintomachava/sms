@@ -112,6 +112,6 @@ Route::middleware(['auth', 'platform'])->prefix('admin')->name('admin.')->group(
     Route::get('/facturas/{factura}/pdf', [FacturaSmsController::class,'pdf'])->name('facturas.pdf');
     Route::get('/pagamentos/novo', [FacturaSmsController::class,'novoPagamento'])->name('pagamentos.novo');
 
-    Route::get('/admin/dashboard', [DashboardController::class, 'index'])->middleware(['auth'])->name('admin.dashboard');
+    Route::get('/admin/home', [DashboardController::class, 'index'])->middleware(['auth'])->name('dashboard.home');
 
 });
