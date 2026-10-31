@@ -2,141 +2,519 @@
 
 @section('conteudo')
 
-<div class="table-responsive">
+@php
+    $coresEstado = [
+        'PENDENTE'    => 'secondary',
+        'PROCESSANDO' => 'info',
+        'INCERTO'     => 'warning',
+        'ENVIADO'     => 'primary',
+        'ENTREGUE'    => 'success',
+        'FALHADO'     => 'danger',
+        'REJEITADO'   => 'danger',
+        'EXPIRADO'    => 'dark',
+    ];
 
-    <table class="table table-hover align-middle">
+    $coresDlr = [
+        'DELIVRD' => 'success',
+        'ENTREGUE' => 'success',
+        'UNDELIV' => 'danger',
+        'REJECTD' => 'danger',
+        'EXPIRED' => 'danger',
+        'ENROUTE' => 'info',
+        'ACCEPTD' => 'info',
+    ];
+@endphp
 
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Conta</th>
-                <th>Destinatário</th>
-                <th>Mensagem</th>
-                <th>Segmentos</th>
-                <th>Origem</th>
-                <th>Estado</th>
-                <th>DLR</th>
-                <th>Data</th>
-                <th>Acções</th>
-            </tr>
-        </thead>
+<div class="container-fluid">
 
-        <tbody>
+    {{-- ====================================================== --}}
+    {{-- CABEÇALHO --}}
+    {{-- ====================================================== --}}
 
-            @forelse($sms as $item)
+    <div class="row">
+        <div class="col-12">
 
-                @php
-                    $cores = [
-                        'PENDENTE' => 'secondary',
-                        'PROCESSANDO' => 'info',
-                        'INCERTO' => 'warning',
-                        'ENVIADO' => 'primary',
-                        'ENTREGUE' => 'success',
-                        'FALHADO' => 'danger',
-                        'REJEITADO' => 'danger',
-                        'EXPIRADO' => 'dark',
-                    ];
+            <div class="card">
 
-                    $cor = $cores[$item->estado] ?? 'secondary';
-                @endphp
+                <div class="card-header">
 
-                <tr>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
 
-                    <td>
-                        <strong>#{{ $item->id }}</strong>
-                    </td>
+                        <div>
+                            <h4 class="card-title mb-1">
+                                Monitorização Global de SMS
+                            </h4>
 
-                    <td>
-                        <strong>
-                            {{ $item->conta_nome_legal ?: $item->conta_nome }}
-                        </strong>
+                            <p class="text-muted mb-0">
+                                Consulta de mensagens de todas as contas da Infordata
+                            </p>
+                        </div>
 
-                        <br>
+                        <span class="badge badge-light-primary">
+                            Total encontrado:
+                            {{ number_format($sms->total(), 0, ',', '.') }}
+                        </span>
 
-                        <small class="text-muted">
-                            {{ $item->tipo_cobranca }}
-                        </small>
-                    </td>
+                    </div>
 
-                    <td>{{ $item->telefone }}</td>
+                </div>
 
-                    <td style="max-width: 250px;">
+            </div>
 
-                        <span
-                            class="d-inline-block text-truncate"
-                            style="max-width: 230px;"
-                            title="{{ $item->mensagem }}"
+        </div>
+    </div>
+
+
+    {{-- ====================================================== --}}
+    {{-- FILTROS --}}
+    {{-- ====================================================== --}}
+
+    <div class="row">
+
+        <div class="col-12">
+
+            <div class="card">
+
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fa fa-filter"></i>
+                        Filtros de Pesquisa
+                    </h5>
+                </div>
+
+                <div class="card-body">
+
+                    <form
+                        method="GET"
+                        action="{{ route('admin.sms.index') }}"
+                    >
+
+                        <div class="row g-3">
+
+                            {{-- CONTA --}}
+
+                            <div class="col-md-4">
+
+                                <label class="form-label">
+                                    Conta
+                                </label>
+
+                                <select
+                                    name="conta_id"
+                                    class="form-select"
+                                >
+
+                                    <option value="">
+                                        Todas as contas
+                                    </option>
+
+                                    @foreach($contas as $conta)
+
+                                        <option
+                                            value="{{ $conta->id }}"
+                                            @selected(request('conta_id') == $conta->id)
+                                        >
+                                            {{ $conta->nome_legal ?: $conta->nome }}
+                                        </option>
+
+                                    @endforeach
+
+                                </select>
+
+                            </div>
+
+
+                            {{-- ESTADO --}}
+
+                            <div class="col-md-2">
+
+                                <label class="form-label">
+                                    Estado
+                                </label>
+
+                                <select
+                                    name="estado"
+                                    class="form-select"
+                                >
+
+                                    <option value="">
+                                        Todos
+                                    </option>
+
+                                    @foreach($estados as $estado)
+
+                                        <option
+                                            value="{{ $estado }}"
+                                            @selected(request('estado') == $estado)
+                                        >
+                                            {{ $estado }}
+                                        </option>
+
+                                    @endforeach
+
+                                </select>
+
+                            </div>
+
+
+                            {{-- TELEFONE --}}
+
+                            <div class="col-md-2">
+
+                                <label class="form-label">
+                                    Telefone
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="telefone"
+                                    class="form-control"
+                                    placeholder="84XXXXXXX"
+                                    value="{{ request('telefone') }}"
+                                >
+
+                            </div>
+
+
+                            {{-- DATA INICIAL --}}
+
+                            <div class="col-md-2">
+
+                                <label class="form-label">
+                                    Data Inicial
+                                </label>
+
+                                <input
+                                    type="date"
+                                    name="inicio"
+                                    class="form-control"
+                                    value="{{ request('inicio') }}"
+                                >
+
+                            </div>
+
+
+                            {{-- DATA FINAL --}}
+
+                            <div class="col-md-2">
+
+                                <label class="form-label">
+                                    Data Final
+                                </label>
+
+                                <input
+                                    type="date"
+                                    name="fim"
+                                    class="form-control"
+                                    value="{{ request('fim') }}"
+                                >
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="mt-3 d-flex gap-2">
+
+                            <button
+                                type="submit"
+                                class="btn btn-primary btn-sm"
+                            >
+                                <i class="fa fa-search"></i>
+                                Pesquisar
+                            </button>
+
+                            <a
+                                href="{{ route('admin.sms.index') }}"
+                                class="btn btn-secondary btn-sm"
+                            >
+                                <i class="fa fa-refresh"></i>
+                                Limpar
+                            </a>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    {{-- ====================================================== --}}
+    {{-- LISTAGEM GLOBAL --}}
+    {{-- ====================================================== --}}
+
+    <div class="row">
+
+        <div class="col-12">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <h5 class="mb-0">
+                        Listagem de SMS
+                    </h5>
+
+                </div>
+
+                <div class="card-body">
+
+                    <div class="table-responsive custom-scrollbar">
+
+                        <table
+                            class="display"
+                            id="basic-1"
                         >
-                            {{ $item->mensagem }}
-                        </span>
 
-                    </td>
+                            <thead>
 
-                    <td>
-                        <span class="badge bg-light text-dark">
-                            {{ $item->segmentos }}
-                        </span>
-                    </td>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Conta</th>
+                                    <th>Telefone</th>
+                                    <th>Mensagem</th>
+                                    <th>Segmentos</th>
+                                    <th>Origem</th>
+                                    <th>Estado</th>
+                                    <th>DLR</th>
+                                    <th>Data</th>
+                                    <th>Hora</th>
+                                    <th>Acção</th>
+                                </tr>
 
-                    <td>{{ $item->origem }}</td>
+                            </thead>
 
-                    <td>
-                        <span class="badge bg-{{ $cor }}">
-                            {{ $item->estado }}
-                        </span>
-                    </td>
+                            <tbody>
 
-                    <td>
-                        @if($item->dlr_estado)
+                                @foreach($sms as $item)
 
-                            <span class="badge bg-info">
-                                {{ $item->dlr_estado }}
-                            </span>
+                                    @php
 
-                        @else
+                                        $corEstado = $coresEstado[$item->estado]
+                                            ?? 'secondary';
 
-                            <span class="text-muted">
-                                Sem DLR
-                            </span>
+                                        $corDlr = $coresDlr[
+                                            strtoupper($item->dlr_estado ?? '')
+                                        ] ?? 'secondary';
 
-                        @endif
-                    </td>
+                                        $nomeConta = $item->conta_nome_legal
+                                            ?: ($item->conta_nome ?? 'Conta #' . $item->conta_id);
 
-                    <td>
-                        {{ \Carbon\Carbon::parse($item->created_at)->format('d/m/Y H:i') }}
-                    </td>
+                                        $dataCriacao = $item->created_at
+                                            ? \Carbon\Carbon::parse($item->created_at)
+                                            : null;
 
-                    <td>
+                                    @endphp
 
-                        <a
-                            href="{{ route('admin.sms.show', $item->id) }}"
-                            class="btn btn-sm btn-outline-primary"
-                        >
-                            Detalhes
-                        </a>
+                                    <tr>
 
-                    </td>
+                                        {{-- ID --}}
 
-                </tr>
+                                        <td>
+                                            <strong>
+                                                #{{ $item->id }}
+                                            </strong>
+                                        </td>
 
-            @empty
 
-                <tr>
-                    <td colspan="10" class="text-center py-4">
-                        Nenhum SMS encontrado.
-                    </td>
-                </tr>
+                                        {{-- CONTA --}}
 
-            @endforelse
+                                        <td>
 
-        </tbody>
+                                            <strong>
+                                                {{ $nomeConta }}
+                                            </strong>
 
-    </table>
+                                            <br>
 
-</div>
+                                            <small class="text-muted">
+                                                {{ $item->tipo_cobranca ?? '-' }}
+                                            </small>
 
-<div class="mt-3">
-    {{ $sms->links() }}
+                                        </td>
+
+
+                                        {{-- TELEFONE --}}
+
+                                        <td>
+                                            {{ $item->telefone }}
+                                        </td>
+
+
+                                        {{-- MENSAGEM COM TOOLTIP --}}
+
+                                        <td
+                                            data-container="body"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            data-bs-original-title="{{ $item->mensagem }}"
+                                            style="cursor: pointer;"
+                                        >
+
+                                            {{ \Illuminate\Support\Str::limit($item->mensagem, 30) }}
+
+                                        </td>
+
+
+                                        {{-- SEGMENTOS --}}
+
+                                        <td>
+
+                                            <span class="badge badge-light-primary">
+                                                {{ $item->segmentos }}
+                                            </span>
+
+                                        </td>
+
+
+                                        {{-- ORIGEM --}}
+
+                                        <td>
+
+                                            <span class="badge badge-light-info">
+                                                {{ $item->origem }}
+                                            </span>
+
+                                        </td>
+
+
+                                        {{-- ESTADO --}}
+
+                                        <td>
+
+                                            <span class="badge bg-{{ $corEstado }}">
+                                                {{ $item->estado }}
+                                            </span>
+
+                                        </td>
+
+
+                                        {{-- DLR --}}
+
+                                        <td>
+
+                                            @if($item->dlr_estado)
+
+                                                <span class="badge bg-{{ $corDlr }}">
+                                                    {{ $item->dlr_estado }}
+                                                </span>
+
+                                            @else
+
+                                                <span class="badge bg-secondary">
+                                                    Sem DLR
+                                                </span>
+
+                                            @endif
+
+                                        </td>
+
+
+                                        {{-- DATA --}}
+
+                                        <td data-order="{{ $dataCriacao?->format('Y-m-d') ?? '' }}">
+
+                                            {{ $dataCriacao?->format('d/m/Y') ?? '-' }}
+
+                                        </td>
+
+
+                                        {{-- HORA --}}
+
+                                        <td>
+
+                                            {{ $dataCriacao?->format('H:i:s') ?? '-' }}
+
+                                        </td>
+
+
+                                        {{-- ACÇÃO --}}
+
+                                        <td>
+
+                                            <a
+                                                href="{{ route('admin.sms.show', $item->id) }}"
+                                                class="btn btn-primary btn-xs"
+                                                data-container="body"
+                                                data-bs-toggle="tooltip"
+                                                data-bs-placement="top"
+                                                data-bs-original-title="Ver detalhes do SMS"
+                                            >
+
+                                                <i class="fa fa-eye"></i>
+                                                Detalhes
+
+                                            </a>
+
+                                        </td>
+
+                                    </tr>
+
+                                @endforeach
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+
+                    {{-- PAGINAÇÃO DO LARAVEL --}}
+
+                    <div class="mt-4">
+
+                        {{ $sms->links() }}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
 </div>
 
 @endsection
+
+@push('scripts')
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | TOOLTIP BOOTSTRAP
+    |--------------------------------------------------------------------------
+    */
+
+    if (typeof bootstrap !== 'undefined') {
+
+        document.querySelectorAll(
+            '[data-bs-toggle="tooltip"]'
+        ).forEach(function (element) {
+
+            if (!bootstrap.Tooltip.getInstance(element)) {
+
+                new bootstrap.Tooltip(element, {
+                    container: 'body'
+                });
+
+            }
+
+        });
+
+    }
+
+});
+</script>
+
+@endpush

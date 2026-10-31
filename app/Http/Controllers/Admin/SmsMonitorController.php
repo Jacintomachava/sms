@@ -8,11 +8,16 @@ use Illuminate\Support\Facades\DB;
 
 class SmsMonitorController extends Controller
 {
+    /*
+    |--------------------------------------------------------------------------
+    | LISTAGEM GLOBAL DE SMS
+    |--------------------------------------------------------------------------
+    */
     public function index(Request $request)
     {
         $filtros = $request->validate([
-            'conta_id' => 'nullable|integer|min:1',
-            'estado' => 'nullable|string|max:50',
+            'conta_id' => 'nullable|integer|exists:contas,id',
+            'estado' => 'nullable|in:PENDENTE,PROCESSANDO,INCERTO,ENVIADO,ENTREGUE,FALHADO,REJEITADO,EXPIRADO',
             'telefone' => 'nullable|string|max:30',
             'inicio' => 'nullable|date',
             'fim' => 'nullable|date|after_or_equal:inicio',
@@ -20,7 +25,7 @@ class SmsMonitorController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | LISTAGEM GLOBAL
+        | CONSULTA GLOBAL
         |--------------------------------------------------------------------------
         */
         $query = DB::table('sms as s')
@@ -28,6 +33,7 @@ class SmsMonitorController extends Controller
             ->select(
                 's.id',
                 's.conta_id',
+                's.sender_id',
                 's.telefone',
                 's.mensagem',
                 's.segmentos',
@@ -49,14 +55,29 @@ class SmsMonitorController extends Controller
                 'c.tipo_cobranca'
             );
 
+        /*
+        |--------------------------------------------------------------------------
+        | FILTRO POR CONTA
+        |--------------------------------------------------------------------------
+        */
         if (!empty($filtros['conta_id'])) {
             $query->where('s.conta_id', $filtros['conta_id']);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | FILTRO POR ESTADO
+        |--------------------------------------------------------------------------
+        */
         if (!empty($filtros['estado'])) {
             $query->where('s.estado', $filtros['estado']);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | FILTRO POR TELEFONE
+        |--------------------------------------------------------------------------
+        */
         if (!empty($filtros['telefone'])) {
             $query->where(
                 's.telefone',
@@ -65,23 +86,62 @@ class SmsMonitorController extends Controller
             );
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | FILTRO POR DATA INICIAL
+        |--------------------------------------------------------------------------
+        */
         if (!empty($filtros['inicio'])) {
-            $query->whereDate('s.created_at', '>=', $filtros['inicio']);
+            $query->whereDate(
+                's.created_at',
+                '>=',
+                $filtros['inicio']
+            );
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | FILTRO POR DATA FINAL
+        |--------------------------------------------------------------------------
+        */
         if (!empty($filtros['fim'])) {
-            $query->whereDate('s.created_at', '<=', $filtros['fim']);
+            $query->whereDate(
+                's.created_at',
+                '<=',
+                $filtros['fim']
+            );
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | PAGINAÇÃO
+        |--------------------------------------------------------------------------
+        */
         $sms = $query
             ->orderByDesc('s.id')
             ->paginate(25)
             ->withQueryString();
 
+        /*
+        |--------------------------------------------------------------------------
+        | CONTAS PARA FILTRO
+        |--------------------------------------------------------------------------
+        */
         $contas = DB::table('contas')
+            ->select(
+                'id',
+                'nome',
+                'nome_legal',
+                'tipo_cobranca'
+            )
             ->orderBy('nome')
             ->get();
 
+        /*
+        |--------------------------------------------------------------------------
+        | ESTADOS DISPONÍVEIS
+        |--------------------------------------------------------------------------
+        */
         $estados = [
             'PENDENTE',
             'PROCESSANDO',
@@ -100,22 +160,27 @@ class SmsMonitorController extends Controller
         ));
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | DETALHES COMPLETOS DO SMS
+    |--------------------------------------------------------------------------
+    */
     public function show(int $id)
     {
         /*
         |--------------------------------------------------------------------------
-        | SMS PRINCIPAL
+        | 1. SMS PRINCIPAL
         |--------------------------------------------------------------------------
         */
         $sms = DB::table('sms')
             ->where('id', $id)
             ->first();
 
-        abort_if(!$sms, 404);
+        abort_if(!$sms, 404, 'SMS não encontrado.');
 
         /*
         |--------------------------------------------------------------------------
-        | CONTA
+        | 2. CONTA RESPONSÁVEL
         |--------------------------------------------------------------------------
         */
         $conta = DB::table('contas')
@@ -124,7 +189,7 @@ class SmsMonitorController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | TENTATIVAS SMPP
+        | 3. TENTATIVAS SMPP
         |--------------------------------------------------------------------------
         */
         $tentativas = DB::table('smpp_tentativas_envio')
@@ -134,20 +199,10 @@ class SmsMonitorController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | SEGMENTOS SMPP
-        |--------------------------------------------------------------------------
-        |
-        | Confirmar a chave estrangeira da tabela
-        | smpp_segmentos_envio antes de activar esta consulta.
-        |--------------------------------------------------------------------------
-        */
-
-        /*
-        |--------------------------------------------------------------------------
-        | SEGMENTOS SMPP
+        | 4. SEGMENTOS SMPP
         |--------------------------------------------------------------------------
         | Cada segmento pertence a uma tentativa SMPP.
-        | Uma mensagem pode ter várias tentativas.
+        | Uma mensagem pode possuir várias tentativas.
         |--------------------------------------------------------------------------
         */
         $segmentos = DB::table('smpp_segmentos_envio as seg')
@@ -172,7 +227,9 @@ class SmsMonitorController extends Controller
                 'seg.dlr_estado',
                 'seg.submetido_em',
                 'seg.respondido_em',
-                'seg.dlr_recebido_em'
+                'seg.dlr_recebido_em',
+                'seg.created_at',
+                'seg.updated_at'
             )
             ->orderBy('seg.smpp_tentativa_envio_id')
             ->orderBy('seg.numero_segmento')
@@ -180,21 +237,55 @@ class SmsMonitorController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | DELIVERY REPORTS
+        | 5. DELIVERY REPORTS - DLR
         |--------------------------------------------------------------------------
+        | Consulta os relatórios associados directamente ao SMS.
         |
-        | Primeiro procuramos por sms_id.
-        |
-        | O provider_message_id é utilizado como alternativa
-        | apenas quando o relatório não tem sms_id associado.
+        | Também procura relatórios sem sms_id quando existe um
+        | provider_message_id associado aos segmentos.
         |--------------------------------------------------------------------------
         */
-        /*
 
-        
+        $providerIds = $segmentos
+            ->pluck('provider_message_id')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if (!empty($sms->provider_message_id)) {
+            $providerIds[] = $sms->provider_message_id;
+        }
+
+        $providerIds = array_values(array_unique($providerIds));
+
+        $dlrs = DB::table('smpp_delivery_reports')
+            ->where(function ($query) use ($id, $providerIds) {
+
+                // DLR associados directamente ao SMS
+                $query->where('sms_id', $id);
+
+                // DLR sem sms_id, associados ao identificador Movitel
+                if (!empty($providerIds)) {
+
+                    $query->orWhere(function ($subquery) use ($providerIds) {
+
+                        $subquery
+                            ->whereNull('sms_id')
+                            ->whereIn(
+                                'provider_message_id',
+                                $providerIds
+                            );
+                    });
+                }
+            })
+            ->orderByDesc('recebido_em')
+            ->orderByDesc('id')
+            ->get();
+
         /*
         |--------------------------------------------------------------------------
-        | RESERVAS
+        | 6. RESERVAS DE CRÉDITOS E STOCK
         |--------------------------------------------------------------------------
         */
         $reservas = DB::table('sms_reservas')
@@ -204,7 +295,7 @@ class SmsMonitorController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | CONSUMOS DE CRÉDITOS
+        | 7. CONSUMOS DE CRÉDITOS DO CLIENTE
         |--------------------------------------------------------------------------
         */
         $consumosCreditos = DB::table('sms_consumos_creditos')
@@ -214,7 +305,7 @@ class SmsMonitorController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | CONSUMOS DE STOCK
+        | 8. CONSUMOS DE STOCK MOVITEL
         |--------------------------------------------------------------------------
         */
         $consumosStock = DB::table('sms_consumos_stock')
@@ -224,7 +315,7 @@ class SmsMonitorController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | RECONCILIAÇÕES
+        | 9. RECONCILIAÇÕES
         |--------------------------------------------------------------------------
         */
         $reconciliacoes = DB::table('sms_reconciliacoes')
@@ -234,7 +325,7 @@ class SmsMonitorController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | OUTBOX
+        | 10. OUTBOX
         |--------------------------------------------------------------------------
         */
         $outbox = DB::table('sms_outbox')
@@ -244,18 +335,62 @@ class SmsMonitorController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | RESUMO FINANCEIRO
+        | 11. RESUMO FINANCEIRO
         |--------------------------------------------------------------------------
         */
+
+        // Valor comercial dos créditos pré-pagos consumidos
         $receitaPrePago = (float) $consumosCreditos
             ->sum('valor_total');
 
+        // Custo real registado no stock Movitel
         $custoMovitel = (float) $consumosStock
             ->sum('custo_total');
 
+        // Segmentos consumidos no stock Movitel
         $segmentosConsumidos = (int) $consumosStock
             ->sum('segmentos');
 
+        /*
+        |--------------------------------------------------------------------------
+        | 12. RESUMO DOS SEGMENTOS
+        |--------------------------------------------------------------------------
+        */
+
+        $totalSegmentos = $segmentos->count();
+
+        $segmentosAceites = $segmentos->filter(
+            fn ($segmento) =>
+                $segmento->command_status !== null &&
+                (int) $segmento->command_status === 0
+        )->count();
+
+        $segmentosEntregues = $segmentos->filter(
+            fn ($segmento) =>
+                in_array(
+                    strtoupper($segmento->dlr_estado ?? ''),
+                    ['DELIVRD', 'ENTREGUE']
+                )
+        )->count();
+
+        $segmentosSemDlr = $segmentos->filter(
+            fn ($segmento) =>
+                empty($segmento->dlr_estado)
+        )->count();
+
+        $segmentosFalhados = $segmentos->filter(
+            fn ($segmento) =>
+                in_array(
+                    strtoupper($segmento->dlr_estado ?? ''),
+                    ['UNDELIV', 'REJECTD', 'EXPIRED']
+                )
+        )->count();
+
+        /*
+        |--------------------------------------------------------------------------
+        | 13. RETORNAR VIEW
+        |--------------------------------------------------------------------------
+        */
         return view('admin.sms.show', compact(
             'sms',
             'conta',
@@ -269,7 +404,12 @@ class SmsMonitorController extends Controller
             'outbox',
             'receitaPrePago',
             'custoMovitel',
-            'segmentosConsumidos'
+            'segmentosConsumidos',
+            'totalSegmentos',
+            'segmentosAceites',
+            'segmentosEntregues',
+            'segmentosSemDlr',
+            'segmentosFalhados'
         ));
     }
 }

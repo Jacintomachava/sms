@@ -10,34 +10,60 @@
     |--------------------------------------------------------------------------
     */
 
-    $moeda = fn ($valor) =>
-        number_format((float) $valor, 4, ',', '.') . ' MZN';
-
-    $numero = fn ($valor) =>
-        number_format((int) $valor, 0, ',', '.');
-
     $formatarData = function ($data) {
+
         return $data
-            ? \Carbon\Carbon::parse($data)->format('d/m/Y H:i:s')
+            ? \Carbon\Carbon::parse($data)->format('d/m/Y')
             : '-';
+
+    };
+
+    $formatarHora = function ($data) {
+
+        return $data
+            ? \Carbon\Carbon::parse($data)->format('H:i:s')
+            : '-';
+
+    };
+
+    $moeda = function ($valor) {
+
+        return number_format((float) $valor, 4, ',', '.') . ' MZN';
+
     };
 
     $coresEstado = [
-        'PENDENTE' => 'secondary',
+        'PENDENTE'    => 'secondary',
         'PROCESSANDO' => 'info',
-        'INCERTO' => 'warning',
-        'ENVIADO' => 'primary',
-        'ENTREGUE' => 'success',
-        'FALHADO' => 'danger',
-        'REJEITADO' => 'danger',
-        'EXPIRADO' => 'dark',
+        'INCERTO'     => 'warning',
+        'ENVIADO'     => 'primary',
+        'ENTREGUE'    => 'success',
+        'FALHADO'     => 'danger',
+        'REJEITADO'   => 'danger',
+        'EXPIRADO'    => 'dark',
     ];
 
     $corEstado = $coresEstado[$sms->estado] ?? 'secondary';
 
+    $corDlr = function ($estado) {
+
+        return match (strtoupper($estado ?? '')) {
+
+            'DELIVRD', 'ENTREGUE' => 'success',
+
+            'UNDELIV', 'REJECTD', 'EXPIRED' => 'danger',
+
+            'ENROUTE', 'ACCEPTD' => 'info',
+
+            default => 'secondary',
+
+        };
+
+    };
+
     /*
     |--------------------------------------------------------------------------
-    | DADOS DA MENSAGEM
+    | INFORMAÇÕES DA CONTA
     |--------------------------------------------------------------------------
     */
 
@@ -45,33 +71,17 @@
         ?? $conta->nome
         ?? 'Conta #' . $sms->conta_id;
 
-    $destinatario = $sms->telefone ?? '-';
-
-    $conteudo = $sms->mensagem ?? '-';
-
     /*
     |--------------------------------------------------------------------------
-    | DADOS FINANCEIROS
+    | INDICADORES
     |--------------------------------------------------------------------------
     */
 
-    $receita = (float) $consumosCreditos->sum('valor_total');
-
-    $custo = (float) $consumosStock->sum('custo_total');
-
-    $margem = $receita - $custo;
-
-    $segmentosCreditos = (int) $consumosCreditos->sum('segmentos');
-
-    $segmentosStock = (int) $consumosStock->sum('segmentos');
-
-    /*
-    |--------------------------------------------------------------------------
-    | INDICADORES SMPP
-    |--------------------------------------------------------------------------
-    */
+    $totalTentativas = $tentativas->count();
 
     $totalSegmentos = $segmentos->count();
+
+    $totalDlrs = $dlrs->count();
 
     $segmentosAceites = $segmentos->filter(
         fn ($segmento) =>
@@ -101,24 +111,21 @@
 
     /*
     |--------------------------------------------------------------------------
-    | CORES DOS DLR
+    | FINANCEIRO
     |--------------------------------------------------------------------------
     */
 
-    $corDlr = function ($estado) {
+    $valorCreditos = (float) $consumosCreditos->sum('valor_total');
 
-        return match (strtoupper($estado ?? '')) {
-            'DELIVRD', 'ENTREGUE' => 'success',
-            'UNDELIV', 'REJECTD', 'EXPIRED' => 'danger',
-            'ENROUTE', 'ACCEPTD' => 'info',
-            default => 'secondary',
-        };
+    $custoStock = (float) $consumosStock->sum('custo_total');
 
-    };
+    $segmentosStock = (int) $consumosStock->sum('segmentos');
+
+    $diferenca = $valorCreditos - $custoStock;
 
     /*
     |--------------------------------------------------------------------------
-    | HISTÓRICOS
+    | HISTÓRICOS ADICIONAIS
     |--------------------------------------------------------------------------
     */
 
@@ -132,118 +139,86 @@
 
 @endphp
 
-<div class="container-fluid py-4">
+<div class="container-fluid">
 
-    {{-- ========================================================= --}}
+    {{-- ====================================================== --}}
     {{-- CABEÇALHO --}}
-    {{-- ========================================================= --}}
+    {{-- ====================================================== --}}
 
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div class="row">
 
-        <div>
+        <div class="col-12">
 
-            <h3 class="fw-bold mb-1">
+            <div class="card">
 
-                <i class="fas fa-sms text-primary me-2"></i>
+                <div class="card-header">
 
-                Detalhes do SMS #{{ $sms->id }}
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
 
-            </h3>
+                        <div>
 
-            <p class="text-muted mb-0">
+                            <h4 class="card-title mb-1">
 
-                Monitorização completa da mensagem, entrega e consumo
+                                Detalhes do SMS #{{ $sms->id }}
 
-            </p>
+                            </h4>
 
-        </div>
+                            <p class="text-muted mb-0">
 
-        <div class="d-flex gap-2">
+                                Monitorização completa da mensagem
 
-            <span class="badge bg-{{ $corEstado }} px-3 py-2 d-flex align-items-center">
+                            </p>
 
-                {{ $sms->estado }}
+                        </div>
 
-            </span>
+                        <div class="d-flex gap-2 align-items-center">
 
-            <a href="{{ route('admin.sms.index') }}"
-               class="btn btn-outline-secondary">
+                            <span class="badge bg-{{ $corEstado }}">
+                                {{ $sms->estado }}
+                            </span>
 
-                <i class="fas fa-arrow-left me-1"></i>
+                            <a
+                                href="{{ route('admin.sms.index') }}"
+                                class="btn btn-secondary btn-sm"
+                            >
 
-                Voltar
+                                <i class="fa fa-arrow-left"></i>
+                                Voltar
 
-            </a>
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
 
         </div>
 
     </div>
 
 
-    {{-- ========================================================= --}}
+    {{-- ====================================================== --}}
     {{-- INDICADORES PRINCIPAIS --}}
-    {{-- ========================================================= --}}
+    {{-- ====================================================== --}}
 
-    <div class="row g-3 mb-4">
-
-        <div class="col-xl-3 col-md-6">
-
-            <div class="card shadow-sm border-0 h-100">
-
-                <div class="card-body">
-
-                    <small class="text-muted">
-
-                        Estado da Mensagem
-
-                    </small>
-
-                    <h4 class="fw-bold mt-2">
-
-                        <span class="badge bg-{{ $corEstado }}">
-
-                            {{ $sms->estado }}
-
-                        </span>
-
-                    </h4>
-
-                    <small class="text-muted">
-
-                        Estado actual do SMS
-
-                    </small>
-
-                </div>
-
-            </div>
-
-        </div>
-
+    <div class="row">
 
         <div class="col-xl-3 col-md-6">
 
-            <div class="card shadow-sm border-0 h-100">
+            <div class="card">
 
                 <div class="card-body">
 
-                    <small class="text-muted">
-
+                    <h6 class="text-muted">
                         Tentativas SMPP
+                    </h6>
 
-                    </small>
-
-                    <h3 class="fw-bold mt-2 text-primary">
-
-                        {{ $numero($tentativas->count()) }}
-
+                    <h3 class="text-primary">
+                        {{ $totalTentativas }}
                     </h3>
-
-                    <small class="text-muted">
-
-                        Tentativas registadas
-
-                    </small>
 
                 </div>
 
@@ -254,27 +229,17 @@
 
         <div class="col-xl-3 col-md-6">
 
-            <div class="card shadow-sm border-0 h-100">
+            <div class="card">
 
                 <div class="card-body">
 
-                    <small class="text-muted">
-
+                    <h6 class="text-muted">
                         Segmentos SMPP
+                    </h6>
 
-                    </small>
-
-                    <h3 class="fw-bold mt-2">
-
-                        {{ $numero($totalSegmentos) }}
-
+                    <h3>
+                        {{ $totalSegmentos }}
                     </h3>
-
-                    <small class="text-muted">
-
-                        Registos de segmentos
-
-                    </small>
 
                 </div>
 
@@ -285,642 +250,17 @@
 
         <div class="col-xl-3 col-md-6">
 
-            <div class="card shadow-sm border-0 h-100">
+            <div class="card">
 
                 <div class="card-body">
 
-                    <small class="text-muted">
-
-                        DLR Recebidos
-
-                    </small>
-
-                    <h3 class="fw-bold mt-2 text-success">
-
-                        {{ $numero($dlrs->count()) }}
-
-                    </h3>
-
-                    <small class="text-muted">
-
-                        Relatórios registados
-
-                    </small>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    {{-- ========================================================= --}}
-    {{-- INFORMAÇÕES PRINCIPAIS --}}
-    {{-- ========================================================= --}}
-
-    <div class="card shadow-sm border-0 mb-4">
-
-        <div class="card-header bg-white fw-bold">
-
-            <i class="fas fa-info-circle text-primary me-2"></i>
-
-            Informações da Mensagem
-
-        </div>
-
-        <div class="card-body">
-
-            <div class="row g-4">
-
-                <div class="col-md-4">
-
-                    <small class="text-muted d-block">
-
-                        Conta
-
-                    </small>
-
-                    <strong>
-
-                        {{ $nomeConta }}
-
-                    </strong>
-
-                    <div class="text-muted small">
-
-                        ID: {{ $sms->conta_id }}
-
-                    </div>
-
-                </div>
-
-
-                <div class="col-md-4">
-
-                    <small class="text-muted d-block">
-
-                        Tipo de Cobrança
-
-                    </small>
-
-                    <strong>
-
-                        {{ $conta->tipo_cobranca ?? '-' }}
-
-                    </strong>
-
-                </div>
-
-
-                <div class="col-md-4">
-
-                    <small class="text-muted d-block">
-
-                        Destinatário
-
-                    </small>
-
-                    <strong>
-
-                        {{ $destinatario }}
-
-                    </strong>
-
-                </div>
-
-
-                <div class="col-md-4">
-
-                    <small class="text-muted d-block">
-
-                        Origem
-
-                    </small>
-
-                    <strong>
-
-                        {{ $sms->origem }}
-
-                    </strong>
-
-                </div>
-
-
-                <div class="col-md-4">
-
-                    <small class="text-muted d-block">
-
-                        Finalidade
-
-                    </small>
-
-                    <strong>
-
-                        {{ $sms->finalidade }}
-
-                    </strong>
-
-                </div>
-
-
-                <div class="col-md-4">
-
-                    <small class="text-muted d-block">
-
-                        Custeado por
-
-                    </small>
-
-                    <strong>
-
-                        {{ $sms->custeado_por }}
-
-                    </strong>
-
-                </div>
-
-
-                <div class="col-md-4">
-
-                    <small class="text-muted d-block">
-
-                        Facturável ao Cliente
-
-                    </small>
-
-                    @if($sms->facturavel_cliente)
-
-                        <span class="badge bg-success">
-
-                            SIM
-
-                        </span>
-
-                    @else
-
-                        <span class="badge bg-secondary">
-
-                            NÃO
-
-                        </span>
-
-                    @endif
-
-                </div>
-
-
-                <div class="col-md-4">
-
-                    <small class="text-muted d-block">
-
-                        Encoding
-
-                    </small>
-
-                    <strong>
-
-                        {{ $sms->encoding }}
-
-                    </strong>
-
-                </div>
-
-
-                <div class="col-md-4">
-
-                    <small class="text-muted d-block">
-
-                        Caracteres
-
-                    </small>
-
-                    <strong>
-
-                        {{ $sms->caracteres }}
-
-                    </strong>
-
-                </div>
-
-
-                <div class="col-md-4">
-
-                    <small class="text-muted d-block">
-
-                        Segmentos Previstos
-
-                    </small>
-
-                    <strong>
-
-                        {{ $sms->segmentos }}
-
-                    </strong>
-
-                </div>
-
-
-                <div class="col-md-4">
-
-                    <small class="text-muted d-block">
-
-                        Tentativas de Envio
-
-                    </small>
-
-                    <strong>
-
-                        {{ $sms->tentativas_envio }}
-
-                    </strong>
-
-                </div>
-
-
-                <div class="col-md-4">
-
-                    <small class="text-muted d-block">
-
-                        Próxima Tentativa
-
-                    </small>
-
-                    <strong>
-
-                        {{ $formatarData($sms->proxima_tentativa_em) }}
-
-                    </strong>
-
-                </div>
-
-
-                <div class="col-12">
-
-                    <small class="text-muted d-block mb-2">
-
-                        Conteúdo da Mensagem
-
-                    </small>
-
-                    <div class="bg-light border rounded p-3"
-                         style="white-space: pre-wrap; overflow-wrap: anywhere;">{{ $conteudo }}</div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    {{-- ========================================================= --}}
-    {{-- INFORMAÇÕES SMPP --}}
-    {{-- ========================================================= --}}
-
-    <div class="card shadow-sm border-0 mb-4">
-
-        <div class="card-header bg-white fw-bold">
-
-            <i class="fas fa-server text-primary me-2"></i>
-
-            Informações SMPP / Movitel
-
-        </div>
-
-        <div class="card-body">
-
-            <div class="row g-4">
-
-                <div class="col-md-4">
-
-                    <small class="text-muted d-block">
-
-                        Provider
-
-                    </small>
-
-                    <strong>
-
-                        {{ $sms->provider ?? '-' }}
-
-                    </strong>
-
-                </div>
-
-
-                <div class="col-md-4">
-
-                    <small class="text-muted d-block">
-
-                        Provider Message ID
-
-                    </small>
-
-                    <code style="overflow-wrap: anywhere;">
-
-                        {{ $sms->provider_message_id ?? '-' }}
-
-                    </code>
-
-                </div>
-
-
-                <div class="col-md-4">
-
-                    <small class="text-muted d-block">
-
-                        Host SMPP
-
-                    </small>
-
-                    <strong>
-
-                        {{ $sms->smpp_host ?? '-' }}
-
-                    </strong>
-
-                </div>
-
-
-                <div class="col-md-4">
-
-                    <small class="text-muted d-block">
-
-                        Sequence Number
-
-                    </small>
-
-                    <strong>
-
-                        {{ $sms->smpp_sequence ?? '-' }}
-
-                    </strong>
-
-                </div>
-
-
-                <div class="col-md-4">
-
-                    <small class="text-muted d-block">
-
-                        Código do Provider
-
-                    </small>
-
-                    <strong>
-
-                        {{ $sms->provider_codigo ?? '-' }}
-
-                    </strong>
-
-                </div>
-
-
-                <div class="col-md-4">
-
-                    <small class="text-muted d-block">
-
-                        Estado DLR
-
-                    </small>
-
-                    <span class="badge bg-{{ $corDlr($sms->dlr_estado) }}">
-
-                        {{ $sms->dlr_estado ?? 'SEM DLR' }}
-
-                    </span>
-
-                </div>
-
-
-                <div class="col-md-6">
-
-                    <small class="text-muted d-block">
-
-                        Descrição do Provider
-
-                    </small>
-
-                    <div>
-
-                        {{ $sms->provider_descricao ?? '-' }}
-
-                    </div>
-
-                </div>
-
-
-                <div class="col-md-6">
-
-                    <small class="text-muted d-block">
-
-                        Código de Erro DLR
-
-                    </small>
-
-                    <strong>
-
-                        {{ $sms->dlr_codigo_erro ?? '-' }}
-
-                    </strong>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    {{-- ========================================================= --}}
-    {{-- LINHA TEMPORAL --}}
-    {{-- ========================================================= --}}
-
-    <div class="card shadow-sm border-0 mb-4">
-
-        <div class="card-header bg-white fw-bold">
-
-            <i class="fas fa-clock text-primary me-2"></i>
-
-            Linha Temporal da Mensagem
-
-        </div>
-
-        <div class="card-body">
-
-            <div class="border-start border-3 ps-3">
-
-                <div class="mb-4">
-
-                    <strong class="text-primary">
-
-                        Mensagem Criada
-
-                    </strong>
-
-                    <div class="text-muted">
-
-                        {{ $formatarData($sms->created_at) }}
-
-                    </div>
-
-                </div>
-
-
-                @if($sms->enviado_em)
-
-                    <div class="mb-4">
-
-                        <strong class="text-primary">
-
-                            Mensagem Submetida
-
-                        </strong>
-
-                        <div class="text-muted">
-
-                            {{ $formatarData($sms->enviado_em) }}
-
-                        </div>
-
-                    </div>
-
-                @endif
-
-
-                @if($sms->dlr_recebido_em)
-
-                    <div class="mb-4">
-
-                        <strong class="text-info">
-
-                            DLR Recebido
-
-                        </strong>
-
-                        <div class="text-muted">
-
-                            {{ $formatarData($sms->dlr_recebido_em) }}
-
-                        </div>
-
-                    </div>
-
-                @endif
-
-
-                @if($sms->entregue_em)
-
-                    <div class="mb-4">
-
-                        <strong class="text-success">
-
-                            Mensagem Entregue
-
-                        </strong>
-
-                        <div class="text-muted">
-
-                            {{ $formatarData($sms->entregue_em) }}
-
-                        </div>
-
-                    </div>
-
-                @endif
-
-
-                @if($sms->falhado_em)
-
-                    <div class="mb-4">
-
-                        <strong class="text-danger">
-
-                            Mensagem Falhada
-
-                        </strong>
-
-                        <div class="text-muted">
-
-                            {{ $formatarData($sms->falhado_em) }}
-
-                        </div>
-
-                    </div>
-
-                @endif
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    {{-- ========================================================= --}}
-    {{-- INDICADORES DOS SEGMENTOS --}}
-    {{-- ========================================================= --}}
-
-    <div class="row g-3 mb-4">
-
-        <div class="col-xl-3 col-md-6">
-
-            <div class="card shadow-sm border-0 h-100">
-
-                <div class="card-body">
-
-                    <small class="text-muted">
-
-                        Segmentos Aceites
-
-                    </small>
-
-                    <h3 class="fw-bold text-primary mt-2">
-
-                        {{ $numero($segmentosAceites) }}
-
-                    </h3>
-
-                    <small class="text-muted">
-
-                        Command Status = 0
-
-                    </small>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="col-xl-3 col-md-6">
-
-            <div class="card shadow-sm border-0 h-100">
-
-                <div class="card-body">
-
-                    <small class="text-muted">
-
+                    <h6 class="text-muted">
                         Segmentos Entregues
+                    </h6>
 
-                    </small>
-
-                    <h3 class="fw-bold text-success mt-2">
-
-                        {{ $numero($segmentosEntregues) }}
-
+                    <h3 class="text-success">
+                        {{ $segmentosEntregues }}
                     </h3>
-
-                    <small class="text-muted">
-
-                        DLR de entrega confirmado
-
-                    </small>
 
                 </div>
 
@@ -931,27 +271,17 @@
 
         <div class="col-xl-3 col-md-6">
 
-            <div class="card shadow-sm border-0 h-100">
+            <div class="card">
 
                 <div class="card-body">
 
-                    <small class="text-muted">
+                    <h6 class="text-muted">
+                        DLR Recebidos
+                    </h6>
 
-                        Segmentos Sem DLR
-
-                    </small>
-
-                    <h3 class="fw-bold text-warning mt-2">
-
-                        {{ $numero($segmentosSemDlr) }}
-
+                    <h3 class="text-info">
+                        {{ $totalDlrs }}
                     </h3>
-
-                    <small class="text-muted">
-
-                        Aguardam confirmação
-
-                    </small>
 
                 </div>
 
@@ -959,267 +289,221 @@
 
         </div>
 
+    </div>
 
-        <div class="col-xl-3 col-md-6">
 
-            <div class="card shadow-sm border-0 h-100">
+    {{-- ====================================================== --}}
+    {{-- INFORMAÇÕES PRINCIPAIS --}}
+    {{-- ====================================================== --}}
+
+    <div class="row">
+
+        <div class="col-12">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <h5 class="mb-0">
+                        Informações da Mensagem
+                    </h5>
+
+                </div>
 
                 <div class="card-body">
 
-                    <small class="text-muted">
+                    <div class="row g-3">
 
-                        Segmentos com Falha DLR
+                        <div class="col-md-4">
 
-                    </small>
+                            <label class="text-muted">
+                                Conta
+                            </label>
 
-                    <h3 class="fw-bold text-danger mt-2">
+                            <h6>
+                                {{ $nomeConta }}
+                            </h6>
 
-                        {{ $numero($segmentosFalhados) }}
+                            <small class="text-muted">
+                                ID: {{ $sms->conta_id }}
+                            </small>
 
-                    </h3>
-
-                    <small class="text-muted">
-
-                        Falha ou expiração
-
-                    </small>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
+                        </div>
 
 
-    {{-- ========================================================= --}}
-    {{-- SEGMENTOS SMPP --}}
-    {{-- ========================================================= --}}
+                        <div class="col-md-4">
 
-    <div class="card shadow-sm border-0 mb-4">
+                            <label class="text-muted">
+                                Tipo de Cobrança
+                            </label>
 
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                            <h6>
+                                {{ $conta->tipo_cobranca ?? '-' }}
+                            </h6>
 
-            <div>
+                        </div>
 
-                <strong>
 
-                    <i class="fas fa-layer-group text-primary me-2"></i>
+                        <div class="col-md-4">
 
-                    Segmentos SMPP
+                            <label class="text-muted">
+                                Destinatário
+                            </label>
 
-                </strong>
+                            <h6>
+                                {{ $sms->telefone }}
+                            </h6>
 
-                <small class="text-muted d-block">
+                        </div>
 
-                    Histórico individual de submissão e entrega
 
-                </small>
+                        <div class="col-md-4">
 
-            </div>
+                            <label class="text-muted">
+                                Origem
+                            </label>
 
-            <span class="badge bg-primary">
+                            <h6>
+                                {{ $sms->origem }}
+                            </h6>
 
-                {{ $numero($segmentos->count()) }}
+                        </div>
 
-            </span>
 
-        </div>
+                        <div class="col-md-4">
 
-        <div class="card-body">
+                            <label class="text-muted">
+                                Finalidade
+                            </label>
 
-            <div class="table-responsive">
+                            <h6>
+                                {{ $sms->finalidade }}
+                            </h6>
 
-                <table class="table table-hover table-bordered align-middle">
+                        </div>
 
-                    <thead class="table-light">
 
-                        <tr>
+                        <div class="col-md-4">
 
-                            <th>Tentativa</th>
-                            <th>Segmento</th>
-                            <th>Provider Message ID</th>
-                            <th>Session ID</th>
-                            <th>Sequence</th>
-                            <th>Estado</th>
-                            <th>Command Status</th>
-                            <th>DLR</th>
-                            <th>Submetido</th>
-                            <th>Respondido</th>
-                            <th>DLR Recebido</th>
+                            <label class="text-muted">
+                                Custeado por
+                            </label>
 
-                        </tr>
+                            <h6>
+                                {{ $sms->custeado_por }}
+                            </h6>
 
-                    </thead>
+                        </div>
 
-                    <tbody>
 
-                        @forelse($segmentos as $segmento)
+                        <div class="col-md-4">
 
-                            @php
+                            <label class="text-muted">
+                                Encoding
+                            </label>
 
-                                $corSegmento = $coresEstado[$segmento->estado]
-                                    ?? 'secondary';
+                            <h6>
+                                {{ $sms->encoding }}
+                            </h6>
 
-                            @endphp
+                        </div>
 
-                            <tr>
 
-                                <td>
+                        <div class="col-md-4">
 
-                                    <span class="badge bg-dark">
+                            <label class="text-muted">
+                                Caracteres
+                            </label>
 
-                                        #{{ $segmento->smpp_tentativa_envio_id }}
+                            <h6>
+                                {{ $sms->caracteres }}
+                            </h6>
 
+                        </div>
+
+
+                        <div class="col-md-4">
+
+                            <label class="text-muted">
+                                Segmentos Previstos
+                            </label>
+
+                            <h6>
+                                {{ $sms->segmentos }}
+                            </h6>
+
+                        </div>
+
+
+                        <div class="col-md-4">
+
+                            <label class="text-muted">
+                                Facturável ao Cliente
+                            </label>
+
+                            <h6>
+
+                                @if($sms->facturavel_cliente)
+
+                                    <span class="badge bg-success">
+                                        SIM
                                     </span>
 
-                                </td>
+                                @else
 
-
-                                <td>
-
-                                    <strong>
-
-                                        {{ $segmento->numero_segmento }}
-                                        /
-                                        {{ $segmento->total_segmentos }}
-
-                                    </strong>
-
-                                </td>
-
-
-                                <td>
-
-                                    <code style="overflow-wrap: anywhere;">
-
-                                        {{ $segmento->provider_message_id ?? '-' }}
-
-                                    </code>
-
-                                </td>
-
-
-                                <td>
-
-                                    <small>
-
-                                        {{ $segmento->session_id ?? '-' }}
-
-                                    </small>
-
-                                </td>
-
-
-                                <td>
-
-                                    {{ $segmento->sequence_number ?? '-' }}
-
-                                </td>
-
-
-                                <td>
-
-                                    <span class="badge bg-{{ $corSegmento }}">
-
-                                        {{ $segmento->estado ?? '-' }}
-
+                                    <span class="badge bg-secondary">
+                                        NÃO
                                     </span>
 
-                                </td>
+                                @endif
+
+                            </h6>
+
+                        </div>
 
 
-                                <td>
+                        <div class="col-md-4">
 
-                                    @if($segmento->command_status === null)
+                            <label class="text-muted">
+                                Data de Criação
+                            </label>
 
-                                        <span class="text-muted">-</span>
+                            <h6>
+                                {{ $formatarData($sms->created_at) }}
+                            </h6>
 
-                                    @elseif((int) $segmento->command_status === 0)
-
-                                        <span class="badge bg-success">
-
-                                            0 - OK
-
-                                        </span>
-
-                                    @else
-
-                                        <span class="badge bg-danger">
-
-                                            {{ $segmento->command_status }}
-
-                                        </span>
-
-                                    @endif
-
-                                </td>
+                        </div>
 
 
-                                <td>
+                        <div class="col-md-4">
 
-                                    @if($segmento->dlr_estado)
+                            <label class="text-muted">
+                                Hora de Criação
+                            </label>
 
-                                        <span class="badge bg-{{ $corDlr($segmento->dlr_estado) }}">
+                            <h6>
+                                {{ $formatarHora($sms->created_at) }}
+                            </h6>
 
-                                            {{ $segmento->dlr_estado }}
-
-                                        </span>
-
-                                    @else
-
-                                        <span class="badge bg-secondary">
-
-                                            SEM DLR
-
-                                        </span>
-
-                                    @endif
-
-                                </td>
+                        </div>
 
 
-                                <td>
+                        <div class="col-12">
 
-                                    {{ $formatarData($segmento->submetido_em) }}
+                            <label class="text-muted">
+                                Mensagem
+                            </label>
 
-                                </td>
+                            <div
+                                class="border rounded p-3 bg-light"
+                                style="white-space: pre-wrap; overflow-wrap: anywhere;"
+                            >{{ $sms->mensagem }}</div>
 
+                        </div>
 
-                                <td>
+                    </div>
 
-                                    {{ $formatarData($segmento->respondido_em) }}
-
-                                </td>
-
-
-                                <td>
-
-                                    {{ $formatarData($segmento->dlr_recebido_em) }}
-
-                                </td>
-
-                            </tr>
-
-                        @empty
-
-                            <tr>
-
-                                <td colspan="11"
-                                    class="text-center text-muted py-4">
-
-                                    Nenhum segmento SMPP registado.
-
-                                </td>
-
-                            </tr>
-
-                        @endforelse
-
-                    </tbody>
-
-                </table>
+                </div>
 
             </div>
 
@@ -1228,479 +512,557 @@
     </div>
 
 
-    {{-- ========================================================= --}}
-    {{-- HISTÓRICO DE TENTATIVAS SMPP --}}
-    {{-- ========================================================= --}}
+    {{-- ====================================================== --}}
+    {{-- INFORMAÇÕES SMPP --}}
+    {{-- ====================================================== --}}
 
-    <div class="card shadow-sm border-0 mb-4">
+    <div class="row">
 
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div class="col-12">
 
-            <strong>
+            <div class="card">
 
-                <i class="fas fa-paper-plane text-primary me-2"></i>
+                <div class="card-header">
 
-                Tentativas SMPP
+                    <h5 class="mb-0">
+                        Informações SMPP / Movitel
+                    </h5>
 
-            </strong>
+                </div>
 
-            <span class="badge bg-primary">
+                <div class="card-body">
 
-                {{ $tentativas->count() }}
+                    <div class="row g-3">
 
-            </span>
+                        <div class="col-md-4">
+
+                            <label class="text-muted">
+                                Provider
+                            </label>
+
+                            <h6>
+                                {{ $sms->provider ?? '-' }}
+                            </h6>
+
+                        </div>
+
+
+                        <div class="col-md-4">
+
+                            <label class="text-muted">
+                                Provider Message ID
+                            </label>
+
+                            <h6>
+                                <code>
+                                    {{ $sms->provider_message_id ?? '-' }}
+                                </code>
+                            </h6>
+
+                        </div>
+
+
+                        <div class="col-md-4">
+
+                            <label class="text-muted">
+                                Host SMPP
+                            </label>
+
+                            <h6>
+                                {{ $sms->smpp_host ?? '-' }}
+                            </h6>
+
+                        </div>
+
+
+                        <div class="col-md-4">
+
+                            <label class="text-muted">
+                                Sequence Number
+                            </label>
+
+                            <h6>
+                                {{ $sms->smpp_sequence ?? '-' }}
+                            </h6>
+
+                        </div>
+
+
+                        <div class="col-md-4">
+
+                            <label class="text-muted">
+                                Código do Provider
+                            </label>
+
+                            <h6>
+                                {{ $sms->provider_codigo ?? '-' }}
+                            </h6>
+
+                        </div>
+
+
+                        <div class="col-md-4">
+
+                            <label class="text-muted">
+                                Estado DLR
+                            </label>
+
+                            <h6>
+
+                                <span class="badge bg-{{ $corDlr($sms->dlr_estado) }}">
+                                    {{ $sms->dlr_estado ?? 'SEM DLR' }}
+                                </span>
+
+                            </h6>
+
+                        </div>
+
+
+                        <div class="col-md-6">
+
+                            <label class="text-muted">
+                                Descrição do Provider
+                            </label>
+
+                            <p>
+                                {{ $sms->provider_descricao ?? '-' }}
+                            </p>
+
+                        </div>
+
+
+                        <div class="col-md-6">
+
+                            <label class="text-muted">
+                                Código de Erro DLR
+                            </label>
+
+                            <p>
+                                {{ $sms->dlr_codigo_erro ?? '-' }}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
 
         </div>
 
-        <div class="card-body">
+    </div>
 
-            @if($tentativas->isEmpty())
 
-                <p class="text-muted mb-0">
+    {{-- ====================================================== --}}
+    {{-- LINHA TEMPORAL --}}
+    {{-- ====================================================== --}}
 
-                    Nenhuma tentativa SMPP encontrada.
+    <div class="row">
 
-                </p>
+        <div class="col-12">
 
-            @else
+            <div class="card">
 
-                <div class="table-responsive">
+                <div class="card-header">
 
-                    <table class="table table-sm table-bordered align-middle">
+                    <h5 class="mb-0">
+                        Linha Temporal
+                    </h5>
 
-                        <thead class="table-light">
+                </div>
 
-                            <tr>
+                <div class="card-body">
 
-                                @foreach(array_keys((array) $tentativas->first()) as $campo)
+                    <div class="table-responsive custom-scrollbar">
 
-                                    <th>
+                        <table class="table table-bordered">
 
-                                        {{ $campo }}
-
-                                    </th>
-
-                                @endforeach
-
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-
-                            @foreach($tentativas as $tentativa)
+                            <thead>
 
                                 <tr>
-
-                                    @foreach((array) $tentativa as $valor)
-
-                                        <td style="max-width: 300px; overflow-wrap: anywhere;">
-
-                                            {{ $valor ?? '-' }}
-
-                                        </td>
-
-                                    @endforeach
-
-                                </tr>
-
-                            @endforeach
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            @endif
-
-        </div>
-
-    </div>
-
-
-    {{-- ========================================================= --}}
-    {{-- HISTÓRICO DLR --}}
-    {{-- ========================================================= --}}
-
-    <div class="card shadow-sm border-0 mb-4">
-
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-
-            <strong>
-
-                <i class="fas fa-check-double text-primary me-2"></i>
-
-                Delivery Reports (DLR)
-
-            </strong>
-
-            <span class="badge bg-primary">
-
-                {{ $dlrs->count() }}
-
-            </span>
-
-        </div>
-
-        <div class="card-body">
-
-            @if($dlrs->isEmpty())
-
-                <div class="alert alert-warning mb-0">
-
-                    Nenhum relatório de entrega encontrado para esta mensagem.
-
-                </div>
-
-            @else
-
-                <div class="table-responsive">
-
-                    <table class="table table-hover table-bordered align-middle">
-
-                        <thead class="table-light">
-
-                            <tr>
-
-                                <th>ID</th>
-                                <th>Provider Message ID</th>
-                                <th>Estado</th>
-                                <th>Erro</th>
-                                <th>Host</th>
-                                <th>Sequence</th>
-                                <th>Recebido</th>
-                                <th>Processado</th>
-                                <th>RAW</th>
-
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-
-                            @foreach($dlrs as $dlr)
-
-                                <tr>
-
-                                    <td>
-
-                                        #{{ $dlr->id }}
-
-                                    </td>
-
-
-                                    <td>
-
-                                        <code>
-
-                                            {{ $dlr->provider_message_id ?? '-' }}
-
-                                        </code>
-
-                                    </td>
-
-
-                                    <td>
-
-                                        <span class="badge bg-{{ $corDlr($dlr->estado) }}">
-
-                                            {{ $dlr->estado }}
-
-                                        </span>
-
-                                    </td>
-
-
-                                    <td>
-
-                                        {{ $dlr->network_error_code ?? '-' }}
-
-                                    </td>
-
-
-                                    <td>
-
-                                        {{ $dlr->host ?? '-' }}
-
-                                    </td>
-
-
-                                    <td>
-
-                                        {{ $dlr->sequence_number ?? '-' }}
-
-                                    </td>
-
-
-                                    <td>
-
-                                        {{ $formatarData($dlr->recebido_em) }}
-
-                                    </td>
-
-
-                                    <td>
-
-                                        {{ $formatarData($dlr->processado_em) }}
-
-                                    </td>
-
-
-                                    <td>
-
-                                        <details>
-
-                                            <summary class="text-primary" style="cursor:pointer;">
-
-                                                Ver RAW
-
-                                            </summary>
-
-                                            <pre class="bg-light p-2 rounded mt-2"
-                                                 style="max-width: 400px; white-space: pre-wrap; overflow-wrap: anywhere;">{{ $dlr->raw_receipt ?? '-' }}</pre>
-
-                                        </details>
-
-                                    </td>
-
-                                </tr>
-
-                            @endforeach
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            @endif
-
-        </div>
-
-    </div>
-
-
-    {{-- ========================================================= --}}
-    {{-- RESUMO FINANCEIRO --}}
-    {{-- ========================================================= --}}
-
-    <div class="card shadow-sm border-0 mb-4">
-
-        <div class="card-header bg-white fw-bold">
-
-            <i class="fas fa-coins text-primary me-2"></i>
-
-            Consumo de Créditos e Stock
-
-        </div>
-
-        <div class="card-body">
-
-            <div class="row g-3">
-
-                <div class="col-xl-3 col-md-6">
-
-                    <div class="border rounded p-3 h-100">
-
-                        <small class="text-muted">
-
-                            Segmentos Cobrados
-
-                        </small>
-
-                        <h4 class="fw-bold mt-2">
-
-                            {{ $numero($segmentosCreditos) }}
-
-                        </h4>
-
-                    </div>
-
-                </div>
-
-
-                <div class="col-xl-3 col-md-6">
-
-                    <div class="border rounded p-3 h-100">
-
-                        <small class="text-muted">
-
-                            Segmentos Consumidos Movitel
-
-                        </small>
-
-                        <h4 class="fw-bold mt-2">
-
-                            {{ $numero($segmentosStock) }}
-
-                        </h4>
-
-                    </div>
-
-                </div>
-
-
-                <div class="col-xl-3 col-md-6">
-
-                    <div class="border rounded p-3 h-100">
-
-                        <small class="text-muted">
-
-                            Valor dos Créditos Consumidos
-
-                        </small>
-
-                        <h4 class="fw-bold mt-2 text-success">
-
-                            {{ $moeda($receita) }}
-
-                        </h4>
-
-                    </div>
-
-                </div>
-
-
-                <div class="col-xl-3 col-md-6">
-
-                    <div class="border rounded p-3 h-100">
-
-                        <small class="text-muted">
-
-                            Custo Movitel
-
-                        </small>
-
-                        <h4 class="fw-bold mt-2 text-danger">
-
-                            {{ $moeda($custo) }}
-
-                        </h4>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <hr>
-
-
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-
-                <div>
-
-                    <strong>
-
-                        Diferença entre valor consumido e custo
-
-                    </strong>
-
-                    <div class="text-muted small">
-
-                        No POS_PAGO, a receita pode estar associada
-                        ao ciclo de consumo e à factura.
-
-                    </div>
-
-                </div>
-
-                <h4 class="fw-bold mb-0 {{ $margem >= 0 ? 'text-success' : 'text-danger' }}">
-
-                    {{ $moeda($margem) }}
-
-                </h4>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    {{-- ========================================================= --}}
-    {{-- HISTÓRICOS ADICIONAIS --}}
-    {{-- ========================================================= --}}
-
-    @foreach($historicos as $titulo => $registos)
-
-        <div class="card shadow-sm border-0 mb-4">
-
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-
-                <strong>
-
-                    {{ $titulo }}
-
-                </strong>
-
-                <span class="badge bg-secondary">
-
-                    {{ $registos->count() }}
-
-                </span>
-
-            </div>
-
-            <div class="card-body">
-
-                @if($registos->isEmpty())
-
-                    <p class="text-muted mb-0">
-
-                        Nenhum registo encontrado.
-
-                    </p>
-
-                @else
-
-                    <div class="table-responsive">
-
-                        <table class="table table-sm table-bordered align-middle">
-
-                            <thead class="table-light">
-
-                                <tr>
-
-                                    @foreach(array_keys((array) $registos->first()) as $campo)
-
-                                        <th>
-
-                                            {{ $campo }}
-
-                                        </th>
-
-                                    @endforeach
-
+                                    <th>Evento</th>
+                                    <th>Data</th>
+                                    <th>Hora</th>
                                 </tr>
 
                             </thead>
 
                             <tbody>
 
-                                @foreach($registos as $registo)
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary">
+                                            SMS CRIADO
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        {{ $formatarData($sms->created_at) }}
+                                    </td>
+
+                                    <td>
+                                        {{ $formatarHora($sms->created_at) }}
+                                    </td>
+                                </tr>
+
+
+                                @if($sms->enviado_em)
+
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-info">
+                                                SMS ENVIADO
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            {{ $formatarData($sms->enviado_em) }}
+                                        </td>
+
+                                        <td>
+                                            {{ $formatarHora($sms->enviado_em) }}
+                                        </td>
+                                    </tr>
+
+                                @endif
+
+
+                                @if($sms->dlr_recebido_em)
+
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-info">
+                                                DLR RECEBIDO
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            {{ $formatarData($sms->dlr_recebido_em) }}
+                                        </td>
+
+                                        <td>
+                                            {{ $formatarHora($sms->dlr_recebido_em) }}
+                                        </td>
+                                    </tr>
+
+                                @endif
+
+
+                                @if($sms->entregue_em)
+
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-success">
+                                                SMS ENTREGUE
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            {{ $formatarData($sms->entregue_em) }}
+                                        </td>
+
+                                        <td>
+                                            {{ $formatarHora($sms->entregue_em) }}
+                                        </td>
+                                    </tr>
+
+                                @endif
+
+
+                                @if($sms->falhado_em)
+
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-danger">
+                                                SMS FALHADO
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            {{ $formatarData($sms->falhado_em) }}
+                                        </td>
+
+                                        <td>
+                                            {{ $formatarHora($sms->falhado_em) }}
+                                        </td>
+                                    </tr>
+
+                                @endif
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    {{-- ====================================================== --}}
+    {{-- RESUMO DOS SEGMENTOS --}}
+    {{-- ====================================================== --}}
+
+    <div class="row">
+
+        <div class="col-md-3">
+
+            <div class="card">
+
+                <div class="card-body">
+
+                    <h6 class="text-muted">
+                        Segmentos Aceites
+                    </h6>
+
+                    <h3 class="text-primary">
+                        {{ $segmentosAceites }}
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3">
+
+            <div class="card">
+
+                <div class="card-body">
+
+                    <h6 class="text-muted">
+                        Segmentos Entregues
+                    </h6>
+
+                    <h3 class="text-success">
+                        {{ $segmentosEntregues }}
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3">
+
+            <div class="card">
+
+                <div class="card-body">
+
+                    <h6 class="text-muted">
+                        Sem DLR
+                    </h6>
+
+                    <h3 class="text-warning">
+                        {{ $segmentosSemDlr }}
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3">
+
+            <div class="card">
+
+                <div class="card-body">
+
+                    <h6 class="text-muted">
+                        DLR Falhado
+                    </h6>
+
+                    <h3 class="text-danger">
+                        {{ $segmentosFalhados }}
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    {{-- ====================================================== --}}
+    {{-- SEGMENTOS SMPP --}}
+    {{-- ====================================================== --}}
+
+    <div class="row">
+
+        <div class="col-12">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <h5 class="mb-0">
+                        Segmentos SMPP
+                    </h5>
+
+                </div>
+
+                <div class="card-body">
+
+                    <div class="table-responsive custom-scrollbar">
+
+                        <table class="display" id="sms-segmentos-table">
+
+                            <thead>
+
+                                <tr>
+                                    <th>Tentativa</th>
+                                    <th>Segmento</th>
+                                    <th>Provider ID</th>
+                                    <th>Session ID</th>
+                                    <th>Sequence</th>
+                                    <th>Estado</th>
+                                    <th>Command Status</th>
+                                    <th>DLR</th>
+                                    <th>Submetido</th>
+                                    <th>Respondido</th>
+                                    <th>DLR Recebido</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                @foreach($segmentos as $segmento)
+
+                                    @php
+
+                                        $corSegmento = $coresEstado[$segmento->estado]
+                                            ?? 'secondary';
+
+                                    @endphp
 
                                     <tr>
 
-                                        @foreach((array) $registo as $valor)
+                                        <td>
+                                            #{{ $segmento->smpp_tentativa_envio_id }}
+                                        </td>
 
-                                            <td style="max-width: 350px; overflow-wrap: anywhere;">
 
-                                                @if(is_array($valor) || is_object($valor))
+                                        <td>
+                                            <strong>
+                                                {{ $segmento->numero_segmento }}
+                                                /
+                                                {{ $segmento->total_segmentos }}
+                                            </strong>
+                                        </td>
 
-                                                    <pre class="mb-0 small">{{ json_encode($valor, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
 
-                                                @else
+                                        <td>
+                                            <code>
+                                                {{ $segmento->provider_message_id ?? '-' }}
+                                            </code>
+                                        </td>
 
-                                                    {{ $valor ?? '-' }}
 
-                                                @endif
+                                        <td>
+                                            <small>
+                                                {{ $segmento->session_id ?? '-' }}
+                                            </small>
+                                        </td>
 
-                                            </td>
 
-                                        @endforeach
+                                        <td>
+                                            {{ $segmento->sequence_number ?? '-' }}
+                                        </td>
+
+
+                                        <td>
+                                            <span class="badge bg-{{ $corSegmento }}">
+                                                {{ $segmento->estado }}
+                                            </span>
+                                        </td>
+
+
+                                        <td>
+
+                                            @if($segmento->command_status === null)
+
+                                                -
+
+                                            @elseif((int) $segmento->command_status === 0)
+
+                                                <span class="badge bg-success">
+                                                    0 - OK
+                                                </span>
+
+                                            @else
+
+                                                <span class="badge bg-danger">
+                                                    {{ $segmento->command_status }}
+                                                </span>
+
+                                            @endif
+
+                                        </td>
+
+
+                                        <td>
+
+                                            <span class="badge bg-{{ $corDlr($segmento->dlr_estado) }}">
+
+                                                {{ $segmento->dlr_estado ?? 'SEM DLR' }}
+
+                                            </span>
+
+                                        </td>
+
+
+                                        <td>
+
+                                            <div>
+                                                {{ $formatarData($segmento->submetido_em) }}
+                                            </div>
+
+                                            <small class="text-muted">
+                                                {{ $formatarHora($segmento->submetido_em) }}
+                                            </small>
+
+                                        </td>
+
+
+                                        <td>
+
+                                            <div>
+                                                {{ $formatarData($segmento->respondido_em) }}
+                                            </div>
+
+                                            <small class="text-muted">
+                                                {{ $formatarHora($segmento->respondido_em) }}
+                                            </small>
+
+                                        </td>
+
+
+                                        <td>
+
+                                            <div>
+                                                {{ $formatarData($segmento->dlr_recebido_em) }}
+                                            </div>
+
+                                            <small class="text-muted">
+                                                {{ $formatarHora($segmento->dlr_recebido_em) }}
+                                            </small>
+
+                                        </td>
 
                                     </tr>
 
@@ -1712,7 +1074,275 @@
 
                     </div>
 
-                @endif
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    {{-- ====================================================== --}}
+    {{-- TENTATIVAS SMPP --}}
+    {{-- ====================================================== --}}
+
+    <div class="row">
+
+        <div class="col-12">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <h5 class="mb-0">
+                        Histórico de Tentativas SMPP
+                    </h5>
+
+                </div>
+
+                <div class="card-body">
+
+                    @if($tentativas->isEmpty())
+
+                        <p class="text-muted">
+                            Nenhuma tentativa SMPP encontrada.
+                        </p>
+
+                    @else
+
+                        <div class="table-responsive custom-scrollbar">
+
+                            <table class="table table-bordered">
+
+                                <thead>
+
+                                    <tr>
+
+                                        @foreach(array_keys((array) $tentativas->first()) as $campo)
+
+                                            <th>
+                                                {{ $campo }}
+                                            </th>
+
+                                        @endforeach
+
+                                    </tr>
+
+                                </thead>
+
+                                <tbody>
+
+                                    @foreach($tentativas as $tentativa)
+
+                                        <tr>
+
+                                            @foreach((array) $tentativa as $valor)
+
+                                                <td style="max-width: 300px; overflow-wrap: anywhere;">
+                                                    {{ $valor ?? '-' }}
+                                                </td>
+
+                                            @endforeach
+
+                                        </tr>
+
+                                    @endforeach
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    @endif
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    {{-- ====================================================== --}}
+    {{-- DELIVERY REPORTS --}}
+    {{-- ====================================================== --}}
+
+    <div class="row">
+
+        <div class="col-12">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <h5 class="mb-0">
+                        Delivery Reports (DLR)
+                    </h5>
+
+                </div>
+
+                <div class="card-body">
+
+                    <div class="table-responsive custom-scrollbar">
+
+                        <table class="display" id="sms-dlr-table">
+
+                            <thead>
+
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Provider Message ID</th>
+                                    <th>Estado</th>
+                                    <th>Erro</th>
+                                    <th>Host</th>
+                                    <th>Sequence</th>
+                                    <th>Data</th>
+                                    <th>Hora</th>
+                                    <th>RAW</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                @foreach($dlrs as $dlr)
+
+                                    <tr>
+
+                                        <td>
+                                            #{{ $dlr->id }}
+                                        </td>
+
+
+                                        <td>
+                                            <code>
+                                                {{ $dlr->provider_message_id ?? '-' }}
+                                            </code>
+                                        </td>
+
+
+                                        <td>
+
+                                            <span class="badge bg-{{ $corDlr($dlr->estado) }}">
+                                                {{ $dlr->estado }}
+                                            </span>
+
+                                        </td>
+
+
+                                        <td>
+                                            {{ $dlr->network_error_code ?? '-' }}
+                                        </td>
+
+
+                                        <td>
+                                            {{ $dlr->host ?? '-' }}
+                                        </td>
+
+
+                                        <td>
+                                            {{ $dlr->sequence_number ?? '-' }}
+                                        </td>
+
+
+                                        <td>
+                                            {{ $formatarData($dlr->recebido_em) }}
+                                        </td>
+
+
+                                        <td>
+                                            {{ $formatarHora($dlr->recebido_em) }}
+                                        </td>
+
+
+                                        <td>
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-primary btn-xs"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalDlr{{ $dlr->id }}"
+                                            >
+                                                Ver RAW
+                                            </button>
+
+                                        </td>
+
+                                    </tr>
+
+                                @endforeach
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    {{-- ====================================================== --}}
+    {{-- MODAIS DLR RAW --}}
+    {{-- ====================================================== --}}
+
+    @foreach($dlrs as $dlr)
+
+        <div
+            class="modal fade"
+            id="modalDlr{{ $dlr->id }}"
+            tabindex="-1"
+            aria-hidden="true"
+        >
+
+            <div class="modal-dialog modal-lg">
+
+                <div class="modal-content">
+
+                    <div class="modal-header">
+
+                        <h5 class="modal-title">
+                            DLR RAW #{{ $dlr->id }}
+                        </h5>
+
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                        ></button>
+
+                    </div>
+
+                    <div class="modal-body">
+
+                        <pre
+                            class="bg-light p-3 rounded"
+                            style="white-space: pre-wrap; overflow-wrap: anywhere;"
+                        >{{ $dlr->raw_receipt ?? 'Sem conteúdo RAW' }}</pre>
+
+                    </div>
+
+                    <div class="modal-footer">
+
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
+                        >
+                            Fechar
+                        </button>
+
+                    </div>
+
+                </div>
 
             </div>
 
@@ -1721,24 +1351,244 @@
     @endforeach
 
 
-    {{-- ========================================================= --}}
-    {{-- DLR RAW PRINCIPAL --}}
-    {{-- ========================================================= --}}
+    {{-- ====================================================== --}}
+    {{-- RESUMO FINANCEIRO --}}
+    {{-- ====================================================== --}}
 
-    @if($sms->dlr_raw)
+    <div class="row">
 
-        <div class="card shadow-sm border-0 mb-4">
+        <div class="col-12">
 
-            <div class="card-header bg-white fw-bold">
+            <div class="card">
 
-                DLR RAW Principal
+                <div class="card-header">
+
+                    <h5 class="mb-0">
+                        Consumo de Créditos e Stock
+                    </h5>
+
+                </div>
+
+                <div class="card-body">
+
+                    <div class="row g-3">
+
+                        <div class="col-md-3">
+
+                            <div class="border rounded p-3">
+
+                                <small class="text-muted">
+                                    Segmentos Consumidos
+                                </small>
+
+                                <h4>
+                                    {{ $segmentosStock }}
+                                </h4>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-md-3">
+
+                            <div class="border rounded p-3">
+
+                                <small class="text-muted">
+                                    Valor dos Créditos Consumidos
+                                </small>
+
+                                <h4 class="text-success">
+                                    {{ $moeda($valorCreditos) }}
+                                </h4>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-md-3">
+
+                            <div class="border rounded p-3">
+
+                                <small class="text-muted">
+                                    Custo Movitel
+                                </small>
+
+                                <h4 class="text-danger">
+                                    {{ $moeda($custoStock) }}
+                                </h4>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-md-3">
+
+                            <div class="border rounded p-3">
+
+                                <small class="text-muted">
+                                    Diferença
+                                </small>
+
+                                <h4 class="{{ $diferenca >= 0 ? 'text-success' : 'text-danger' }}">
+                                    {{ $moeda($diferenca) }}
+                                </h4>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="alert alert-info mt-3 mb-0">
+
+                        O valor dos créditos consumidos corresponde aos registos
+                        de consumo pré-pago. Para contas pós-pagas, a receita
+                        pode estar associada ao ciclo de consumo e à facturação.
+
+                        A diferença apresentada não representa necessariamente
+                        o lucro da mensagem.
+
+                    </div>
+
+                </div>
 
             </div>
 
-            <div class="card-body">
+        </div>
 
-                <pre class="bg-light p-3 rounded mb-0"
-                     style="white-space: pre-wrap; overflow-wrap: anywhere;">{{ $sms->dlr_raw }}</pre>
+    </div>
+
+
+    {{-- ====================================================== --}}
+    {{-- HISTÓRICOS ADICIONAIS --}}
+    {{-- ====================================================== --}}
+
+    @foreach($historicos as $titulo => $registos)
+
+        <div class="row">
+
+            <div class="col-12">
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <h5 class="mb-0">
+                            {{ $titulo }}
+                        </h5>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        @if($registos->isEmpty())
+
+                            <p class="text-muted mb-0">
+                                Nenhum registo encontrado.
+                            </p>
+
+                        @else
+
+                            <div class="table-responsive custom-scrollbar">
+
+                                <table class="table table-bordered">
+
+                                    <thead>
+
+                                        <tr>
+
+                                            @foreach(array_keys((array) $registos->first()) as $campo)
+
+                                                <th>
+                                                    {{ $campo }}
+                                                </th>
+
+                                            @endforeach
+
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody>
+
+                                        @foreach($registos as $registo)
+
+                                            <tr>
+
+                                                @foreach((array) $registo as $valor)
+
+                                                    <td style="max-width: 350px; overflow-wrap: anywhere;">
+
+                                                        @if(is_array($valor) || is_object($valor))
+
+                                                            <pre class="mb-0">{{ json_encode($valor, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
+
+                                                        @else
+
+                                                            {{ $valor ?? '-' }}
+
+                                                        @endif
+
+                                                    </td>
+
+                                                @endforeach
+
+                                            </tr>
+
+                                        @endforeach
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                        @endif
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    @endforeach
+
+
+    {{-- ====================================================== --}}
+    {{-- DLR RAW PRINCIPAL --}}
+    {{-- ====================================================== --}}
+
+    @if($sms->dlr_raw)
+
+        <div class="row">
+
+            <div class="col-12">
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <h5 class="mb-0">
+                            DLR RAW Principal
+                        </h5>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <pre
+                            class="bg-light p-3 rounded"
+                            style="white-space: pre-wrap; overflow-wrap: anywhere;"
+                        >{{ $sms->dlr_raw }}</pre>
+
+                    </div>
+
+                </div>
 
             </div>
 
