@@ -192,6 +192,17 @@
                 </li>
 
 
+                <li class="nav-item">
+                    <a href="{{ route('admin.financeiro.dashboard') }}"
+                     class="nav-link {{ request()->routeIs('admin.financeiro.*') ? 'active' : '' }}">
+
+                        <i class="fas fa-chart-line"></i>
+
+                        <span>Gestão Financeira</span>
+                    </a>
+                </li>
+
+
                 <li class="sidebar-list">
                     <a  class="sidebar-link sidebar-title" href="javascript:void(0)">
                         <svg class="stroke-icon">
