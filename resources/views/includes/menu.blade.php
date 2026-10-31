@@ -168,153 +168,151 @@
             @endif
 
             {{-- ============================================================
-                MENUS DA ADMINISTRAÇÃO / PLATFORM
+                ADMINISTRAÇÃO INFORDATA / PLATFORM
             ============================================================ --}}
 
             @if(session('contexto') === 'PLATFORM')
 
-
+                {{-- 1. DASHBOARD --}}
                 <li class="sidebar-list">
                     <i class="fa fa-thumb-tack"></i>
 
-                    <label class="badge badge-light-primary">1</label>
+                    <a class="sidebar-link sidebar-title"
+                    href="{{ route('admin.dashboard.home') }}">
 
-                    <a
-                        class="sidebar-link sidebar-title"
-                        href="{{ route('admin.dashboard.home') }}"
-                    >
-                        <svg class="stroke-icon">
-                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-icons') }}"></use>
-                        </svg>
-
-                        <span class="lan-3">home</span>
+                        <span class="lan-3">
+                            <i class="fa fa-home"
+                            style="font-size: 15pt; padding-right: 5pt; color: white"></i>
+                            Dashboard
+                        </span>
                     </a>
                 </li>
 
+
+                {{-- 2. CONTAS --}}
                 <li class="sidebar-list">
                     <i class="fa fa-thumb-tack"></i>
 
-                    <label class="badge badge-light-primary">1</label>
+                    <a class="sidebar-link sidebar-title"
+                    href="{{ route('admin.contas.index') }}">
 
-                    <a
-                        class="sidebar-link sidebar-title"
-                        href="{{ route('admin.financeiro.dashboard') }}"
-                    >
-                        <svg class="stroke-icon">
-                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-icons') }}"></use>
-                        </svg>
-
-                        <span class="lan-3">Gestão Financeira</span>
+                        <span class="lan-3">
+                            <i class="fa fa-building"
+                            style="font-size: 15pt; padding-right: 5pt; color: white"></i>
+                            Contas
+                        </span>
                     </a>
                 </li>
 
+
+                {{-- 3. SENDERS ADMIN --}}
                 <li class="sidebar-list">
                     <i class="fa fa-thumb-tack"></i>
 
-                    <label class="badge badge-light-primary">1</label>
+                    <a class="sidebar-link sidebar-title"
+                    href="{{ route('admin.sender-ids.index') }}">
 
-                    <a
-                        class="sidebar-link sidebar-title"
-                        href="{{ route('admin.sms.index') }}"
-                    >
-                        <svg class="stroke-icon">
-                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-icons') }}"></use>
-                        </svg>
-
-                        <span class="lan-3">Monit.de SMS</span>
+                        <span class="lan-3">
+                            <i class="fa fa-paper-plane"
+                            style="font-size: 15pt; padding-right: 5pt; color: white"></i>
+                            Senders Admin
+                        </span>
                     </a>
                 </li>
 
-                <li class="sidebar-list">
-                    <a  class="sidebar-link sidebar-title" href="javascript:void(0)">
-                        <svg class="stroke-icon">
-                            <use href="{{ asset('assets/svg/icon-sprite.svg#stroke-ecommerce') }}"></use>
-                        </svg>
 
-                        <span> Contas</span>
-                    </a>
-                    <ul class="sidebar-submenu">
-
-                        <li>
-                            <a href="{{ route('admin.contas.index') }}">
-                                Contas
-                            </a>
-                        </li>
-
-                    </ul>
-                </li>
-
-
-                <li class="sidebar-list">
-                    <a  class="sidebar-link sidebar-title" href="javascript:void(0)">
-                        <svg class="stroke-icon">
-                            <use href="{{ asset('assets/svg/icon-sprite.svg#stroke-ecommerce') }}"></use>
-                        </svg>
-
-                        <span>Stock SMS</span>
-                    </a>
-                    <ul class="sidebar-submenu">
-
-                        <li>
-                            <a href="{{ route('admin.stock.index') }}">
-                                Stock Movitel
-                            </a>
-                        </li>
-
-                    </ul>
-                </li>
-
-                <li class="sidebar-list">
-
-                    <i class="fa fa-thumb-tack"></i>
-
-                    <a
-                        class="sidebar-link sidebar-title"
-                        href="{{ route('admin.tarifas-sms.index') }}"
-                    >
-
-                        <svg class="stroke-icon">
-                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-ecommerce') }}">
-                            </use>
-                        </svg>
-
-                        <span>Tarifas SMS</span>
-
-                    </a>
-
-                </li>
-
+                {{-- 4. MONITORIZAÇÃO SMS --}}
                 <li class="sidebar-list">
                     <i class="fa fa-thumb-tack"></i>
 
-                    <label class="badge badge-light-primary">1</label>
+                    <a class="sidebar-link sidebar-title"
+                    href="{{ route('admin.sms.index') }}">
 
-                    <a
-                        class="sidebar-link sidebar-title"
-                        href="{{ route('admin.sender-ids.index') }}"
-                    >
-                        <svg class="stroke-icon">
-                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-icons') }}"></use>
-                        </svg>
-
-                        <span class="lan-3">Senders Admin</span>
+                        <span class="lan-3">
+                            <i class="fa fa-envelope"
+                            style="font-size: 15pt; padding-right: 5pt; color: white"></i>
+                            Monitorização SMS
+                        </span>
                     </a>
                 </li>
 
+
+                {{-- 5. STOCK SMS --}}
                 <li class="sidebar-list">
                     <i class="fa fa-thumb-tack"></i>
 
-                    <label class="badge badge-light-primary">1</label>
+                    <a class="sidebar-link sidebar-title"
+                    href="{{ route('admin.stock.index') }}">
 
-                    <a
-                        class="sidebar-link sidebar-title"
-                        href="{{ route('admin.facturas.index') }}"
-                    >
-                        <svg class="stroke-icon">
-                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-icons') }}"></use>
-                        </svg>
+                        <span class="lan-3">
+                            <i class="fa fa-cubes"
+                            style="font-size: 15pt; padding-right: 5pt; color: white"></i>
+                            Stock SMS
+                        </span>
+                    </a>
+                </li>
 
-                        <span class="lan-3">Facturas</span>
+
+                {{-- 6. TARIFAS SMS --}}
+                <li class="sidebar-list">
+                    <i class="fa fa-thumb-tack"></i>
+
+                    <a class="sidebar-link sidebar-title"
+                    href="{{ route('admin.tarifas-sms.index') }}">
+
+                        <span class="lan-3">
+                            <i class="fa fa-tags"
+                            style="font-size: 15pt; padding-right: 5pt; color: white"></i>
+                            Tarifas SMS
+                        </span>
+                    </a>
+                </li>
+
+
+                {{-- 7. GESTÃO FINANCEIRA --}}
+                <li class="sidebar-list">
+                    <i class="fa fa-thumb-tack"></i>
+
+                    <a class="sidebar-link sidebar-title"
+                    href="{{ route('admin.financeiro.dashboard') }}">
+
+                        <span class="lan-3">
+                            <i class="fa fa-line-chart"
+                            style="font-size: 15pt; padding-right: 5pt; color: white"></i>
+                            Gestão Financeira
+                        </span>
+                    </a>
+                </li>
+
+
+                {{-- 8. FACTURAS --}}
+                <li class="sidebar-list">
+                    <i class="fa fa-thumb-tack"></i>
+
+                    <a class="sidebar-link sidebar-title"
+                    href="{{ route('admin.facturas.index') }}">
+
+                        <span class="lan-3">
+                            <i class="fa fa-file-text-o"
+                            style="font-size: 15pt; padding-right: 5pt; color: white"></i>
+                            Facturas
+                        </span>
+                    </a>
+                </li>
+
+
+                {{-- 9. UTILIZADORES, ROLES E PERMISSÕES --}}
+                <li class="sidebar-list">
+                    <i class="fa fa-thumb-tack"></i>
+
+                    <a class="sidebar-link sidebar-title"
+                    href="{{ Route::has('admin.users.index') ? route('admin.users.index') : 'javascript:void(0)' }}">
+
+                        <span class="lan-3">
+                            <i class="fa fa-users"
+                            style="font-size: 15pt; padding-right: 5pt; color: white"></i>
+                            Utilizadores
+                        </span>
                     </a>
                 </li>
 
