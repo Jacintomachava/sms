@@ -191,7 +191,6 @@
                     </a>
                 </li>
 
-
                 <li class="sidebar-list">
                     <i class="fa fa-thumb-tack"></i>
 
@@ -206,6 +205,23 @@
                         </svg>
 
                         <span class="lan-3">Gestão Financeira</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-list">
+                    <i class="fa fa-thumb-tack"></i>
+
+                    <label class="badge badge-light-primary">1</label>
+
+                    <a
+                        class="sidebar-link sidebar-title"
+                        href="{{ route('admin.sms.index') }}"
+                    >
+                        <svg class="stroke-icon">
+                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-icons') }}"></use>
+                        </svg>
+
+                        <span class="lan-3">Monitorização de SMS</span>
                     </a>
                 </li>
 

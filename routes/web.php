@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\TarifaSmsController;
 use App\Http\Controllers\Admin\FacturaSmsController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\Financeiro\DashboardFinanceiroController;
+use App\Http\Controllers\Admin\SmsMonitorController;
 use App\Http\Controllers\CompraSmsController;
 use App\Http\Controllers\FinanceiroController;
 use App\Http\Controllers\Admin\SenderIdController as AdminSenderIdController;
@@ -115,5 +116,8 @@ Route::middleware(['auth', 'platform'])->prefix('admin')->name('admin.')->group(
 
     Route::get('/admin/home', [DashboardController::class, 'index'])->middleware(['auth'])->name('dashboard.home');
     Route::get('/admin/financeiro',[DashboardFinanceiroController::class, 'index'])->name('financeiro.dashboard');
+
+    Route::get('/admin/sms',[SmsMonitorController::class, 'index'])->name('sms.index');
+    Route::get('/admin/sms/{id}',[SmsMonitorController::class, 'show'])->whereNumber('id')->name('sms.show');
 
 });
