@@ -113,6 +113,6 @@ Route::middleware(['auth', 'platform'])->prefix('admin')->name('admin.')->group(
     Route::get('/pagamentos/novo', [FacturaSmsController::class,'novoPagamento'])->name('pagamentos.novo');
 
     Route::get('/admin/home', [DashboardController::class, 'index'])->middleware(['auth'])->name('dashboard.home');
-    Route::get('/admin/financeiro',[DashboardFinanceiroController::class, 'index'])->name('admin.financeiro.dashboard');
+    Route::get('/admin/financeiro',[DashboardFinanceiroController::class, 'index'])->name('financeiro.dashboard');
 
 });
