@@ -205,7 +205,7 @@
                             <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-icons') }}"></use>
                         </svg>
 
-                        <span class="lan-3">home</span>
+                        <span class="lan-3">Gestão Financeira</span>
                     </a>
                 </li>
 
