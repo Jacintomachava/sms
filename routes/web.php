@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\CompraStockSmsController;
 use App\Http\Controllers\Admin\TarifaSmsController;
 use App\Http\Controllers\Admin\FacturaSmsController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\Financeiro\DashboardFinanceiroController;
 use App\Http\Controllers\CompraSmsController;
 use App\Http\Controllers\FinanceiroController;
 use App\Http\Controllers\Admin\SenderIdController as AdminSenderIdController;
