@@ -192,16 +192,22 @@
                 </li>
 
 
-                <li class="nav-item">
-                    <a href="{{ route('admin.financeiro.dashboard') }}"
-                     class="nav-link {{ request()->routeIs('admin.financeiro.*') ? 'active' : '' }}">
+                <li class="sidebar-list">
+                    <i class="fa fa-thumb-tack"></i>
 
-                        <i class="fas fa-chart-line"></i>
+                    <label class="badge badge-light-primary">1</label>
 
-                        <span>Gestão Financeira</span>
+                    <a
+                        class="sidebar-link sidebar-title"
+                        href="{{ route('admin.financeiro.dashboard') }}"
+                    >
+                        <svg class="stroke-icon">
+                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-icons') }}"></use>
+                        </svg>
+
+                        <span class="lan-3">home</span>
                     </a>
                 </li>
-
 
                 <li class="sidebar-list">
                     <a  class="sidebar-link sidebar-title" href="javascript:void(0)">
