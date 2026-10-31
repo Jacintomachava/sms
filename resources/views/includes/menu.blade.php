@@ -221,7 +221,7 @@
                             <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-icons') }}"></use>
                         </svg>
 
-                        <span class="lan-3">Monitorização de SMS</span>
+                        <span class="lan-3">Monit.de SMS</span>
                     </a>
                 </li>
 
