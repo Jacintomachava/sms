@@ -1,3 +1,7 @@
+@extends('layouts.app')
+
+@section('conteudo')
+
 <div class="table-responsive">
 
     <table class="table table-hover align-middle">
@@ -134,3 +138,5 @@
 <div class="mt-3">
     {{ $sms->links() }}
 </div>
+
+@endsection
