@@ -10,11 +10,8 @@
         <div class="card-header">
             <h5>
                 <i class="fa fa-money"></i>
-                Monitorização Global de Pagamentos
+                Monitorização de Pagamentos
             </h5>
-            <p class="mb-0">
-                Consulta de pagamentos de facturas e compras de SMS.
-            </p>
         </div>
 
         <div class="card-body">
@@ -24,7 +21,7 @@
                   action="{{ route('admin.pagamentos.index') }}"
                   class="row g-3 mb-4">
 
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <label class="form-label">Conta</label>
 
                     <select name="conta_id" class="form-select">
@@ -33,14 +30,14 @@
                         @foreach($contas as $conta)
                             <option value="{{ $conta->id }}"
                                 @selected(request('conta_id') == $conta->id)>
-                                {{ $conta->nome_legal ?: $conta->nome }}
+                                {{ $conta->nome }}
                             </option>
                         @endforeach
                     </select>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label">Tipo</label>
+                <div class="col-md-3">
+                    <label class="form-label">Tipo de Pagamento</label>
 
                     <select name="tipo" class="form-select">
                         <option value="">Todos</option>
@@ -58,22 +55,8 @@
                 </div>
 
                 <div class="col-md-2">
-                    <label class="form-label">Estado da transacção</label>
-
-                    <select name="estado" class="form-select">
-                        <option value="">Todos</option>
-
-                        @foreach($estados as $estado)
-                            <option value="{{ $estado }}"
-                                @selected(request('estado') === $estado)>
-                                {{ $estado }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="col-md-2">
                     <label class="form-label">Data inicial</label>
+
                     <input type="date"
                            name="inicio"
                            value="{{ request('inicio') }}"
@@ -82,6 +65,7 @@
 
                 <div class="col-md-2">
                     <label class="form-label">Data final</label>
+
                     <input type="date"
                            name="fim"
                            value="{{ request('fim') }}"
@@ -102,32 +86,24 @@
                         Limpar filtros
                     </a>
                 </div>
+
             </form>
 
-            @if($errors->any())
-                <div class="alert alert-danger">
-                    {{ $errors->first() }}
-                </div>
-            @endif
+            {{-- LISTAGEM --}}
+            <div class="table-responsive">
 
-            {{-- TABELA --}}
-            <div class="table-responsive custom-scrollbar">
-
-                <table class="display"
-                       id="pagamentos-monitor-table">
+                <table class="display" id="basic-1">
 
                     <thead>
                         <tr>
-                            <th>ID</th>
                             <th>Conta</th>
                             <th>Tipo</th>
                             <th>Referência</th>
                             <th>Forma</th>
                             <th>Valor</th>
-                            <th>Estado Trans.</th>
                             <th>Data</th>
                             <th>Hora</th>
-                            <th>Acção</th>
+                            <th>Acções</th>
                         </tr>
                     </thead>
 
@@ -144,89 +120,89 @@
                                     : ($temCompra ? 'Compra SMS' : ($pagamento->tipo ?? 'Outro'));
 
                                 $referencia = $temFactura
-                                    ? $pagamento->numeros_facturas
-                                    : ($pagamento->referencia ?: (
-                                        $temCompra
+                                    ? ($pagamento->numeros_facturas ?? '—')
+                                    : ($pagamento->referencia
+                                        ?: ($temCompra
                                             ? 'Compra #' . $pagamento->compra_sms_id
-                                            : '—'
-                                    ));
+                                            : '—'));
 
-                                $estado = $pagamento->transacao_estado ?? 'Sem transacção';
-
-                                $cor = match(strtoupper($estado)) {
-                                    'SUCESSO', 'PAGO', 'CONFIRMADO', 'CONCLUIDO',
-                                    'CONCLUÍDO', 'APROVADO' => 'success',
-
-                                    'FALHADO', 'FALHADA', 'ERRO',
-                                    'REJEITADO', 'CANCELADO' => 'danger',
-
-                                    'PENDENTE', 'PROCESSANDO',
-                                    'EM_PROCESSAMENTO' => 'warning',
-
-                                    default => 'secondary'
-                                };
-
-                                $data = $pagamento->pago_em
+                                $dataPagamento = $pagamento->pago_em
                                     ?? $pagamento->paga_em
                                     ?? $pagamento->created_at;
                             @endphp
 
                             <tr>
 
-                                <td>{{ $pagamento->id }}</td>
-
+                                {{-- CONTA --}}
                                 <td>
                                     <strong>
-                                        {{ $pagamento->conta_nome_legal
-                                            ?: ($pagamento->conta_nome
-                                            ?: 'Conta #' . $pagamento->conta_id) }}
+                                        {{ $pagamento->conta_nome ?: 'Conta #' . $pagamento->conta_id }}
                                     </strong>
+
+                                    @if($pagamento->conta_nome_legal)
+                                        <br>
+                                        <small class="text-muted">
+                                            {{ $pagamento->conta_nome_legal }}
+                                        </small>
+                                    @endif
                                 </td>
 
+                                {{-- TIPO --}}
                                 <td>
-                                    <span class="badge badge-light-primary">
-                                        {{ $tipo }}
-                                    </span>
+                                    @if($tipo === 'Compra SMS')
+                                        <span class="badge badge-light-primary">
+                                            Compra SMS
+                                        </span>
+                                    @elseif($tipo === 'Factura')
+                                        <span class="badge badge-light-success">
+                                            Factura
+                                        </span>
+                                    @else
+                                        <span class="badge badge-light-secondary">
+                                            {{ $tipo }}
+                                        </span>
+                                    @endif
                                 </td>
 
-                                <td>
-                                    <span data-bs-toggle="tooltip"
-                                          data-bs-placement="top"
-                                          data-bs-original-title="{{ $referencia }}"
-                                          style="cursor: pointer;">
-                                        {{ \Illuminate\Support\Str::limit($referencia, 25) }}
-                                    </span>
+                                {{-- REFERÊNCIA --}}
+                                <td
+                                    data-container="body"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    data-bs-original-title="{{ $referencia }}"
+                                    style="cursor: pointer;">
+
+                                    {{ \Illuminate\Support\Str::limit($referencia, 25) }}
                                 </td>
 
+                                {{-- FORMA DE PAGAMENTO --}}
                                 <td>
                                     {{ $pagamento->forma_pagamento ?? '—' }}
                                 </td>
 
+                                {{-- VALOR --}}
                                 <td>
                                     <strong>
-                                        {{ number_format($pagamento->valor, 2, ',', '.') }}
+                                        {{ number_format((float) $pagamento->valor, 2, ',', '.') }}
                                         {{ $pagamento->moeda ?? 'MZN' }}
                                     </strong>
                                 </td>
 
+                                {{-- DATA --}}
                                 <td>
-                                    <span class="badge bg-{{ $cor }}">
-                                        {{ $estado }}
-                                    </span>
-                                </td>
-
-                                <td>
-                                    {{ $data
-                                        ? \Carbon\Carbon::parse($data)->format('d/m/Y')
+                                    {{ $dataPagamento
+                                        ? \Carbon\Carbon::parse($dataPagamento)->format('d/m/Y')
                                         : '—' }}
                                 </td>
 
+                                {{-- HORA --}}
                                 <td>
-                                    {{ $data
-                                        ? \Carbon\Carbon::parse($data)->format('H:i:s')
+                                    {{ $dataPagamento
+                                        ? \Carbon\Carbon::parse($dataPagamento)->format('H:i:s')
                                         : '—' }}
                                 </td>
 
+                                {{-- ACÇÕES --}}
                                 <td>
                                     <a href="{{ route('admin.pagamentos.show', $pagamento->id) }}"
                                        class="btn btn-primary btn-xs">
@@ -245,14 +221,10 @@
 
             </div>
 
+            {{-- PAGINAÇÃO LARAVEL --}}
             <div class="mt-3">
                 {{ $pagamentos->links() }}
             </div>
-
-            <small class="text-muted">
-                A apresentar {{ $pagamentos->count() }}
-                de {{ $pagamentos->total() }} pagamentos registados.
-            </small>
 
         </div>
 
@@ -261,36 +233,3 @@
 </div>
 
 @endsection
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-
-    // Tooltip Bootstrap 5
-    if (typeof bootstrap !== 'undefined') {
-        document.querySelectorAll(
-            '#pagamentos-monitor-table [data-bs-toggle="tooltip"]'
-        ).forEach(function (element) {
-            new bootstrap.Tooltip(element, {
-                container: 'body'
-            });
-        });
-    }
-
-    // DataTables: sem paginação local, pois o Laravel já pagina.
-    if (
-        window.jQuery &&
-        $.fn.DataTable &&
-        !$.fn.DataTable.isDataTable('#pagamentos-monitor-table')
-    ) {
-        $('#pagamentos-monitor-table').DataTable({
-            paging: false,
-            searching: false,
-            info: false,
-            ordering: false,
-            lengthChange: false
-        });
-    }
-});
-</script>
-@endpush
