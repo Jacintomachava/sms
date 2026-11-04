@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\TarifaSmsController;
 use App\Http\Controllers\Admin\FacturaSmsController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\Financeiro\DashboardFinanceiroController;
+use App\Http\Controllers\Admin\PagamentoMonitorController;
 use App\Http\Controllers\Admin\SmsMonitorController;
 use App\Http\Controllers\CompraSmsController;
 use App\Http\Controllers\FinanceiroController;
@@ -119,5 +120,8 @@ Route::middleware(['auth', 'platform'])->prefix('admin')->name('admin.')->group(
 
     Route::get('/admin/sms',[SmsMonitorController::class, 'index'])->name('sms.index');
     Route::get('/admin/sms/{id}',[SmsMonitorController::class, 'show'])->whereNumber('id')->name('sms.show');
+
+    Route::get('/admin/pagamentos', [PagamentoMonitorController::class, 'index'])->name('pagamentos.index');
+    Route::get('/admin/pagamentos/{id}', [PagamentoMonitorController::class, 'show'])->name('pagamentos.show');
 
 });

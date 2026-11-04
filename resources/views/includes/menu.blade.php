@@ -284,6 +284,20 @@
                     </a>
                 </li>
 
+                <li class="sidebar-list">
+                    <i class="fa fa-thumb-tack"></i>
+
+                    <a class="sidebar-link sidebar-title"
+                    href="{{ route('admin.pagamentos.index') }}">
+
+                        <span class="lan-3">
+                            <i class="fa fa-money"
+                            style="font-size: 15pt; padding-right: 5pt; color: white"></i>
+                            Pagamentos
+                        </span>
+                    </a>
+                </li>
+
 
                 {{-- 8. FACTURAS --}}
                 <li class="sidebar-list">
