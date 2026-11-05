@@ -281,6 +281,7 @@ class UtilizadorController extends Controller
 
         abort_if($roles->isEmpty(), 404);
 
+
         $permissoesDirectas = DB::table('platform_user_permissions as pup')
             ->join('permissions as p', 'p.id', '=', 'pup.permission_id')
             ->where('pup.user_id', $id)
