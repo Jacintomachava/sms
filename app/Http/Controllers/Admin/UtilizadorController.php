@@ -88,10 +88,16 @@ class UtilizadorController extends Controller
 
     private function obterUtilizador(int $id)
     {
-        return DB::table('users')
+        $utilizador = DB::table('users')
             ->where('id', $id)
             ->whereNull('deleted_at')
-            ->firstOrFail();
+            ->first();
+
+        if (!$utilizador) {
+            abort(404, 'Utilizador não encontrado.');
+        }
+
+        return $utilizador;
     }
 
     private function rolesDoUtilizador(int $id)
