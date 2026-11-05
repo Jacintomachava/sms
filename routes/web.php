@@ -125,4 +125,25 @@ Route::middleware(['auth', 'platform'])->prefix('admin')->name('admin.')->group(
     Route::get('/admin/pagamentos', [PagamentoMonitorController::class, 'index'])->name('pagamentos.index');
     Route::get('/admin/pagamentos/{id}', [PagamentoMonitorController::class, 'show'])->name('pagamentos.show');
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | UTILIZADORES DA PLATAFORMA
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('utilizadores')
+        ->name('utilizadores.')
+        ->controller(UtilizadorController::class)
+        ->group(function () {
+
+            Route::get('/', 'index')->name('index');
+            Route::get('/criar', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{id}', 'show')->name('show');
+            Route::get('/{id}/editar', 'edit')->name('edit');
+            Route::put('/{id}', 'update')->name('update');
+            Route::patch('/{id}/estado', 'alterarEstado')->name('estado');
+
+        });
+
 });

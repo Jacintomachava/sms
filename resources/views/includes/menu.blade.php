@@ -320,7 +320,7 @@
                     <i class="fa fa-thumb-tack"></i>
 
                     <a class="sidebar-link sidebar-title"
-                    href="{{ Route::has('admin.users.index') ? route('admin.users.index') : 'javascript:void(0)' }}">
+                    href="{{ Route::has('admin.utilizadores.index') ? route('admin.utilizadores.index') : 'javascript:void(0)' }}">
 
                         <span class="lan-3">
                             <i class="fa fa-users"
