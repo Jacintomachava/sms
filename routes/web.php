@@ -107,6 +107,7 @@ Route::middleware(['auth', 'platform'])->prefix('admin')->name('admin.')->group(
 
     Route::get('/contas', [ContaController::class, 'index'])->name('contas.index');
     Route::post('/contas', [ContaController::class, 'store'])->name('contas.store');
+    Route::get('/detalhes/{id}', [ContaController::class, 'show'])->name('contas.show');
 
     Route::get('/facturas', [FacturaSmsController::class,'index'])->name('facturas.index');
     Route::get('/facturas/{factura}', [FacturaSmsController::class,'show'])->name('facturas.show');
