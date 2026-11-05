@@ -273,6 +273,8 @@ class UtilizadorController extends Controller
     {
         $this->exigirPlatform();
 
+        dd('ENTROU NO SHOW', $id);
+
         $utilizador = $this->obterUtilizador($id);
 
         $roles = $this->rolesDoUtilizador($id);
