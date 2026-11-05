@@ -163,15 +163,13 @@
                                 {{-- ACÇÕES --}}
                                 <td>
 
-                                    <button
-                                        type="button"
-                                        class="btn btn-sm btn-light"
-                                        title="Configurar">
+                                    <a href="{{ route('admin.contas.show', $conta->id) }}"
+                                    class="btn btn-primary btn-xs">
 
-                                        <i class="fa fa-cog"></i>
+                                        <i class="fa fa-eye"></i>
+                                        Detalhes
 
-                                    </button>
-
+                                    </a>
                                 </td>
 
                             </tr>
