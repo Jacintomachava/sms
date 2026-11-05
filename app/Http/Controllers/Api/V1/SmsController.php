@@ -188,228 +188,78 @@ class SmsController extends Controller
         ]);
     }
 
-    public function send(Request $request, SmsCriacaoService $smsCriacaoService){
-
+   
+    public function send(Request $request, SmsCriacaoService $smsCriacaoService)
+    {
         try {
 
             $validated = $request->validate([
-                'to' => ['required','string','max:20',],
-                'sender' => ['required','string','max:50',],
-                'message' => ['required','string','max:5000',],
+                'to' => ['required', 'string', 'max:20'],
+                'sender' => ['required', 'string', 'max:50'],
+                'message' => ['required', 'string', 'max:5000'],
             ]);
 
-            /*
-             * A conta NUNCA vem do JSON.
-             * Ela vem da API Key.
-             */
+            // A conta é identificada pela API Key, nunca pelo JSON.
             $contaId = (int) $request->attributes->get('conta_id');
-            $origem = 'API';
 
-            /*
-             * Procuramos o Sender dentro dos Senders
-             * autorizados para esta conta.
-             */
-            $sender = SenderId::query()
-                ->where('sender', $validated['sender'])
-                ->where('estado', 'APROVADO')
-                ->whereHas(
-                    'contas',
-                    function ($query) use ($contaId) {
-
-                        $query
-                            ->where('contas.id', $contaId)
-                            ->where('conta_sender_ids.estado','ACTIVO');
-                    }
-                )
-                ->first();
-
-
-            if (!$sender) {
-
+            if ($contaId <= 0) {
                 return response()->json([
                     'status' => 0,
-                    'message' => 'O Sender informado não está activo ou autorizado para esta conta.',
-                    'error' => [
-                        'code' => 'SENDER_NOT_ALLOWED',
-                    ],
+                    'message' => 'Conta não identificada.',
+                    'error' => ['code' => 'ACCOUNT_NOT_FOUND'],
                 ], 403);
             }
 
-            /*
-             * API não possui utilizador humano.
-             * Por isso criado_por será null.
-             *
-             * Vamos ajustar SmsService para aceitar
-             * ?int $userId.
-             */
-            $sms = $smsCriacaoService->criar(contaId: $contaId, senderId: $sender->id, telefone: $validated['to'], mensagem: $validated['message'], userId: null, origem: 'API');
+            $sender = $this->obterSender(
+                $contaId,
+                $validated['sender']
+            );
 
-            $saldo = Carteira::where('conta_id', $contaId)->value('saldo_sms');
+            if (!$sender) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => 'Sender não autorizado para esta conta.',
+                    'error' => ['code' => 'SENDER_NOT_ALLOWED'],
+                ], 403);
+            }
+
+            $sms = $smsCriacaoService->criar(
+                contaId: $contaId,
+                senderId: $sender->id,
+                telefone: $validated['to'],
+                mensagem: $validated['message'],
+                userId: null,
+                origem: 'API'
+            );
 
             return response()->json([
                 'status' => 1,
-                'message' => 'SMS enviado com sucesso.',
+                'message' => 'SMS registada e colocada na fila de envio.',
                 'data' => [
                     'id' => $sms->id,
                     'to' => $sms->telefone,
                     'sender' => $sender->sender,
-                    'message' => $sms->mensagem,
                     'encoding' => $sms->encoding,
                     'characters' => $sms->caracteres,
                     'segments' => $sms->segmentos,
                     'sms_status' => $this->publicSmsStatus($sms->estado),
-                    'balance' =>(int) ($saldo ?? 0),
-                    'created_at' => $sms->created_at->toIso8601String(),
+                    'created_at' => $sms->created_at?->toIso8601String(),
                 ],
-            ], 201);
-
-
-        } catch (ValidationException $e) {
-
-            return response()->json([
-                'status' => 0,
-                'message' => 'Os dados enviados são inválidos.',
-                'error' => [
-                    'code' => 'VALIDATION_ERROR',
-                ],
-
-                'errors' => $e->errors(),
-
-            ], 422);
-
-
-        } catch (RuntimeException $e) {
-
-            /*
-             * Por enquanto tratamos erros de negócio aqui.
-             * Mais adiante criaremos Exceptions próprias.
-             */
-            $code = match ($e->getMessage()) {
-
-                'Saldo SMS insuficiente.' => 'INSUFFICIENT_CREDITS',
-                'Carteira não encontrada.' => 'WALLET_NOT_FOUND',
-                'A carteira encontra-se bloqueada.' => 'WALLET_BLOCKED',
-                'Número de telefone inválido.' => 'INVALID_PHONE',
-                default
-                    => 'SMS_SEND_FAILED',
-            };
-
-
-            return response()->json([
-                'status' => 0,
-                'message' => $e->getMessage(),
-                'error' => [
-                    'code' => $code,
-                ],
-            ], 422);
-
-
-        } catch (Throwable $e) {
-
-            report($e);
-
-            return response()->json([
-                'status' => 0,
-                'message' => 'Ocorreu um erro interno ao processar a SMS.',
-                'error' => [
-                    'code' =>'INTERNAL_ERROR',
-                ],
-            ], 500);
-        }
-    }
-
-    public function sendMany(Request $request, SmsService $smsService) {
-        
-        try {
-
-            $validated = $request->validate([
-                'sender' => ['required','string','max:50',],
-                'message' => ['required','string','max:5000',],
-                'to' => ['required','array','min:1','max:1000',],
-                'to.*' => ['required','string','max:20',
-                ],
-            ]);
-
-            $contaId = (int) $request->attributes->get('conta_id');
-            $sender = $this->obterSender($contaId, $validated['sender']);
-            $origem = 'API';
-
-            if (!$sender) {
-
-                return response()->json([
-                    'status' => 0,
-                    'message' => 'O Sender informado não está activo ou autorizado para esta conta.',
-                    'error' => [
-                        'code' =>
-                            'SENDER_NOT_ALLOWED',
-                    ],
-
-                ], 403);
-            }
-
-            $results = [];
-
-            $sent = 0;
-            $failed = 0;
-            $totalSegments = 0;
-
-
-            foreach ($validated['to'] as $telefone) {
-
-                try {
-
-                    $sms = $smsService->enviar($contaId, $sender->id, $telefone, $validated['message'], $origem, null);
-
-                    $results[] = [
-                        'id' => $sms->id,
-                        'to' => $sms->telefone,
-                        'sender' => $sender->sender,
-                        'segments' => $sms->segmentos,
-                        'sms_status' => 'SENT',
-                    ];
-
-                    $sent++;
-
-                    $totalSegments += $sms->segmentos;
-
-                } catch (Throwable $e) {
-
-                    $failed++;
-
-                    $results[] = [
-                        'to' => $telefone,
-                        'sender' => $sender->sender,
-                        'sms_status' => 'FAILED',
-
-                        'error' => [
-                            'code' => $this->errorCode($e),
-                            'message' => $e->getMessage(),
-                        ],
-                    ];
-                }
-            }
-
-            $saldo = Carteira::where('conta_id', $contaId)->value('saldo_sms');
-
-            return response()->json([
-                'status' => 1,
-                'message' => $failed > 0 ? 'Envio processado com algumas falhas.' : 'SMS enviadas com sucesso.',
-                'data' => [
-                    'recipients' => count($validated['to']),
-                    'sent' => $sent,
-                    'failed' => $failed,
-                    'total_segments' => $totalSegments,
-                    'balance' => (int) ($saldo ?? 0),
-                    'results' => $results,
-                ],
-
-            ], 200);
-
+            ], 202);
 
         } catch (ValidationException $e) {
 
             return $this->validationError($e);
 
+        } catch (RuntimeException $e) {
+
+            return response()->json([
+                'status' => 0,
+                'message' => $e->getMessage(),
+                'error' => [
+                    'code' => $this->errorCode($e),
+                ],
+            ], 422);
 
         } catch (Throwable $e) {
 
@@ -417,109 +267,225 @@ class SmsController extends Controller
 
             return response()->json([
                 'status' => 0,
-                'message' => 'Não foi possível processar o envio.',
-                'error' => [
-                    'code' => 'INTERNAL_ERROR',
-                ],
-
+                'message' => 'Erro interno ao registar a SMS.',
+                'error' => ['code' => 'INTERNAL_ERROR'],
             ], 500);
         }
     }
 
-    public function bulk(Request $request, SmsService $smsService) {
-        
+
+    public function sendMany(Request $request, SmsCriacaoService $smsCriacaoService)
+    {
         try {
 
             $validated = $request->validate([
-                'messages' => ['required','array','min:1','max:1000',],
-                'messages.*.to' => ['required','string','max:20',],
-                'messages.*.sender' => ['required','string','max:50',],
-                'messages.*.message' => ['required','string','max:5000',],
+                'sender' => ['required', 'string', 'max:50'],
+                'message' => ['required', 'string', 'max:5000'],
+                'to' => ['required', 'array', 'min:1', 'max:1000'],
+                'to.*' => ['required', 'string', 'max:20'],
             ]);
 
             $contaId = (int) $request->attributes->get('conta_id');
-            $origem = 'API';
+
+            if ($contaId <= 0) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => 'Conta não identificada.',
+                    'error' => ['code' => 'ACCOUNT_NOT_FOUND'],
+                ], 403);
+            }
+
+            $sender = $this->obterSender(
+                $contaId,
+                $validated['sender']
+            );
+
+            if (!$sender) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => 'Sender não autorizado.',
+                    'error' => ['code' => 'SENDER_NOT_ALLOWED'],
+                ], 403);
+            }
 
             $results = [];
-
-            $sent = 0;
+            $accepted = 0;
             $failed = 0;
             $totalSegments = 0;
 
-            /*
-            * Cache dos Senders para não consultar
-            * a BD repetidamente.
-            */
+            foreach ($validated['to'] as $index => $telefone) {
+
+                try {
+
+                    $sms = $smsCriacaoService->criar(
+                        contaId: $contaId,
+                        senderId: $sender->id,
+                        telefone: $telefone,
+                        mensagem: $validated['message'],
+                        userId: null,
+                        origem: 'API'
+                    );
+
+                    $accepted++;
+                    $totalSegments += (int) $sms->segmentos;
+
+                    $results[] = [
+                        'index' => $index,
+                        'id' => $sms->id,
+                        'to' => $sms->telefone,
+                        'sender' => $sender->sender,
+                        'segments' => $sms->segmentos,
+                        'sms_status' => $this->publicSmsStatus($sms->estado),
+                        'accepted' => true,
+                    ];
+
+                } catch (Throwable $e) {
+
+                    report($e);
+                    $failed++;
+
+                    $results[] = [
+                        'index' => $index,
+                        'to' => $telefone,
+                        'accepted' => false,
+                        'error' => [
+                            'code' => $this->errorCode($e),
+                            'message' => $e instanceof RuntimeException
+                                ? $e->getMessage()
+                                : 'Não foi possível registar esta SMS.',
+                        ],
+                    ];
+                }
+            }
+
+            return response()->json([
+                'status' => $accepted > 0 ? 1 : 0,
+                'message' => 'Processamento do lote concluído.',
+                'data' => [
+                    'recipients' => count($validated['to']),
+                    'accepted' => $accepted,
+                    'failed' => $failed,
+                    'total_segments' => $totalSegments,
+                    'results' => $results,
+                ],
+            ], $accepted > 0 ? 202 : 422);
+
+        } catch (ValidationException $e) {
+
+            return $this->validationError($e);
+
+        } catch (Throwable $e) {
+
+            report($e);
+
+            return response()->json([
+                'status' => 0,
+                'message' => 'Erro interno ao processar o lote.',
+                'error' => ['code' => 'INTERNAL_ERROR'],
+            ], 500);
+        }
+    }
+
+    public function bulk(Request $request, SmsCriacaoService $smsCriacaoService)
+    {
+        try {
+
+            $validated = $request->validate([
+                'messages' => ['required', 'array', 'min:1', 'max:1000'],
+                'messages.*.to' => ['required', 'string', 'max:20'],
+                'messages.*.sender' => ['required', 'string', 'max:50'],
+                'messages.*.message' => ['required', 'string', 'max:5000'],
+            ]);
+
+            $contaId = (int) $request->attributes->get('conta_id');
+
+            if ($contaId <= 0) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => 'Conta não identificada.',
+                    'error' => ['code' => 'ACCOUNT_NOT_FOUND'],
+                ], 403);
+            }
+
+            $results = [];
             $senderCache = [];
 
-            foreach ($validated['messages'] as $item) {
+            $accepted = 0;
+            $failed = 0;
+            $totalSegments = 0;
+
+            foreach ($validated['messages'] as $index => $item) {
 
                 try {
 
                     $senderName = strtoupper(trim($item['sender']));
 
                     if (!array_key_exists($senderName, $senderCache)) {
-
-                        $senderCache[$senderName] = $this->obterSender($contaId, $senderName);
+                        $senderCache[$senderName] = $this->obterSender(
+                            $contaId,
+                            $senderName
+                        );
                     }
 
                     $sender = $senderCache[$senderName];
 
                     if (!$sender) {
-
-                        throw new RuntimeException(
-                            'Sender não autorizado.'
-                        );
+                        throw new RuntimeException('Sender não autorizado.');
                     }
 
-                    $sms = $smsService->enviar($contaId, $sender->id, $item['to'], $item['message'], $origem, null);
+                    $sms = $smsCriacaoService->criar(
+                        contaId: $contaId,
+                        senderId: $sender->id,
+                        telefone: $item['to'],
+                        mensagem: $item['message'],
+                        userId: null,
+                        origem: 'API'
+                    );
+
+                    $accepted++;
+                    $totalSegments += (int) $sms->segmentos;
 
                     $results[] = [
+                        'index' => $index,
                         'id' => $sms->id,
                         'to' => $sms->telefone,
                         'sender' => $sender->sender,
                         'segments' => $sms->segmentos,
-                        'sms_status' => 'SENT',
+                        'sms_status' => $this->publicSmsStatus($sms->estado),
+                        'accepted' => true,
                     ];
-
-                    $sent++;
-
-                    $totalSegments += $sms->segmentos;
 
                 } catch (Throwable $e) {
 
+                    report($e);
                     $failed++;
 
                     $results[] = [
+                        'index' => $index,
                         'to' => $item['to'],
                         'sender' => $item['sender'],
-                        'sms_status' => 'FAILED',
-
+                        'accepted' => false,
                         'error' => [
-                            'code' => $e->getMessage() === 'Sender não autorizado.' ? 'SENDER_NOT_ALLOWED' : $this->errorCode($e),
-                            'message' => $e->getMessage(),
+                            'code' => $this->errorCode($e),
+                            'message' => $e instanceof RuntimeException
+                                ? $e->getMessage()
+                                : 'Não foi possível registar esta SMS.',
                         ],
                     ];
                 }
             }
 
-            $saldo = Carteira::where('conta_id', $contaId)->value('saldo_sms');
-
             return response()->json([
-                'status' => 1,
-                'message' => $failed > 0 ? 'Envio em massa processado com algumas falhas.' : 'Envio em massa processado com sucesso.',
-
+                'status' => $accepted > 0 ? 1 : 0,
+                'message' => 'Processamento em massa concluído.',
                 'data' => [
                     'total' => count($validated['messages']),
-                    'sent' => $sent,
+                    'accepted' => $accepted,
                     'failed' => $failed,
                     'total_segments' => $totalSegments,
-                    'balance' => (int) ($saldo ?? 0),
                     'results' => $results,
                 ],
-
-            ], 200);
-
+            ], $accepted > 0 ? 202 : 422);
 
         } catch (ValidationException $e) {
 
@@ -531,11 +497,8 @@ class SmsController extends Controller
 
             return response()->json([
                 'status' => 0,
-                'message' => 'Não foi possível processar o envio em massa.',
-                'error' => [
-                    'code' => 'INTERNAL_ERROR',
-                ],
-
+                'message' => 'Erro interno ao processar o envio em massa.',
+                'error' => ['code' => 'INTERNAL_ERROR'],
             ], 500);
         }
     }
@@ -589,20 +552,19 @@ class SmsController extends Controller
         ], 422);
     }
 
-    private function publicSmsStatus(string $status): string {
-
+    private function publicSmsStatus(string $status): string
+    {
         return match ($status) {
-
-            'PENDENTE' => 'PENDING',
+            'PENDENTE'    => 'PENDING',
             'PROCESSANDO' => 'PROCESSING',
-            'ENVIADO' => 'SENT',
-            'ENTREGUE' => 'DELIVERED',
-            'FALHADO' => 'FAILED',
-            'REJEITADO' => 'REJECTED',
-            'EXPIRADO' => 'EXPIRED',
-
-            default =>
-                'UNKNOWN',
+            'INCERTO'     => 'UNKNOWN',
+            'ENVIADO'     => 'SENT',
+            'ENTREGUE'    => 'DELIVERED',
+            'FALHADO'     => 'FAILED',
+            'REJEITADO'   => 'REJECTED',
+            'EXPIRADO'    => 'EXPIRED',
+            default       => 'UNKNOWN',
         };
     }
+
 }
