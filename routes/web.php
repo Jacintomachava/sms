@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\Financeiro\DashboardFinanceiroController;
 use App\Http\Controllers\Admin\PagamentoMonitorController;
 use App\Http\Controllers\Admin\SmsMonitorController;
+use App\Http\Controllers\Admin\UtilizadorController;
 use App\Http\Controllers\CompraSmsController;
 use App\Http\Controllers\FinanceiroController;
 use App\Http\Controllers\Admin\SenderIdController as AdminSenderIdController;
