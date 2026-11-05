@@ -158,7 +158,8 @@
 
 </div>
 
-@push('script')
+@section('script')
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -182,4 +183,5 @@ document.addEventListener('DOMContentLoaded', function () {
     actualizarPermissoes();
 });
 </script>
-@endpush
+
+@endsection
