@@ -9,6 +9,7 @@ use App\Http\Controllers\ContactoController;
 use App\Http\Controllers\GrupoContactoController;
 use App\Http\Controllers\ContactoImportController;
 use App\Http\Controllers\SmsController;
+use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\Admin\ContaController;
 use App\Http\Controllers\Admin\CompraStockSmsController;
