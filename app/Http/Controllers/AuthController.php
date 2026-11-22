@@ -7,6 +7,7 @@ use App\Models\ContaUser;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\CriarContaService;
+use App\Services\SenderPadraoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -244,44 +245,98 @@ class AuthController extends Controller
     {
         /*
         |--------------------------------------------------------------------------
-        | VALIDAR DADOS
+        | 1. VALIDAR DADOS
         |--------------------------------------------------------------------------
         */
         $dados = $request->validate([
-            'name' => ['required','string','min:3','max:255',],
-            'email' => ['required','email','max:255',Rule::unique('users', 'email')->whereNull('deleted_at'),],
-            'telefone' => ['required','string','min:9','max:20',],
-            'tipo_conta' => ['required',Rule::in(['INDIVIDUAL','EMPRESA']),],
+            'name' => [
+                'required',
+                'string',
+                'min:3',
+                'max:255',
+            ],
+
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->whereNull('deleted_at'),
+            ],
+
+            'telefone' => [
+                'required',
+                'string',
+                'min:9',
+                'max:20',
+            ],
+
+            'tipo_conta' => [
+                'required',
+                Rule::in(['INDIVIDUAL', 'EMPRESA']),
+            ],
+
             /*
             |--------------------------------------------------------------------------
             | DADOS EMPRESA
             |--------------------------------------------------------------------------
             */
-            'nome_empresa' => ['nullable','required_if:tipo_conta,EMPRESA','string','max:255',],
-            'nome_legal' => ['nullable','required_if:tipo_conta,EMPRESA','string','max:255',],
-            'nuit' => ['nullable','required_if:tipo_conta,EMPRESA','string','max:20',],
+            'nome_empresa' => [
+                'nullable',
+                'required_if:tipo_conta,EMPRESA',
+                'string',
+                'max:255',
+            ],
+
+            'nome_legal' => [
+                'nullable',
+                'required_if:tipo_conta,EMPRESA',
+                'string',
+                'max:255',
+            ],
+
+            'nuit' => [
+                'nullable',
+                'required_if:tipo_conta,EMPRESA',
+                'string',
+                'max:20',
+            ],
+
             /*
             |--------------------------------------------------------------------------
             | PASSWORD
             |--------------------------------------------------------------------------
             */
-            'password' => ['required','string','min:8','confirmed',],
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'confirmed',
+            ],
+
             /*
             |--------------------------------------------------------------------------
             | TERMOS
             |--------------------------------------------------------------------------
             */
-            'termos' => ['required','accepted',],
-
+            'termos' => [
+                'required',
+                'accepted',
+            ],
         ]);
-
 
         try {
 
             /*
             |--------------------------------------------------------------------------
-            | TRANSACTION
+            | 2. CRIAR UTILIZADOR E CONTA
             |--------------------------------------------------------------------------
+            |
+            | O CriarContaService já cria:
+            | - Utilizador
+            | - Conta PRE_PAGO
+            | - Associação OWNER
+            | - Sender partilhado InfoSMS
+            |
             */
             $resultado = DB::transaction(function () use ($dados) {
 
@@ -294,7 +349,7 @@ class AuthController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | TRANSACTION TERMINOU COM SUCESSO
+            | 3. OBTER UTILIZADOR E CONTA
             |--------------------------------------------------------------------------
             */
             $user = $resultado['user'];
@@ -302,32 +357,70 @@ class AuthController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | 6. FAZER LOGIN
+            | 4. LOCALIZAR ASSOCIAÇÃO OWNER
+            |--------------------------------------------------------------------------
+            |
+            | Esta associação já foi criada pelo CriarContaService.
+            | Vamos recuperar o role_id e o conta_user_id.
+            |
+            */
+            $contaUser = DB::table('conta_user')
+                ->where('conta_id', $conta->id)
+                ->where('user_id', $user->id)
+                ->where('estado', 'ACTIVO')
+                ->first();
+
+            if (!$contaUser) {
+                throw new \RuntimeException(
+                    'Não foi possível localizar a associação OWNER da conta.'
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | 5. FAZER LOGIN AUTOMÁTICO
             |--------------------------------------------------------------------------
             */
             Auth::login($user);
 
             /*
             |--------------------------------------------------------------------------
-            | 7. REGENERAR SESSÃO
+            | 6. REGENERAR SESSÃO
             |--------------------------------------------------------------------------
             */
             $request->session()->regenerate();
 
             /*
             |--------------------------------------------------------------------------
-            | 8. GUARDAR CONTA ACTUAL
+            | 7. GUARDAR CONTEXTO ACCOUNT
             |--------------------------------------------------------------------------
             |
-            | Isto será importante porque futuramente o mesmo utilizador
-            | poderá pertencer a várias contas.
+            | IMPORTANTE:
+            | Estes dados são utilizados pelo sistema para identificar
+            | a conta activa, a role e as permissões do utilizador.
             |
             */
-            $request->session()->put('conta_id', $conta->id);
+            $request->session()->put([
+                'contexto' => 'ACCOUNT',
+                'conta_id' => $conta->id,
+                'conta_user_id' => $contaUser->id,
+                'role_id' => $contaUser->role_id,
+                'tipo_cobranca' => $conta->tipo_cobranca,
+            ]);
 
             /*
             |--------------------------------------------------------------------------
-            | 9. ÚLTIMO LOGIN
+            | 8. LIMPAR CONTEXTO DA PLATAFORMA
+            |--------------------------------------------------------------------------
+            */
+            $request->session()->forget([
+                'platform_role_id',
+                'platform_role_codigo',
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | 9. ACTUALIZAR ÚLTIMO LOGIN
             |--------------------------------------------------------------------------
             */
             $user->update([
@@ -336,38 +429,35 @@ class AuthController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | 10. RESPOSTA PARA AJAX
+            | 10. RESPOSTA AJAX
             |--------------------------------------------------------------------------
             */
             return response()->json([
                 'status' => 1,
                 'message' => 'Conta criada com sucesso.',
-                'redirect' => route('dashboard'),
+                'redirect' => route('financeiro.index'),
             ]);
-
 
         } catch (\Throwable $e) {
 
             /*
             |--------------------------------------------------------------------------
-            | LOG
+            | REGISTAR ERRO
             |--------------------------------------------------------------------------
             */
             report($e);
 
             /*
             |--------------------------------------------------------------------------
-            | RESPOSTA
+            | RESPOSTA DE ERRO
             |--------------------------------------------------------------------------
             */
             return response()->json([
                 'status' => 0,
-                'message' => 'Não foi possível criar a conta. Tente novamente.',
+                'message' => 'Não foi possível concluir o registo. Tente novamente.',
             ], 500);
-
         }
     }
-    
 
     public function login1(Request $request)
     {

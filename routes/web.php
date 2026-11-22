@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\SmsMonitorController;
 use App\Http\Controllers\Admin\UtilizadorController;
 use App\Http\Controllers\CompraSmsController;
 use App\Http\Controllers\FinanceiroController;
+use App\Http\Controllers\OtpConfiguracaoController;
 use App\Http\Controllers\Admin\SenderIdController as AdminSenderIdController;
 
 Route::get('/', function () {
@@ -74,6 +75,9 @@ Route::middleware(['auth','account.active'])->group(function () {
     Route::get('/minhas-facturas', [FacturaController::class, 'index'])->name('cliente.facturas.index');
     Route::get('/minhas-facturas/{id}', [FacturaController::class, 'show'])->name('cliente.facturas.show');
     Route::get('/minhas-facturas/{id}/pdf', [FacturaController::class, 'pdf'])->name('cliente.facturas.pdf');
+
+    Route::get('/configuracao', [OtpConfiguracaoController::class,'index'])->name('configuracao');
+    Route::put('/configuracao', [OtpConfiguracaoController::class,'update'])->name('configuracao.update');
 
     Route::post('/sender-ids/{sender}/enviar-operadora',[AdminSenderIdController::class, 'enviarOperadora'])->name('sender-ids.enviar-operadora');
     Route::post('/sender-ids/{sender}/aprovar',[AdminSenderIdController::class, 'aprovar'])->name('sender-ids.aprovar');

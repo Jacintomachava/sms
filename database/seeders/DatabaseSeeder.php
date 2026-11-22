@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             PlatformAdminSeeder::class,
 
             TarifaSmsSeeder::class,
+            SenderPadraoSeeder::class,
 
         ]);
     }

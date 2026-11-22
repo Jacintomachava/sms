@@ -150,6 +150,16 @@
                     </a>
                 </li>
 
+                <li class="nav-item">
+                    <a href="{{ route('configuracao') }}"
+                    class="nav-link">
+
+                        <i class="fa fa-shield-alt"></i>
+                        <span>Configuração OTP</span>
+
+                    </a>
+                </li>
+
                 <li class="sidebar-list">
                     <i class="fa fa-thumb-tack"></i>
 
