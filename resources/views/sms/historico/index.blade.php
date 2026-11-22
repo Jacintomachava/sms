@@ -81,9 +81,6 @@
                                     <td>
                                         {{ $item->sender?->sender }}
                                     </td>
-                                    <td>
-                                        {{ $item->mensagem }}
-                                    </td>
 
                                     <td data-container="body" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-original-title="{{$item->mensagem}}">
                                         {{ Str::limit($item->mensagem, 10) }}
