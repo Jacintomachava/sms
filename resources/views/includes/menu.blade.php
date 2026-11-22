@@ -150,13 +150,18 @@
                     </a>
                 </li>
 
-                <li class="nav-item">
-                    <a href="{{ route('configuracao') }}"
-                    class="nav-link">
+                <li class="sidebar-list">
+                    <i class="fa fa-thumb-tack"></i>
 
-                        <i class="fa fa-shield-alt"></i>
+                    <a
+                        class="sidebar-link sidebar-title {{ request()->routeIs('sms.*') ? 'active' : '' }}"
+                        href="{{ route('configuracao') }}"
+                    >
+                        <svg class="stroke-icon">
+                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-email') }}"></use>
+                        </svg>
+
                         <span>Configuração OTP</span>
-
                     </a>
                 </li>
 
