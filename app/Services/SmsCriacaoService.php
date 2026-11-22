@@ -27,7 +27,8 @@ class SmsCriacaoService
         string $telefone,
         string $mensagem,
         ?int $userId = null,
-        string $origem = 'PAINEL'
+        string $origem = 'PAINEL',
+        string $finalidade = 'NORMAL'
     ): Sms {
 
         $telefone = trim($telefone);
@@ -41,6 +42,10 @@ class SmsCriacaoService
             throw ValidationException::withMessages([
                 'telefone' => 'Número de telefone moçambicano inválido.',
             ]);
+        }
+
+        if (!in_array($finalidade, ['NORMAL', 'OTP'], true)) {
+            throw new RuntimeException('Finalidade da SMS inválida.');
         }
 
         // Guardar sempre no formato nacional.
@@ -97,7 +102,8 @@ class SmsCriacaoService
             $caracteres,
             $segmentos,
             $userId,
-            $origem
+            $origem,
+            $finalidade
         ) {
             /*
              * 1. Validar conta e remetente.
@@ -155,7 +161,7 @@ class SmsCriacaoService
             $sms->caracteres = $caracteres;
             $sms->segmentos = $segmentos;
 
-            $sms->finalidade = 'NORMAL';
+            $sms->finalidade = $finalidade;
             $sms->custeado_por = 'CLIENTE';
             $sms->facturavel_cliente = true;
 
