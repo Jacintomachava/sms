@@ -62,8 +62,8 @@
 
                             <tr>
                                 <th>Sender</th>
-                                <th>Destinatário</th>
                                 <th>Mensagem</th>
+                                <th>Destinatário</th>
                                 <th>Segmentos</th>
                                 <th>Estado</th>
                                 <th>Data</th>
