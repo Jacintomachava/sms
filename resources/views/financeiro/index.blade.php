@@ -33,6 +33,7 @@
                             <i class="fa fa-file-invoice"></i>
                             <span>Minhas Facturas</span>
                         </a>
+                        <br>
 
                     @endif
 

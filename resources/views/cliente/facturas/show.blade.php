@@ -26,46 +26,6 @@
 
     </div>
 
-    <div class="row mb-4">
-
-        <div class="col-md-4 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <small>Valor da Factura</small>
-                    <h4>
-                        {{ number_format((float) $factura->valor_total, 2, ',', '.') }}
-                        MZN
-                    </h4>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <small>Total Pago</small>
-                    <h4 class="text-success">
-                        {{ number_format((float) $totalPago, 2, ',', '.') }}
-                        MZN
-                    </h4>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <small>Saldo Pendente</small>
-                    <h4 class="text-danger">
-                        {{ number_format((float) $saldo, 2, ',', '.') }}
-                        MZN
-                    </h4>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
     <div class="row">
 
         <div class="col-lg-7 mb-4">
