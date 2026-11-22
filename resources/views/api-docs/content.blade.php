@@ -225,6 +225,13 @@
                     'api-docs.sections.errors'
                 )
 
+                {{-- OTP --}}
+                @include('api-docs.sections.otp-send')
+
+                @include('api-docs.sections.otp-verify')
+
+                @include('api-docs.sections.otp-resend')
+
             </div>
 
         </div>
