@@ -83,7 +83,7 @@
                                     </td>
 
                                     <td data-container="body" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-original-title="{{$item->mensagem}}">
-                                        {{ Str::limit($item->mensagem, 10) }}
+                                        {{ Str::limit($item->mensagem, 20) }}
                                     </td>
 
                                     <td>
