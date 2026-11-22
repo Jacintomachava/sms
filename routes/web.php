@@ -10,6 +10,7 @@ use App\Http\Controllers\GrupoContactoController;
 use App\Http\Controllers\ContactoImportController;
 use App\Http\Controllers\SmsController;
 use App\Http\Controllers\FacturaController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\Admin\ContaController;
 use App\Http\Controllers\Admin\CompraStockSmsController;
@@ -35,6 +36,12 @@ Route::post('/fazer/register', [AuthController::class, 'login'])->name('login.st
 
 Auth::routes();
 
+Route::middleware(['auth'])->group(function () {
+
+Route::get('/alterar/senha', [UserController::class, 'senhaIndex'])->name('senha.index');
+Route::post('/editar/senha', [UserController::class, 'senhaUpdate'])->name('senha.update');
+
+});
 
 Route::middleware(['auth','account.active'])->group(function () {
 

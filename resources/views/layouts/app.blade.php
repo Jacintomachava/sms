@@ -117,7 +117,7 @@
                             </div>
                           </div>
                           <ul class="profile-dropdown onhover-show-div">
-                              <li><a href="#">
+                              <li><a href="{{route('senha.index')}}">
                                 <div class="profile-icon">
                                   <svg>
                                     <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-form') }}"></use>
