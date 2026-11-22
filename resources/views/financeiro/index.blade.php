@@ -28,14 +28,11 @@
                     @elseif($conta->tipo_cobranca === 'POS_PAGO')
 
                         {{-- Por enquanto, até criarmos as facturas --}}
-                        <button
-                            type="button"
-                            class="btn btn-primary"
-                            disabled
-                        >
-                            <i class="fa fa-file-text-o me-1"></i>
-                            Ver Facturas
-                        </button>
+                        <a href="{{ route('cliente.facturas.index') }}"
+                            class="nav-link">
+                            <i class="fas fa-file-invoice"></i>
+                            <span>Minhas Facturas</span>
+                        </a>
 
                     @endif
 

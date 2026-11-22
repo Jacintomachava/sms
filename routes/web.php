@@ -38,8 +38,8 @@ Auth::routes();
 Route::middleware(['auth','account.active'])->group(function () {
 
 
-    Route::get('/dashboard', function () { return view('dashbord.index');})->name('dashboard');
-    Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('financeiro.index');
+    Route::get('/dashboard1', function () { return view('dashbord.index');})->name('dashboard');
+    Route::get('/dashboard', [FinanceiroController::class, 'index'])->name('financeiro.index');
 
     Route::get('/sms', [SmsController::class, 'index'])->middleware('account.permission:sms.view')->name('sms.index');
     Route::post('/sms/enviar', [SmsController::class, 'store'])->middleware('account.permission:sms.send')->name('sms.store');
@@ -62,6 +62,10 @@ Route::middleware(['auth','account.active'])->group(function () {
     Route::get('/sender-ids', [SenderIdController::class, 'index'])->middleware('account.permission:senders.view')->name('sender-ids.index');
     Route::post('/sender-ids', [SenderIdController::class, 'store'])->name('sender-ids.store');
     Route::get('/sender-ids', [SenderIdController::class, 'index'])->name('sender-ids.index');
+
+    Route::get('/minhas-facturas', [FacturaController::class, 'index'])->name('cliente.facturas.index');
+    Route::get('/minhas-facturas/{id}', [FacturaController::class, 'show'])->name('cliente.facturas.show');
+    Route::get('/minhas-facturas/{id}/pdf', [FacturaController::class, 'pdf'])->name('cliente.facturas.pdf');
 
     Route::post('/sender-ids/{sender}/enviar-operadora',[AdminSenderIdController::class, 'enviarOperadora'])->name('sender-ids.enviar-operadora');
     Route::post('/sender-ids/{sender}/aprovar',[AdminSenderIdController::class, 'aprovar'])->name('sender-ids.aprovar');

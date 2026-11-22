@@ -49,6 +49,24 @@
 
 
                 <li class="sidebar-list">
+                    <i class="fa fa-thumb-tack"></i>
+
+                    <label class="badge badge-light-primary"></label>
+
+                    <a
+                        class="sidebar-link sidebar-title"
+                        href="{{ route('financeiro.index') }}"
+                    >
+                        <svg class="stroke-icon">
+                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-blog') }}"></use>
+                        </svg>
+
+                        <span class="lan-3">Dashboard </span>
+                    </a>
+                </li>
+
+
+                <li class="sidebar-list">
 
                     <i class="fa fa-thumb-tack"></i>
                     <a class="sidebar-link sidebar-title"  href="javascript:void(0)">
@@ -95,23 +113,6 @@
                         </svg>
 
                         <span class="lan-3">Sender </span>
-                    </a>
-                </li>
-
-                <li class="sidebar-list">
-                    <i class="fa fa-thumb-tack"></i>
-
-                    <label class="badge badge-light-primary"></label>
-
-                    <a
-                        class="sidebar-link sidebar-title"
-                        href="{{ route('financeiro.index') }}"
-                    >
-                        <svg class="stroke-icon">
-                            <use href="{{ URL('/assets/svg/icon-sprite.svg#stroke-blog') }}"></use>
-                        </svg>
-
-                        <span class="lan-3">Financeiro </span>
                     </a>
                 </li>
 
