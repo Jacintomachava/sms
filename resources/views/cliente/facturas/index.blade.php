@@ -12,46 +12,6 @@
         </p>
     </div>
 
-    <div class="row mb-4">
-
-        <div class="col-md-4 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <small class="text-muted">Total Facturado</small>
-                    <h4 class="mt-2">
-                        {{ number_format((float) $totalFacturado, 2, ',', '.') }}
-                        MZN
-                    </h4>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <small class="text-muted">Total Pago</small>
-                    <h4 class="mt-2 text-success">
-                        {{ number_format((float) $totalPago, 2, ',', '.') }}
-                        MZN
-                    </h4>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <small class="text-muted">Saldo Pendente</small>
-                    <h4 class="mt-2 text-danger">
-                        {{ number_format((float) $saldoPendente, 2, ',', '.') }}
-                        MZN
-                    </h4>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body">
 
