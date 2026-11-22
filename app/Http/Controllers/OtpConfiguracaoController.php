@@ -161,7 +161,7 @@ class OtpConfiguracaoController extends Controller
         );
 
         return redirect()
-            ->route('cliente.otp.configuracao')
+            ->route('configuracao')
             ->with('success', 'Configuração OTP actualizada com sucesso.');
     }
 }
