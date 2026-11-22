@@ -37,7 +37,7 @@
         <div class="card-body">
 
             <form method="POST"
-                  action="{{ route('cliente.otp.configuracao.update') }}">
+                  action="{{ route('configuracao.update') }}">
 
                 @csrf
                 @method('PUT')
