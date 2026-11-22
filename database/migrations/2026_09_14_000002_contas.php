@@ -22,7 +22,8 @@ return new class extends Migration
             $table->string('telefone')->nullable();
             $table->boolean('verificar_conteudo')->default(true);
             $table->enum('tipo_cobranca', ['PRE_PAGO','POS_PAGO'])->default('PRE_PAGO');
-            $table->foreignId('tarifa_sms_id')->nullable()->constrained('tarifas_sms')->nullOnDelete();
+            //$table->foreignId('tarifa_sms_id')->nullable()->constrained('tarifas_sms')->nullOnDelete();
+            $table->unsignedBigInteger('tarifa_sms_id')->nullable();
             $table->enum('estado', ['ACTIVA','SUSPENSA','BLOQUEADA'])->default('ACTIVA');
             $table->timestamps();
             $table->softDeletes();
