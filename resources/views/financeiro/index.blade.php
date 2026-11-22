@@ -29,8 +29,8 @@
 
                         {{-- Por enquanto, até criarmos as facturas --}}
                         <a href="{{ route('cliente.facturas.index') }}"
-                            class="nav-link">
-                            <i class="fas fa-file-invoice"></i>
+                             class="btn btn-primary" >
+                            <i class="fa fa-file-invoice"></i>
                             <span>Minhas Facturas</span>
                         </a>
 
