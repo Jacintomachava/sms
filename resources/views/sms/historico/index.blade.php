@@ -61,12 +61,13 @@
                         <thead>
 
                             <tr>
-                                <th>#</th>
-                                <th>Data</th>
                                 <th>Sender</th>
                                 <th>Destinatário</th>
+                                <th>Mensagem</th>
                                 <th>Segmentos</th>
                                 <th>Estado</th>
+                                <th>Data</th>
+                                <th>Hora</th>
                             </tr>
 
                         </thead>
@@ -78,15 +79,14 @@
                                 <tr>
 
                                     <td>
-                                        {{ $item->id }}
-                                    </td>
-
-                                    <td>
-                                        {{ $item->created_at->format('d/m/Y H:i') }}
-                                    </td>
-
-                                    <td>
                                         {{ $item->sender?->sender }}
+                                    </td>
+                                    <td>
+                                        {{ $item->mensagem }}
+                                    </td>
+
+                                    <td data-container="body" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-original-title="{{$item->mensagem}}">
+                                        {{ Str::limit($item->mensagem, 10) }}
                                     </td>
 
                                     <td>
@@ -127,6 +127,12 @@
 
                                         @endswitch
 
+                                    </td>
+                                    <td>
+                                        {{ $item->created_at->format('d-m-Y') }}
+                                    </td>
+                                    <td>
+                                        {{ $item->created_at->format('H:i') }}
                                     </td>
 
                                 </tr>

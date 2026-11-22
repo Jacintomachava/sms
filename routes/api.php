@@ -32,4 +32,13 @@ Route::prefix('v1')->middleware('api.key')->group(function () {
     Route::get('/senders',[SenderController::class, 'index']);
     Route::get('/balance',[BalanceController::class, 'show']);
 
+    /*
+    |--------------------------------------------------------------------------
+    | OTP
+    |--------------------------------------------------------------------------
+    */
+    Route::post('/otp/send', [OtpController::class, 'send']);
+    Route::post('/otp/verify', [OtpController::class, 'verify']);
+    Route::post('/otp/resend', [OtpController::class, 'resend']);
+
 });

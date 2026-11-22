@@ -39,6 +39,7 @@ Route::middleware(['auth','account.active'])->group(function () {
 
 
     Route::get('/dashboard', function () { return view('dashbord.index');})->name('dashboard');
+    Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('financeiro.index');
 
     Route::get('/sms', [SmsController::class, 'index'])->middleware('account.permission:sms.view')->name('sms.index');
     Route::post('/sms/enviar', [SmsController::class, 'store'])->middleware('account.permission:sms.send')->name('sms.store');
@@ -81,8 +82,6 @@ Route::middleware(['auth','account.active'])->group(function () {
     Route::get('/integracao-api', [ApiKeyController::class, 'index'])->name('api-keys.index');
     Route::post('/integracao-api/keys', [ApiKeyController::class, 'store'])->name('api-keys.store');
     Route::post('/integracao-api/keys/{id}/revoke', [ApiKeyController::class, 'revoke'])->name('api-keys.revoke');
-
-    Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('financeiro.index');
 
 });
 
