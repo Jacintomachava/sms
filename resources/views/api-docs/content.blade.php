@@ -86,6 +86,34 @@
                 </div>
 
 
+                {{-- OTP --}}
+                <div class="mb-4">
+
+                    <small class="text-muted text-uppercase fw-bold">
+                        OTP
+                    </small>
+
+                    <nav class="nav flex-column mt-2">
+
+                        <a class="nav-link api-doc-link"
+                        href="#doc-otp-send">
+                            Enviar OTP
+                        </a>
+
+                        <a class="nav-link api-doc-link"
+                        href="#doc-otp-verify">
+                            Validar OTP
+                        </a>
+
+                        <a class="nav-link api-doc-link"
+                        href="#doc-otp-resend">
+                            Reenviar OTP
+                        </a>
+
+                    </nav>
+
+                </div>
+
                 <div class="mb-4">
 
                     <small

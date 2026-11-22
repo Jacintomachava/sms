@@ -96,6 +96,24 @@
             </tr>
 
             <tr>
+                <td><strong>POST</strong></td>
+                <td><code>/otp/send</code></td>
+                <td>Enviar código OTP</td>
+            </tr>
+
+            <tr>
+                <td><strong>POST</strong></td>
+                <td><code>/otp/verify</code></td>
+                <td>Validar código OTP</td>
+            </tr>
+
+            <tr>
+                <td><strong>POST</strong></td>
+                <td><code>/otp/resend</code></td>
+                <td>Reenviar código OTP</td>
+            </tr>
+
+            <tr>
                 <td><strong>GET</strong></td>
                 <td><code>/balance</code></td>
                 <td>Consultar saldo</td>
