@@ -113,6 +113,26 @@
                 <td>Reenviar código OTP</td>
             </tr>
 
+            {{-- PAGAMENTOS --}}
+
+            <tr>
+                <td><strong>GET</strong></td>
+                <td><code>/payments</code></td>
+                <td>Listar pagamentos da conta</td>
+            </tr>
+
+            <tr>
+                <td><strong>GET</strong></td>
+                <td><code>/payments/{id}</code></td>
+                <td>Consultar detalhes de um pagamento</td>
+            </tr>
+
+            <tr>
+                <td><strong>GET</strong></td>
+                <td><code>/payments/{id}/status</code></td>
+                <td>Consultar estado de um pagamento</td>
+            </tr>
+
             <tr>
                 <td><strong>GET</strong></td>
                 <td><code>/balance</code></td>
