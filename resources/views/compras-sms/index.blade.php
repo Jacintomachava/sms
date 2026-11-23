@@ -648,6 +648,7 @@ $(function () {
     let compraEmCurso = false;
     let pagamentoEmCurso = false;
     let chaveCompra = null;
+    let telefoneDaChave = null;
     const chavesPagamentos = {};
 
     const formatarNumero = valor => new Intl.NumberFormat('pt-PT', {
@@ -689,6 +690,7 @@ $(function () {
         invalidarCalculo();
         // Alterar a quantidade significa uma nova operação de compra.
         chaveCompra = null;
+        telefoneDaChave = null;
         $('#compra_idempotency_key').val('');
 
         const quantidade = Number($(this).val());
@@ -739,8 +741,13 @@ $(function () {
             Swal.fire('Telefone inválido', 'Introduza um número M-Pesa com 9 dígitos, iniciado por 84 ou 85.', 'warning');
             return;
         }
+        // Uma chave representa exactamente a mesma quantidade e telefone.
+        if (chaveCompra && telefoneDaChave !== telefone) {
+            chaveCompra = null;
+        }
         try {
             chaveCompra = chaveCompra || novaChave();
+            telefoneDaChave = telefone;
         } catch (erro) {
             Swal.fire('Erro', erro.message, 'error');
             return;
@@ -758,13 +765,17 @@ $(function () {
         $.ajax({
             url: @json(route('compras.sms.comprar')),
             method: 'POST',
+            headers: {
+                'Idempotency-Key': chaveCompra,
+                'Accept': 'application/json'
+            },
             data: $('#formComprarSms').serialize(),
             success: function (response) {
                 // Uma resposta HTTP 200 não prova que a transacção foi paga.
                 const mensagem = response.message || 'Pedido registado. Consulte o estado no histórico.';
                 Swal.fire({
-                    icon: 'info',
-                    title: 'Pedido de pagamento registado',
+                    icon: response.sucesso === true ? 'success' : 'info',
+                    title: response.sucesso === true ? 'Pagamento confirmado' : 'Pagamento por confirmar',
                     text: mensagem
                 }).then(() => window.location.reload());
             },
@@ -790,7 +801,7 @@ $(function () {
         $('#pagarQuantidade').text(formatarNumero($(this).data('quantidade')));
         $('#pagarTotal').text(formatarDinheiro($(this).data('total')));
         $('#telefonePagamento').val('');
-        // Reutilizar a chave ao reabrir a mesma tentativa nesta página.
+        // Chave local de rastreio; o endpoint pagar() actual não exige Idempotency-Key.
         if (!chavesPagamentos[id]) {
             try { chavesPagamentos[id] = novaChave(); }
             catch (erro) { Swal.fire('Erro', erro.message, 'error'); return; }
@@ -821,11 +832,12 @@ $(function () {
         $.ajax({
             url: url,
             method: 'POST',
+            headers: { 'Accept': 'application/json' },
             data: $('#formPagarCompra').serialize(),
             success: function (response) {
                 Swal.fire({
-                    icon: 'info',
-                    title: 'Pedido processado',
+                    icon: response.sucesso === true ? 'success' : 'info',
+                    title: response.sucesso === true ? 'Pagamento confirmado' : 'Pagamento por confirmar',
                     text: response.message || 'Consulte o estado da compra no histórico.'
                 }).then(() => window.location.reload());
             },
