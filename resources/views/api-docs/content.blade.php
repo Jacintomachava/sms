@@ -114,6 +114,35 @@
 
                 </div>
 
+                {{-- PAGAMENTOS --}}
+                <div class="mb-4">
+
+                    <small class="text-muted text-uppercase fw-bold">
+                        Pagamentos
+                    </small>
+
+                    <nav class="nav flex-column mt-2">
+
+                        <a class="nav-link api-doc-link"
+                        href="#doc-payment-list">
+                            Listar Pagamentos
+                        </a>
+
+                        <a class="nav-link api-doc-link"
+                        href="#doc-payment-show">
+                            Consultar Pagamento
+                        </a>
+
+                        <a class="nav-link api-doc-link"
+                        href="#doc-payment-status">
+                            Estado do Pagamento
+                        </a>
+
+                    </nav>
+
+                </div>
+                
+
                 <div class="mb-4">
 
                     <small
