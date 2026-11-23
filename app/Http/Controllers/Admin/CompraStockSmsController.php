@@ -42,25 +42,21 @@ class CompraStockSmsController extends Controller
                 'integer',
                 'min:1',
             ],
-
             'preco_unitario' => [
                 'required',
                 'numeric',
                 'gt:0',
                 'decimal:0,4',
             ],
-
             'data_compra' => [
                 'required',
                 'date',
             ],
-
             'referencia' => [
                 'nullable',
                 'string',
                 'max:100',
             ],
-
             'observacao' => [
                 'nullable',
                 'string',
@@ -69,7 +65,6 @@ class CompraStockSmsController extends Controller
         ]);
 
         try {
-
             $compra = $service->criar(
                 quantidade: (int) $dados['quantidade_sms'],
                 precoUnitario: (string) $dados['preco_unitario'],
@@ -87,13 +82,13 @@ class CompraStockSmsController extends Controller
             ]);
 
         } catch (Throwable $e) {
-
             report($e);
 
             return response()->json([
                 'status' => 0,
-                'message' => 'Não foi possível registar a compra de stock.'
+                'message' => 'Não foi possível registar a compra de stock.',
             ], 500);
         }
     }
+
 }
