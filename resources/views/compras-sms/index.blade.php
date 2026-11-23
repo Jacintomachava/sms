@@ -429,6 +429,7 @@
             <form id="formComprarSms">
 
                 @csrf
+                <input type="hidden" name="idempotency_key" id="compra_idempotency_key">
 
                 <div class="modal-body">
 
@@ -596,504 +597,260 @@
 </div>
 
 
-{{-- MODAL REPETIR PAGAMENTO --}}
-<div class="modal fade" id="modalCompraSms" tabindex="-1">
+{{-- MODAL PAGAR COMPRA PENDENTE --}}
+<div class="modal fade" id="modalPagarCompra" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-
             <div class="modal-header">
-                <h5 class="modal-title">Comprar créditos SMS</h5>
-                <button type="button" class="btn-close"
-                        data-bs-dismiss="modal"></button>
+                <h5 class="modal-title">Pagar compra #<span id="pagarCompraId"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
-
-            <div class="modal-body">
-
-                <form id="formCompraSms">
-
+            <form id="formPagarCompra">
+                @csrf
+                <input type="hidden" id="compra_id" name="compra_id">
+                <input type="hidden" id="pagamento_idempotency_key" name="idempotency_key">
+                <div class="modal-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Quantidade</span><strong><span id="pagarQuantidade">0</span> SMS</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Total a pagar</span><strong><span id="pagarTotal">0,00</span> MT</strong>
+                    </div>
                     <div class="mb-3">
-                        <label class="form-label">Quantidade de SMS</label>
-                        <input type="number"
-                               id="quantidade_sms"
-                               class="form-control"
-                               min="1"
-                               required>
+                        <label for="telefonePagamento" class="form-label">Número M-Pesa *</label>
+                        <input type="text" class="form-control" name="telefone"
+                               id="telefonePagamento" maxlength="9" inputmode="numeric"
+                               pattern="(84|85)[0-9]{7}" placeholder="84xxxxxxx" required>
                     </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Telefone M-Pesa</label>
-                        <input type="text"
-                               id="telefone_mpesa"
-                               class="form-control"
-                               placeholder="84XXXXXXX"
-                               maxlength="9"
-                               required>
+                    <div class="alert alert-light border mb-0">
+                        Confirme o número e autorize o pagamento no telefone.
                     </div>
-
-                    <div class="border rounded p-3 mb-3">
-                        <div>Preço unitário: <strong id="precoUnitario">—</strong></div>
-                        <div>Total: <strong id="valorTotal">—</strong></div>
-                    </div>
-
-                    <div id="mensagemPagamento" class="alert d-none"></div>
-
-                    <button type="submit"
-                            id="btnComprarSms"
-                            class="btn btn-primary w-100">
-                        Comprar com M-Pesa
-                    </button>
-
-                </form>
-
-            </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnPagarCompra">Pagar com M-Pesa</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
-
 @endsection
 
 @section('script')
-
 <script>
-
-
-$(document).ready(function () {
+$(function () {
+    'use strict';
 
     let timerCalculo = null;
     let calculoValido = false;
+    let quantidadeCalculada = null;
+    let pedidoCalculo = null;
+    let compraEmCurso = false;
+    let pagamentoEmCurso = false;
+    let chaveCompra = null;
+    const chavesPagamentos = {};
 
+    const formatarNumero = valor => new Intl.NumberFormat('pt-PT', {
+        maximumFractionDigits: 0
+    }).format(valor);
 
-    function formatarNumero(valor)
-    {
-        return new Intl.NumberFormat('pt-PT', {
-            maximumFractionDigits: 0
-        }).format(valor);
+    const formatarDinheiro = valor => new Intl.NumberFormat('pt-PT', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(valor);
+
+    function novaChave() {
+        if (!window.crypto || !window.crypto.randomUUID) {
+            throw new Error('É necessária uma ligação HTTPS para iniciar um pagamento seguro.');
+        }
+        return window.crypto.randomUUID();
     }
 
-
-    function formatarDinheiro(valor)
-    {
-        return new Intl.NumberFormat('pt-PT', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(valor);
+    function mensagemErro(xhr, padrao) {
+        const erros = xhr.responseJSON?.errors;
+        const primeiroErro = erros ? Object.values(erros).flat()[0] : null;
+        return primeiroErro || xhr.responseJSON?.message || padrao;
     }
 
+    function validarTelefone(telefone) {
+        return /^(84|85)[0-9]{7}$/.test(telefone);
+    }
 
-    /*
-    |--------------------------------------------------------------------------
-    | CALCULAR COMPRA
-    |--------------------------------------------------------------------------
-    */
+    function invalidarCalculo() {
+        calculoValido = false;
+        quantidadeCalculada = null;
+        $('#btnComprar').prop('disabled', true);
+        $('#resumoCompra').addClass('d-none');
+    }
 
     $('#quantidade_sms').on('input', function () {
-
         clearTimeout(timerCalculo);
+        if (pedidoCalculo) pedidoCalculo.abort();
+        invalidarCalculo();
+        // Alterar a quantidade significa uma nova operação de compra.
+        chaveCompra = null;
+        $('#compra_idempotency_key').val('');
 
-        calculoValido = false;
-
-        $('#btnComprar').prop('disabled', true);
-
-        $('#resumoCompra').addClass('d-none');
-
-
-        let quantidade = parseInt($(this).val());
-
-
-        if (!quantidade || quantidade < 1) {
-            return;
-        }
-
+        const quantidade = Number($(this).val());
+        if (!Number.isSafeInteger(quantidade) || quantidade < 1) return;
 
         timerCalculo = setTimeout(function () {
-
-            $.ajax({
-
-                url: "{{ route('compras.sms.calcular') }}",
-
-                type: "POST",
-
+            pedidoCalculo = $.ajax({
+                url: @json(route('compras.sms.calcular')),
+                method: 'POST',
                 data: {
-
-                    _token: "{{ csrf_token() }}",
-
+                    _token: @json(csrf_token()),
                     quantidade_sms: quantidade
-
                 },
-
-
                 success: function (response) {
-
-                    if (response.status != 1) {
+                    if (Number($('#quantidade_sms').val()) !== quantidade) return;
+                    if (Number(response.status) !== 1 || !response.data) {
+                        invalidarCalculo();
                         return;
                     }
-
-
-                    let dados = response.data;
-
-
-                    $('#resumoQuantidade').text(
-                        formatarNumero(
-                            dados.quantidade_sms
-                        )
-                    );
-
-
-                    $('#resumoTarifa').text(
-                        dados.tarifa
-                    );
-
-
-                    $('#resumoPreco').text(
-                        formatarDinheiro(
-                            dados.preco_unitario
-                        )
-                    );
-
-
-                    $('#resumoTotal').text(
-                        formatarDinheiro(
-                            dados.valor_total
-                        )
-                    );
-
-
-                    $('#resumoCompra')
-                        .removeClass('d-none');
-
-
+                    const dados = response.data;
+                    $('#resumoQuantidade').text(formatarNumero(dados.quantidade_sms));
+                    $('#resumoTarifa').text(dados.tarifa || '-');
+                    $('#resumoPreco').text(formatarDinheiro(dados.preco_unitario));
+                    $('#resumoTotal').text(formatarDinheiro(dados.valor_total));
+                    $('#resumoCompra').removeClass('d-none');
+                    quantidadeCalculada = quantidade;
                     calculoValido = true;
-
-
-                    $('#btnComprar')
-                        .prop('disabled', false);
-
+                    $('#btnComprar').prop('disabled', false);
                 },
-
-
-                error: function (xhr) {
-
-                    calculoValido = false;
-
-                    $('#btnComprar')
-                        .prop('disabled', true);
-
-
-                    let mensagem =
-                        xhr.responseJSON?.message
-                        ?? 'Não foi possível calcular a tarifa.';
-
-
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Erro',
-                        text: mensagem
-                    });
-
+                error: function (xhr, estado) {
+                    if (estado === 'abort') return;
+                    invalidarCalculo();
+                    Swal.fire('Erro', mensagemErro(xhr, 'Não foi possível calcular a tarifa.'), 'error');
                 }
-
             });
-
         }, 500);
-
     });
-
-
-        /*
-    |--------------------------------------------------------------------------
-    | COMPRAR SMS
-    |--------------------------------------------------------------------------
-    */
 
     $('#formComprarSms').on('submit', function (e) {
-
         e.preventDefault();
-
-
-        if (!calculoValido) {
+        if (compraEmCurso || !calculoValido) return;
+        if (Number($('#quantidade_sms').val()) !== quantidadeCalculada) {
+            invalidarCalculo();
             return;
         }
-
-
-        let botao = $('#btnComprar');
-
-
-        botao.prop('disabled', true);
-
-
+        const telefone = $('#telefone').val().trim();
+        if (!validarTelefone(telefone)) {
+            Swal.fire('Telefone inválido', 'Introduza um número M-Pesa com 9 dígitos, iniciado por 84 ou 85.', 'warning');
+            return;
+        }
+        try {
+            chaveCompra = chaveCompra || novaChave();
+        } catch (erro) {
+            Swal.fire('Erro', erro.message, 'error');
+            return;
+        }
+        $('#compra_idempotency_key').val(chaveCompra);
+        compraEmCurso = true;
+        $('#btnComprar').prop('disabled', true);
         Swal.fire({
-
             title: 'A processar pagamento',
-
-            html:
-                'Foi enviado um pedido para o seu número M-Pesa.<br>' +
-                '<strong>Confirme a transacção no telefone.</strong>',
-
+            text: 'Aguarde a resposta do M-Pesa e confirme no telefone, caso seja solicitado.',
             allowOutsideClick: false,
-
             allowEscapeKey: false,
-
-            didOpen: () => {
-                Swal.showLoading();
-            }
-
+            didOpen: () => Swal.showLoading()
         });
-
-
         $.ajax({
-
-            url: "{{ route('compras.sms.comprar') }}",
-
-            type: "POST",
-
+            url: @json(route('compras.sms.comprar')),
+            method: 'POST',
             data: $('#formComprarSms').serialize(),
-
-
             success: function (response) {
-
+                // Uma resposta HTTP 200 não prova que a transacção foi paga.
+                const mensagem = response.message || 'Pedido registado. Consulte o estado no histórico.';
                 Swal.fire({
-
-                    icon: 'success',
-
-                    title: 'Pagamento efectuado',
-
-                    text: response.message,
-
-                    confirmButtonText: 'OK'
-
-                }).then(function () {
-
-                    window.location.reload();
-
-                });
-
+                    icon: 'info',
+                    title: 'Pedido de pagamento registado',
+                    text: mensagem
+                }).then(() => window.location.reload());
             },
-
-
             error: function (xhr) {
-
-                botao.prop('disabled', false);
-
-
-                let mensagem =
-                    xhr.responseJSON?.message
-                    ?? 'Não foi possível efectuar o pagamento.';
-
-
+                const mensagem = mensagemErro(xhr, 'Não foi possível confirmar o estado do pagamento.');
                 Swal.fire({
-
-                    icon: 'error',
-
-                    title: 'Pagamento não concluído',
-
-                    text: mensagem,
-
-                    confirmButtonText: 'OK'
-
-                }).then(function () {
-
-                    /*
-                     * A compra pode ter ficado PENDENTE.
-                     * Recarregamos para mostrar no histórico.
-                     */
-
-                    window.location.reload();
-
+                    icon: 'warning',
+                    title: 'Pagamento não confirmado',
+                    text: mensagem + ' Verifique o histórico antes de tentar novamente.'
                 });
-
+            },
+            complete: function () {
+                compraEmCurso = false;
+                $('#btnComprar').prop('disabled', !calculoValido);
             }
-
         });
-
     });
-
-        /*
-    |--------------------------------------------------------------------------
-    | ABRIR PAGAMENTO PENDENTE
-    |--------------------------------------------------------------------------
-    */
 
     $('.btn-tentar-pagamento').on('click', function () {
-
-        let id = $(this).data('id');
-
-        let quantidade =
-            $(this).data('quantidade');
-
-        let total =
-            $(this).data('total');
-
-
+        const id = String($(this).data('id'));
         $('#compra_id').val(id);
-
         $('#pagarCompraId').text(id);
-
-
-        $('#pagarQuantidade').text(
-            formatarNumero(quantidade)
-        );
-
-
-        $('#pagarTotal').text(
-            formatarDinheiro(total)
-        );
-
-
+        $('#pagarQuantidade').text(formatarNumero($(this).data('quantidade')));
+        $('#pagarTotal').text(formatarDinheiro($(this).data('total')));
         $('#telefonePagamento').val('');
-
-
-        let modal = new bootstrap.Modal(
-            document.getElementById(
-                'modalPagarCompra'
-            )
-        );
-
-
-        modal.show();
-
+        // Reutilizar a chave ao reabrir a mesma tentativa nesta página.
+        if (!chavesPagamentos[id]) {
+            try { chavesPagamentos[id] = novaChave(); }
+            catch (erro) { Swal.fire('Erro', erro.message, 'error'); return; }
+        }
+        $('#pagamento_idempotency_key').val(chavesPagamentos[id]);
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalPagarCompra')).show();
     });
-
-        /*
-    |--------------------------------------------------------------------------
-    | PAGAR COMPRA PENDENTE
-    |--------------------------------------------------------------------------
-    */
 
     $('#formPagarCompra').on('submit', function (e) {
-
         e.preventDefault();
-
-
-        let compraId =
-            $('#compra_id').val();
-
-
-        let telefone =
-            $('#telefonePagamento').val();
-
-
-        let botao =
-            $('#btnPagarCompra');
-
-
-        botao.prop('disabled', true);
-
-
-        let url =
-            "{{ route('compras.sms.pagar', ':id') }}";
-
-
-        url = url.replace(
-            ':id',
-            compraId
-        );
-
-
+        if (pagamentoEmCurso) return;
+        const compraId = $('#compra_id').val();
+        const telefone = $('#telefonePagamento').val().trim();
+        if (!validarTelefone(telefone)) {
+            Swal.fire('Telefone inválido', 'Introduza um número M-Pesa iniciado por 84 ou 85.', 'warning');
+            return;
+        }
+        pagamentoEmCurso = true;
+        $('#btnPagarCompra').prop('disabled', true);
+        const url = @json(route('compras.sms.pagar', ':id')).replace(':id', encodeURIComponent(compraId));
         Swal.fire({
-
             title: 'A processar pagamento',
-
-            text: 'Confirme a transacção no seu telefone.',
-
+            text: 'Confirme a operação no telefone, caso seja solicitado.',
             allowOutsideClick: false,
-
             allowEscapeKey: false,
-
-            didOpen: () => {
-
-                Swal.showLoading();
-
-            }
-
+            didOpen: () => Swal.showLoading()
         });
-
-
         $.ajax({
-
             url: url,
-
-            type: "POST",
-
-            data: {
-
-                _token: "{{ csrf_token() }}",
-
-                telefone: telefone
-
-            },
-
-
+            method: 'POST',
+            data: $('#formPagarCompra').serialize(),
             success: function (response) {
-
                 Swal.fire({
-
-                    icon: 'success',
-
-                    title: 'Pagamento efectuado',
-
-                    text: response.message,
-
-                    confirmButtonText: 'OK'
-
-                }).then(function () {
-
-                    window.location.reload();
-
-                });
-
+                    icon: 'info',
+                    title: 'Pedido processado',
+                    text: response.message || 'Consulte o estado da compra no histórico.'
+                }).then(() => window.location.reload());
             },
-
-
             error: function (xhr) {
-
-                botao.prop('disabled', false);
-
-
-                let mensagem =
-                    xhr.responseJSON?.message
-                    ?? 'Não foi possível efectuar o pagamento.';
-
-
                 Swal.fire({
-
-                    icon: 'error',
-
-                    title: 'Pagamento não concluído',
-
-                    text: mensagem
-
+                    icon: 'warning',
+                    title: 'Pagamento não confirmado',
+                    text: mensagemErro(xhr, 'Não foi possível confirmar o pagamento.') +
+                        ' Consulte o histórico antes de repetir.'
                 });
-
+            },
+            complete: function () {
+                pagamentoEmCurso = false;
+                $('#btnPagarCompra').prop('disabled', false);
             }
-
         });
-
     });
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | LIMPAR MODAL
-    |--------------------------------------------------------------------------
-    */
 
     $('#modalComprarSms').on('hidden.bs.modal', function () {
-
+        if (compraEmCurso) return;
+        // Preservar a chave até o resultado ser conhecido; fechar o modal não cancela M-Pesa.
+        if (chaveCompra) return;
         $('#formComprarSms')[0].reset();
-
-        $('#resumoCompra')
-            .addClass('d-none');
-
-        $('#btnComprar')
-            .prop('disabled', true);
-
-        calculoValido = false;
-
+        invalidarCalculo();
     });
-
 });
-
 </script>
-
 @endsection
-

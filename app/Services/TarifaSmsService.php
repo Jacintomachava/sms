@@ -28,7 +28,7 @@ class TarifaSmsService
 
         if ($quantidade <= 0) {
             throw ValidationException::withMessages([
-                'quantidade' =>
+                'quantidade_sms' =>
                     'A quantidade de SMS deve ser superior a zero.',
             ]);
         }
@@ -37,8 +37,9 @@ class TarifaSmsService
 
         /*
         |--------------------------------------------------------------------------
-        | 1. TARIFA FIXA ASSOCIADA À CONTA
+        | 1. TARIFA ATRIBUÍDA À CONTA
         |--------------------------------------------------------------------------
+        | A mesma tarifa pode ser utilizada por várias contas.
         */
         if ($conta->tarifa_sms_id !== null) {
 
@@ -49,29 +50,10 @@ class TarifaSmsService
             if (!$tarifa) {
                 throw ValidationException::withMessages([
                     'tarifa' =>
-                        'A tarifa configurada para esta conta não está activa ou está fora da validade.',
+                        'A tarifa atribuída à conta não está activa ou está fora da validade.',
                 ]);
             }
 
-            /*
-             * Não permitir utilizar a tarifa exclusiva
-             * pertencente a outra conta.
-             */
-            if (
-                $tarifa->conta_id !== null &&
-                (int) $tarifa->conta_id !== (int) $contaId
-            ) {
-                throw ValidationException::withMessages([
-                    'tarifa' =>
-                        'A tarifa configurada não pertence a esta conta.',
-                ]);
-            }
-
-            /*
-             * Tarifa fixa:
-             * não aplicar quantidade_minima
-             * nem quantidade_maxima.
-             */
             return $tarifa;
         }
 
@@ -79,15 +61,22 @@ class TarifaSmsService
         |--------------------------------------------------------------------------
         | 2. TARIFAS GERAIS POR ESCALÃO
         |--------------------------------------------------------------------------
+        | Excluir todas as tarifas atribuídas directamente
+        | a qualquer conta.
         */
+        $tarifasAtribuidas = Conta::query()
+            ->whereNotNull('tarifa_sms_id')
+            ->select('tarifa_sms_id');
+
         $tarifa = $this->queryBase($quantidade)
+            ->whereNotIn('id', $tarifasAtribuidas)
             ->whereNull('conta_id')
             ->orderByDesc('quantidade_minima')
             ->first();
 
         if (!$tarifa) {
             throw ValidationException::withMessages([
-                'quantidade' =>
+                'quantidade_sms' =>
                     'Não existe tarifa geral configurada para esta quantidade de SMS.',
             ]);
         }
