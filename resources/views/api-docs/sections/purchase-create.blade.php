@@ -1,92 +1,79 @@
-
-<section id="doc-purchase-create" class="api-doc-section">
-
-    <h4>Comprar créditos SMS</h4>
-
-    <p>
-        Permite comprar créditos SMS directamente através
-        da API InfoSMS, utilizando pagamento M-Pesa.
-    </p>
-
-    <p>
-        A conta é identificada automaticamente pela API Key.
-        O preço é calculado pelo servidor com base na tarifa
-        associada à conta.
-    </p>
-
-    <div class="mb-3">
-        <span class="badge bg-success">POST</span>
-        <code>/api/v1/sms/purchases</code>
+<div class="card mb-4" id="purchase-create">
+    <div class="card-header">
+        <h5 class="mb-0">Criar Compra de SMS</h5>
     </div>
 
-    <h6>Autenticação</h6>
+    <div class="card-body">
+        <p>
+            Permite ao cliente criar uma compra de SMS,
+            utilizando o tarifário associado à sua conta.
+        </p>
 
-    <pre><code>X-API-KEY: SUA_API_KEY
+        <h6>Autenticação</h6>
+        <p>
+            <span class="badge bg-warning text-dark">
+                Bearer Token
+            </span>
+        </p>
+
+        <h6>Endpoint</h6>
+        <pre class="bg-light p-3 rounded"><code>POST /api/sms/compras</code></pre>
+
+        <h6>Headers</h6>
+        <pre class="bg-light p-3 rounded"><code>Authorization: Bearer SEU_TOKEN
+Accept: application/json
 Content-Type: application/json
-Accept: application/json</code></pre>
+Idempotency-Key: UUID_UNICO</code></pre>
 
-    <h6>Parâmetros</h6>
+        <h6>Parâmetros</h6>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Campo</th>
+                        <th>Tipo</th>
+                        <th>Obrigatório</th>
+                        <th>Descrição</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>quantidade_sms</td>
+                        <td>integer</td>
+                        <td>Sim</td>
+                        <td>Quantidade de SMS pretendida.</td>
+                    </tr>
+                    <tr>
+                        <td>telefone</td>
+                        <td>string</td>
+                        <td>Sim</td>
+                        <td>Número M-Pesa que realizará o pagamento.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Campo</th>
-                <th>Tipo</th>
-                <th>Obrigatório</th>
-                <th>Descrição</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>quantidade_sms</td>
-                <td>integer</td>
-                <td>Sim</td>
-                <td>Quantidade de SMS a comprar.</td>
-            </tr>
-            <tr>
-                <td>telefone</td>
-                <td>string</td>
-                <td>Sim</td>
-                <td>Número M-Pesa com prefixo 84 ou 85.</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <h6>Exemplo de requisição</h6>
-
-    <pre><code>{
+        <h6>Exemplo de requisição</h6>
+        <pre class="bg-light p-3 rounded"><code>{
     "quantidade_sms": 1000,
     "telefone": "841234567"
 }</code></pre>
 
-    <h6>Resposta de sucesso — HTTP 201</h6>
-
-    <pre><code>{
+        <h6>Exemplo ilustrativo de resposta</h6>
+        <pre class="bg-light p-3 rounded"><code>{
     "status": 1,
-    "message": "Pagamento efectuado com sucesso.",
+    "message": "Compra criada.",
     "data": {
-        "compra_id": 125,
-        "pagamento_id": 89,
-        "saldo_sms": 2500
+        "compra_id": 15,
+        "quantidade_sms": 1000,
+        "estado": "PENDENTE"
     }
 }</code></pre>
 
-    <h6>Resposta de falha — HTTP 422</h6>
-
-    <pre><code>{
-    "status": 0,
-    "message": "Não foi possível efectuar o pagamento.",
-    "data": {
-        "compra_id": 125,
-        "transacao_id": 321,
-        "pode_tentar_novamente": true
-    }
-}</code></pre>
-
-    <p class="text-muted">
-        Em caso de falha, a compra permanece pendente
-        e pode ser paga novamente através do endpoint
-        de repetição de pagamento.
-    </p>
-
-</section>
+        <div class="alert alert-info mb-0">
+            A criação de uma compra não significa que
+            o pagamento foi confirmado. A confirmação
+            deve ser feita pelo fluxo de pagamento.
+        </div>
+    </div>
+</div>
