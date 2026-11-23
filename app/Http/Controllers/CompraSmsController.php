@@ -6,6 +6,7 @@ use App\Models\CompraSms;
 use App\Services\CompraSmsService;
 use App\Services\TarifaSmsService;
 use App\Services\Pagamentos\PagamentoSmsService;
+use App\Support\RespostaPagamentoSms;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Throwable;
@@ -98,74 +99,99 @@ class CompraSmsController extends Controller
         }
     }
 
-
     /**
      * Cria compra e inicia pagamento M-Pesa.
      */
-    public function comprar(Request $request, CompraSmsService $compraService, PagamentoSmsService $pagamentoService) {
-
-        $request->validate([
-            'quantidade_sms' => ['required','integer','min:1'],
-            'telefone' => ['required','regex:/^[0-9]{9}$/'],
+    public function comprar(
+        Request $request,
+        CompraSmsService $compraService,
+        PagamentoSmsService $pagamentoService
+    ) {
+        $dados = $request->validate([
+            'quantidade_sms' => ['required', 'integer', 'min:1'],
+            'telefone' => [
+                'required',
+                'string',
+                'regex:/^(84|85)[0-9]{7}$/',
+            ],
         ]);
+
+        $chave = $request->header('Idempotency-Key');
+
+        if (
+            !is_string($chave) ||
+            trim($chave) === '' ||
+            strlen($chave) > 100
+        ) {
+            throw ValidationException::withMessages([
+                'idempotency_key' =>
+                    'A chave de idempotência é obrigatória.',
+            ]);
+        }
 
         $contaId = (int) session('conta_id');
         $userId = auth()->id();
 
+        abort_if($contaId <= 0, 403);
+
         try {
 
             /*
-             * IMPORTANTE:
-             *
-             * O preço não vem do frontend.
-             * Recalculamos tudo no servidor.
-             */
-            $compra = $compraService->criar(
+            * Criar ou recuperar a compra pela chave.
+            *
+            * Uma repetição do mesmo pedido nunca
+            * deve iniciar automaticamente outro débito.
+            */
+            $criacao = $compraService->criarViaApi(
                 $contaId,
-                (int) $request->quantidade_sms,
-                $userId
+                (int) $dados['quantidade_sms'],
+                $dados['telefone'],
+                $chave
             );
 
+            $compra = $criacao['compra'];
+
+            if (!$criacao['criada']) {
+
+                return response()->json([
+                    'status' => 1,
+                    'sucesso' => $compra->estado === 'PAGA',
+                    'compra_id' => $compra->id,
+                    'estado_compra' => $compra->estado,
+                    'pagamento_reiniciado' => false,
+                    'message' =>
+                        'Esta compra já foi registada. Consulte o estado antes de efectuar outro pagamento.',
+                ], 200);
+            }
+
             /*
-             * Agora iniciamos a tentativa M-Pesa.
-             */
+            * Só uma compra recém-criada pode
+            * iniciar o primeiro débito M-Pesa.
+            */
             $resultado = $pagamentoService->pagarMpesa(
                 $compra->id,
                 $contaId,
-                $request->telefone,
+                $dados['telefone'],
                 $userId
             );
 
-            if (!$resultado['sucesso']) {
+            $resposta = RespostaPagamentoSms::formatar($resultado);
 
-                return response()->json([
-                    'status' => 0,
-                    'message' => $resultado['message'],
-                    'compra_id' => $compra->id,
-                    'transacao_id' => $resultado['transacao']->id ?? null,
-                    /*
-                     * A compra continua PENDENTE.
-                     * Poderemos permitir nova tentativa.
-                     */
-                    'pode_tentar_novamente' => true,
-                ], 422);
+            $resposta['compra_id'] = $compra->id;
+
+            if ($resposta['sucesso']) {
+                $resposta['saldo_sms'] = \App\Models\Carteira::query()
+                    ->where('conta_id', $contaId)
+                    ->value('saldo_sms');
             }
 
-            return response()->json([
-                'status' => 1,
-                'message' => 'Pagamento efectuado com sucesso.',
-                'compra_id' => $compra->id,
-                'pagamento_id' => $resultado['pagamento']->id,
-                'saldo_sms' =>
-                    auth()->user()
-                        ?->contas()
-                        ->where('contas.id', $contaId)
-                        ->first()
-                        ?->carteira
-                        ?->saldo_sms,
-            ]);
+            return response()->json(
+                $resposta,
+                RespostaPagamentoSms::httpStatus($resposta)
+            );
 
         } catch (ValidationException $e) {
+
             throw $e;
 
         } catch (Throwable $e) {
@@ -174,105 +200,161 @@ class CompraSmsController extends Controller
 
             return response()->json([
                 'status' => 0,
-                'message' => 'Ocorreu um erro ao processar a compra.',
+                'sucesso' => false,
+                'message' =>
+                    'Não foi possível confirmar o resultado da compra. Consulte o histórico antes de repetir.',
+                'pode_tentar_novamente' => false,
             ], 500);
         }
     }
 
-    public function pagar(Request $request, int $id, PagamentoSmsService $pagamentoService) {
-        
-        $request->validate([
-            'telefone' => ['required','regex:/^(84|85)[0-9]{7}$/'],
+    public function pagar(
+        Request $request,
+        int $id,
+        PagamentoSmsService $pagamentoService
+    ) {
+        $dados = $request->validate([
+            'telefone' => [
+                'required',
+                'string',
+                'regex:/^(84|85)[0-9]{7}$/',
+            ],
         ]);
 
         $contaId = (int) session('conta_id');
         $userId = auth()->id();
 
-        /*
-        * A compra tem obrigatoriamente de pertencer
-        * à conta actualmente autenticada.
-        */
+        abort_if($contaId <= 0, 403);
+
         $compra = CompraSms::query()
             ->where('id', $id)
             ->where('conta_id', $contaId)
             ->firstOrFail();
 
-        /*
-        * Só compras pendentes podem ser pagas novamente.
-        */
         if ($compra->estado !== 'PENDENTE') {
-
             return response()->json([
                 'status' => 0,
+                'sucesso' => false,
                 'message' => 'Esta compra já não está pendente.',
+                'pode_tentar_novamente' => false,
             ], 422);
         }
 
         try {
 
             /*
-            * Não criamos uma nova compra.
+            * O PagamentoSmsService verifica com
+            * lockForUpdate se existe uma transacção
+            * INCERTA, PROCESSANDO ou SUCESSO.
             *
-            * Criamos apenas uma nova tentativa de pagamento
-            * para a compra existente.
+            * Só permite uma nova tentativa quando
+            * não existe transacção bloqueante.
             */
             $resultado = $pagamentoService->pagarMpesa(
                 $compra->id,
                 $contaId,
-                $request->telefone,
+                $dados['telefone'],
                 $userId
             );
 
-            if (!$resultado['sucesso']) {
+            $resposta = RespostaPagamentoSms::formatar($resultado);
 
-                return response()->json([
-                    'status' => 0,
+            $resposta['compra_id'] = $compra->id;
 
-                    'message' =>
-                        $resultado['message']
-                        ?? 'Não foi possível efectuar o pagamento.',
-
-                    'compra_id' =>
-                        $compra->id,
-
-                    'transacao_id' =>
-                        $resultado['transacao']->id ?? null,
-
-                ], 422);
+            if ($resposta['sucesso']) {
+                $resposta['saldo_sms'] = \App\Models\Carteira::query()
+                    ->where('conta_id', $contaId)
+                    ->value('saldo_sms');
             }
 
-            return response()->json([
-                'status' => 1,
+            return response()->json(
+                $resposta,
+                RespostaPagamentoSms::httpStatus($resposta)
+            );
 
-                'message' =>
-                    'Pagamento efectuado e créditos SMS adicionados com sucesso.',
+        } catch (ValidationException $e) {
 
-                'compra_id' =>
-                    $compra->id,
+            throw $e;
 
-                'transacao_id' =>
-                    $resultado['transacao']->id,
-
-                'pagamento_id' =>
-                    $resultado['pagamento']->id,
-
-                'saldo_sms' =>
-                    \App\Models\Carteira::where(
-                        'conta_id',
-                        $contaId
-                    )->value('saldo_sms'),
-
-            ]);
-
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
 
             report($e);
 
             return response()->json([
                 'status' => 0,
+                'sucesso' => false,
+                'compra_id' => $compra->id,
+                'pode_tentar_novamente' => false,
                 'message' =>
-                    'Não foi possível processar o pagamento.',
+                    'Não foi possível confirmar o resultado. Consulte o estado do pagamento antes de repetir.',
             ], 500);
         }
     }
+
+    public function estado(int $id)
+    {
+        $contaId = (int) session('conta_id');
+
+        abort_if($contaId <= 0, 403);
+
+        $compra = CompraSms::query()
+            ->where('id', $id)
+            ->where('conta_id', $contaId)
+            ->firstOrFail();
+
+        $transacao = \App\Models\TransacaoPagamento::query()
+            ->where('conta_id', $contaId)
+            ->where('compra_sms_id', $compra->id)
+            ->orderByDesc('id')
+            ->first();
+
+        $existeBloqueante = \App\Models\TransacaoPagamento::query()
+            ->where('conta_id', $contaId)
+            ->where('compra_sms_id', $compra->id)
+            ->whereIn('estado', [
+                'INICIADA',
+                'PROCESSANDO',
+                'AGUARDANDO_CONFIRMACAO',
+                'INCERTA',
+                'SUCESSO',
+            ])
+            ->exists();
+
+        $paga = $compra->estado === 'PAGA';
+
+        $podeTentarNovamente =
+            $compra->estado === 'PENDENTE'
+            && !$existeBloqueante
+            && (
+                $transacao === null
+                || in_array($transacao->estado, [
+                    'FALHADA',
+                    'CANCELADA',
+                    'EXPIRADA',
+                ], true)
+            );
+
+        return response()->json([
+            'status' => 1,
+            'sucesso' => $paga,
+            'compra_id' => $compra->id,
+            'estado_compra' => $compra->estado,
+            'estado_pagamento' => $transacao?->estado,
+            'transacao_id' => $transacao?->id,
+            'pagamento_pendente' =>
+                !$paga && (
+                    $existeBloqueante
+                    || $transacao === null
+                ),
+            'pode_tentar_novamente' => $podeTentarNovamente,
+            'message' => $paga
+                ? 'Pagamento confirmado e SMS creditados.'
+                : (
+                    $existeBloqueante
+                        ? 'Existe um pagamento em processamento ou por confirmar.'
+                        : 'A compra ainda não está paga.'
+                ),
+        ]);
+    }
+
 }

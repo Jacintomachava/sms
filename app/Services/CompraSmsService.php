@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CompraSms;
 use App\Models\Conta;
 use App\Models\Carteira;
+use App\Models\TransacaoPagamento;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
@@ -17,10 +18,9 @@ class CompraSmsService
     }
 
     /**
-     * Criar uma compra de créditos SMS.
+     * Criar uma compra pendente de créditos SMS.
      *
-     * A compra fica PENDENTE.
-     * Nenhum crédito é disponibilizado nesta fase.
+     * Nenhum SMS é creditado nesta fase.
      */
     public function criar(
         int $contaId,
@@ -30,17 +30,17 @@ class CompraSmsService
 
         if ($quantidade <= 0) {
             throw ValidationException::withMessages([
-                'quantidade' =>
+                'quantidade_sms' =>
                     'A quantidade de SMS deve ser superior a zero.',
             ]);
         }
 
-        $conta = Conta::findOrFail($contaId);
+        $conta = Conta::query()->findOrFail($contaId);
 
         if ($conta->tipo_cobranca !== 'PRE_PAGO') {
             throw ValidationException::withMessages([
-                'quantidade' =>
-                    'A compra de créditos SMS está disponível apenas para contas pré-pagas.',
+                'conta' =>
+                    'A compra de SMS está disponível apenas para contas pré-pagas.',
             ]);
         }
 
@@ -62,11 +62,172 @@ class CompraSmsService
     }
 
     /**
-     * Confirmar pagamento e creditar SMS.
+     * Criar ou recuperar uma compra com idempotência.
      *
-     * IMPORTANTE:
-     * Chamar apenas após confirmação efectiva
-     * do pagamento ou aprovação administrativa.
+     * A mesma conta + chave + dados devolve
+     * sempre a mesma compra.
+     *
+     * Este método NÃO inicia o pagamento M-Pesa.
+     */
+    public function criarViaApi(
+        int $contaId,
+        int $quantidade,
+        string $telefone,
+        string $idempotencyKey,
+        ?int $userId = null
+    ): array {
+
+        $idempotencyKey = trim($idempotencyKey);
+
+        if (
+            $idempotencyKey === '' ||
+            strlen($idempotencyKey) > 100
+        ) {
+            throw ValidationException::withMessages([
+                'idempotency_key' =>
+                    'A chave de idempotência é obrigatória e deve ter até 100 caracteres.',
+            ]);
+        }
+
+        if ($quantidade <= 0) {
+            throw ValidationException::withMessages([
+                'quantidade_sms' =>
+                    'A quantidade de SMS deve ser superior a zero.',
+            ]);
+        }
+
+        /*
+         * Normalizar telefone para formato local.
+         */
+        $telefone = preg_replace('/\D+/', '', $telefone);
+
+        if (
+            strlen($telefone) === 12 &&
+            str_starts_with($telefone, '258')
+        ) {
+            $telefone = substr($telefone, 3);
+        }
+
+        if (!preg_match('/^(84|85)[0-9]{7}$/', $telefone)) {
+            throw ValidationException::withMessages([
+                'telefone' =>
+                    'Número M-Pesa inválido. Utilize 84XXXXXXX ou 85XXXXXXX.',
+            ]);
+        }
+
+        /*
+         * Hash dos dados comerciais da requisição.
+         */
+        $hash = hash(
+            'sha256',
+            json_encode([
+                'quantidade_sms' => $quantidade,
+                'telefone' => $telefone,
+            ], JSON_THROW_ON_ERROR)
+        );
+
+        return DB::transaction(function () use (
+            $contaId,
+            $quantidade,
+            $idempotencyKey,
+            $hash,
+            $userId
+        ) {
+
+            /*
+            |--------------------------------------------------------------------------
+            | 1. BLOQUEAR CONTA
+            |--------------------------------------------------------------------------
+            |
+            | Serializa pedidos concorrentes para a
+            | mesma conta.
+            */
+            $conta = Conta::query()
+                ->whereKey($contaId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            /*
+            |--------------------------------------------------------------------------
+            | 2. PROCURAR COMPRA EXISTENTE
+            |--------------------------------------------------------------------------
+            */
+            $compraExistente = CompraSms::query()
+                ->where('conta_id', $contaId)
+                ->where('api_idempotency_key', $idempotencyKey)
+                ->first();
+
+            if ($compraExistente) {
+
+                if ($compraExistente->api_request_hash !== $hash) {
+                    throw ValidationException::withMessages([
+                        'idempotency_key' =>
+                            'Esta chave já foi utilizada com dados diferentes.',
+                    ]);
+                }
+
+                return [
+                    'compra' => $compraExistente,
+                    'criada' => false,
+                ];
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | 3. VALIDAR CONTA
+            |--------------------------------------------------------------------------
+            */
+            if ($conta->tipo_cobranca !== 'PRE_PAGO') {
+                throw ValidationException::withMessages([
+                    'conta' =>
+                        'Esta conta não permite comprar créditos SMS.',
+                ]);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | 4. CALCULAR TARIFA
+            |--------------------------------------------------------------------------
+            */
+            $calculo = $this->tarifaService->calcular(
+                $contaId,
+                $quantidade
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | 5. CRIAR COMPRA
+            |--------------------------------------------------------------------------
+            */
+            $compra = CompraSms::create([
+                'conta_id' => $contaId,
+                'tarifa_sms_id' => $calculo['tarifa']->id,
+                'quantidade_sms' => $quantidade,
+                'preco_unitario' => $calculo['preco_unitario'],
+                'valor_total' => $calculo['valor_total'],
+                'moeda' => 'MZN',
+                'estado' => 'PENDENTE',
+                'criado_por' => $userId,
+                'api_idempotency_key' => $idempotencyKey,
+                'api_request_hash' => $hash,
+            ]);
+
+            return [
+                'compra' => $compra,
+                'criada' => true,
+            ];
+
+        }, 3);
+    }
+
+    /**
+     * Confirmar manualmente uma compra e creditar SMS.
+     *
+     * Utilizar apenas após confirmação efectiva
+     * do pagamento por um administrador autorizado.
+     *
+     * Para pagamentos M-Pesa automáticos, utilizar
+     * PagamentoSmsService::confirmarPagamento().
      */
     public function confirmarPagamento(
         int $compraId,
@@ -80,9 +241,10 @@ class CompraSmsService
             $referenciaPagamento === '' ||
             strlen($referenciaPagamento) > 100
         ) {
-            throw new RuntimeException(
-                'Referência de pagamento inválida.'
-            );
+            throw ValidationException::withMessages([
+                'referencia_pagamento' =>
+                    'A referência de pagamento é inválida.',
+            ]);
         }
 
         return DB::transaction(function () use (
@@ -103,7 +265,7 @@ class CompraSmsService
 
             /*
             |--------------------------------------------------------------------------
-            | 2. IDEMPOTÊNCIA
+            | 2. VERIFICAR IDEMPOTÊNCIA
             |--------------------------------------------------------------------------
             */
             if ($compra->estado === 'PAGA') {
@@ -117,22 +279,53 @@ class CompraSmsService
                     $lote->referencia !== $referenciaPagamento
                 ) {
                     throw new RuntimeException(
-                        'Compra já confirmada com outra referência ou sem lote válido.'
+                        'Esta compra já foi confirmada com outra referência ou não possui lote válido.'
                     );
                 }
 
                 return $compra;
             }
 
+            /*
+            |--------------------------------------------------------------------------
+            | 3. VALIDAR ESTADO
+            |--------------------------------------------------------------------------
+            */
             if ($compra->estado !== 'PENDENTE') {
-                throw new RuntimeException(
-                    'Esta compra não pode ser confirmada no estado actual.'
-                );
+                throw ValidationException::withMessages([
+                    'compra' =>
+                        'Esta compra não pode ser confirmada no estado actual.',
+                ]);
             }
 
             /*
             |--------------------------------------------------------------------------
-            | 3. VALIDAR QUANTIDADE
+            | 4. BLOQUEAR CONFIRMAÇÃO MANUAL SE
+            |    EXISTIR M-PESA POR RESOLVER
+            |--------------------------------------------------------------------------
+            */
+            $existeTentativaBloqueante = TransacaoPagamento::query()
+                ->where('compra_sms_id', $compra->id)
+                ->where('conta_id', $compra->conta_id)
+                ->whereIn('estado', [
+                    'INICIADA',
+                    'PROCESSANDO',
+                    'AGUARDANDO_CONFIRMACAO',
+                    'INCERTA',
+                    'SUCESSO',
+                ])
+                ->exists();
+
+            if ($existeTentativaBloqueante) {
+                throw ValidationException::withMessages([
+                    'pagamento' =>
+                        'Existe uma transacção M-Pesa em processamento, confirmada ou pendente de reconciliação. Não é possível confirmar manualmente esta compra.',
+                ]);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | 5. VALIDAR QUANTIDADE
             |--------------------------------------------------------------------------
             */
             $quantidade = (int) $compra->quantidade_sms;
@@ -145,7 +338,7 @@ class CompraSmsService
 
             /*
             |--------------------------------------------------------------------------
-            | 4. VERIFICAR DUPLICAÇÃO
+            | 6. VERIFICAR LOTE EXISTENTE
             |--------------------------------------------------------------------------
             */
             $loteExistente = DB::table('carteira_lotes_sms')
@@ -160,7 +353,7 @@ class CompraSmsService
 
             /*
             |--------------------------------------------------------------------------
-            | 5. BLOQUEAR CARTEIRA
+            | 7. BLOQUEAR CARTEIRA
             |--------------------------------------------------------------------------
             */
             $carteira = Carteira::query()
@@ -175,14 +368,15 @@ class CompraSmsService
             }
 
             if ($carteira->estado !== 'ACTIVA') {
-                throw new RuntimeException(
-                    'A carteira encontra-se bloqueada.'
-                );
+                throw ValidationException::withMessages([
+                    'carteira' =>
+                        'A carteira encontra-se bloqueada.',
+                ]);
             }
 
             /*
             |--------------------------------------------------------------------------
-            | 6. CRIAR LOTE COMERCIAL
+            | 8. CRIAR LOTE COMERCIAL
             |--------------------------------------------------------------------------
             */
             DB::table('carteira_lotes_sms')->insert([
@@ -205,14 +399,16 @@ class CompraSmsService
 
             /*
             |--------------------------------------------------------------------------
-            | 7. CREDITAR CARTEIRA
+            | 9. CREDITAR SALDO
             |--------------------------------------------------------------------------
             */
             $saldoAnterior = (int) $carteira->saldo_sms;
 
-            if ($quantidade > PHP_INT_MAX - $saldoAnterior) {
+            if (
+                $quantidade > PHP_INT_MAX - $saldoAnterior
+            ) {
                 throw new RuntimeException(
-                    'Quantidade ultrapassa o limite permitido.'
+                    'A quantidade ultrapassa o limite permitido.'
                 );
             }
 
@@ -223,7 +419,7 @@ class CompraSmsService
 
             /*
             |--------------------------------------------------------------------------
-            | 8. REGISTAR MOVIMENTO
+            | 10. REGISTAR MOVIMENTO
             |--------------------------------------------------------------------------
             */
             DB::table('carteira_movimentos')->insert([
@@ -248,7 +444,7 @@ class CompraSmsService
 
             /*
             |--------------------------------------------------------------------------
-            | 9. CONFIRMAR COMPRA
+            | 11. FINALIZAR COMPRA
             |--------------------------------------------------------------------------
             */
             $compra->estado = 'PAGA';

@@ -41,6 +41,7 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('/alterar/senha', [UserController::class, 'senhaIndex'])->name('senha.index');
 Route::post('/editar/senha', [UserController::class, 'senhaUpdate'])->name('senha.update');
+Route::get('/sms/compras/{id}/estado',[CompraSmsController::class, 'estado'])->name('compras.sms.estado');
 
 });
 

@@ -597,131 +597,57 @@
 
 
 {{-- MODAL REPETIR PAGAMENTO --}}
-<div class="modal fade" id="modalPagarCompra" tabindex="-1" aria-hidden="true">
-
+<div class="modal fade" id="modalCompraSms" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-
         <div class="modal-content">
 
             <div class="modal-header">
-
-                <h5 class="modal-title">
-                    <i class="fa fa-credit-card"></i>
-                    Pagar Compra
-                </h5>
-
-                <button
-                    type="button"
-                    class="btn-close"
-                    data-bs-dismiss="modal"
-                ></button>
-
+                <h5 class="modal-title">Comprar créditos SMS</h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
             </div>
 
+            <div class="modal-body">
 
-            <form
-                id="formPagarCompra"
-                method="POST"
-            >
-
-                @csrf
-
-                <input
-                    type="hidden"
-                    name="compra_id"
-                    id="compra_id"
-                >
-
-
-                <div class="modal-body">
-
-                    <div class="border rounded p-3 mb-3">
-
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted">Compra</span>
-
-                            <strong>
-                                #<span id="pagarCompraId"></span>
-                            </strong>
-                        </div>
-
-
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted">Quantidade</span>
-
-                            <strong>
-                                <span id="pagarQuantidade"></span>
-                                SMS
-                            </strong>
-                        </div>
-
-
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted">Total</span>
-
-                            <strong class="text-primary">
-                                <span id="pagarTotal"></span>
-                                MT
-                            </strong>
-                        </div>
-
-                    </div>
-
+                <form id="formCompraSms">
 
                     <div class="mb-3">
-
-                        <label class="form-label">
-                            Número M-Pesa
-                            <span class="text-danger">*</span>
-                        </label>
-
-                        <input
-                            type="text"
-                            name="telefone"
-                            id="telefonePagamento"
-                            class="form-control"
-                            maxlength="9"
-                            pattern="(84|85)[0-9]{7}"
-                            placeholder="84xxxxxxx ou 85xxxxxxx"
-                            required
-                        >
-
-                        <small class="text-muted">
-                            Introduza o número M-Pesa que irá efectuar o pagamento.
-                        </small>
-
+                        <label class="form-label">Quantidade de SMS</label>
+                        <input type="number"
+                               id="quantidade_sms"
+                               class="form-control"
+                               min="1"
+                               required>
                     </div>
 
-                </div>
+                    <div class="mb-3">
+                        <label class="form-label">Telefone M-Pesa</label>
+                        <input type="text"
+                               id="telefone_mpesa"
+                               class="form-control"
+                               placeholder="84XXXXXXX"
+                               maxlength="9"
+                               required>
+                    </div>
 
+                    <div class="border rounded p-3 mb-3">
+                        <div>Preço unitário: <strong id="precoUnitario">—</strong></div>
+                        <div>Total: <strong id="valorTotal">—</strong></div>
+                    </div>
 
-                <div class="modal-footer">
+                    <div id="mensagemPagamento" class="alert d-none"></div>
 
-                    <button
-                        type="button"
-                        class="btn btn-light"
-                        data-bs-dismiss="modal"
-                    >
-                        Cancelar
+                    <button type="submit"
+                            id="btnComprarSms"
+                            class="btn btn-primary w-100">
+                        Comprar com M-Pesa
                     </button>
 
-                    <button
-                        type="submit"
-                        class="btn btn-primary"
-                        id="btnPagarCompra"
-                    >
-                        <i class="fa fa-credit-card"></i>
-                        Pagar Agora
-                    </button>
+                </form>
 
-                </div>
-
-            </form>
-
+            </div>
         </div>
-
     </div>
-
 </div>
 
 @endsection

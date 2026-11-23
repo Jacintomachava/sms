@@ -22,127 +22,141 @@ class PagamentoSmsService
     /**
      * Tenta pagar uma compra de SMS via M-Pesa.
      */
-    public function pagarMpesa(int $compraId, int $contaId, string $telefone,?int $userId = null): array {
+    public function pagarMpesa(
+        int $compraId,
+        int $contaId,
+        string $telefone,
+        ?int $userId = null
+    ): array {
 
-        /*
-        |--------------------------------------------------------------------------
-        | 1. BUSCAR E VALIDAR A COMPRA
-        |--------------------------------------------------------------------------
-        */
-        $compra = CompraSms::query()->where('id', $compraId)->where('conta_id', $contaId)->firstOrFail();
-
-        if ($compra->estado === 'PAGA') {
-            throw ValidationException::withMessages([
-                'compra' => 'Esta compra já foi paga.',
-            ]);
-        }
-
-        if (in_array($compra->estado, ['CANCELADA','EXPIRADA',])) {
-            throw ValidationException::withMessages([
-                'compra' => 'Esta compra já não pode ser paga.',
-            ]);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | 2. NORMALIZAR TELEFONE
-        |--------------------------------------------------------------------------
-        */
         $telefoneLocal = $this->normalizarTelefoneLocal($telefone);
 
         /*
         |--------------------------------------------------------------------------
-        | 3. GERAR REFERÊNCIAS ÚNICAS
+        | 1. RESERVAR TENTATIVA COM BLOQUEIO
         |--------------------------------------------------------------------------
         */
-        $invoiceId = $this->gerarInvoiceId($compra);
-        $referenceId = $this->gerarReferenceId($invoiceId);
+        $transacao = DB::transaction(function () use (
+            $compraId,
+            $contaId,
+            $telefoneLocal
+        ) {
 
-        /*
-        |--------------------------------------------------------------------------
-        | 4. REGISTAR A TENTATIVA ANTES DE CHAMAR O M-PESA
-        |--------------------------------------------------------------------------
-        |
-        | Isto é fundamental.
-        |
-        | Mesmo que:
-        | - M-Pesa dê timeout
-        | - cliente não tenha saldo
-        | - cliente cancele
-        | - ocorra erro de rede
-        |
-        | teremos sempre o registo da tentativa.
-        */
-        $transacao = TransacaoPagamento::create([
-            'conta_id' => $contaId,
-            'compra_sms_id' => $compra->id,
-            'forma_pagamento' => 'MPESA',
-            'provider' => 'VODACOM',
-            'valor' => $compra->valor_total,
-            'moeda' => $compra->moeda ?? 'MZN',
-            'telefone' => $telefoneLocal,
-            'invoice_id' => $invoiceId,
-            'reference_id' => $referenceId,
-            'estado' => 'INICIADA',
+            $compra = CompraSms::query()
+                ->where('id', $compraId)
+                ->where('conta_id', $contaId)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-            'request_payload' => [
-                'invoice_id' => $invoiceId,
-                'telefone' => '258' . $telefoneLocal,
+            if ($compra->estado !== 'PENDENTE') {
+                throw ValidationException::withMessages([
+                    'compra' => 'Esta compra já não permite pagamentos.',
+                ]);
+            }
+
+            /*
+            * Bloquear qualquer tentativa não resolvida,
+            * mesmo que não seja a última.
+            */
+            $existeBloqueante = TransacaoPagamento::query()
+                ->where('compra_sms_id', $compraId)
+                ->where('conta_id', $contaId)
+                ->whereIn('estado', [
+                    'INICIADA',
+                    'PROCESSANDO',
+                    'AGUARDANDO_CONFIRMACAO',
+                    'INCERTA',
+                    'SUCESSO',
+                ])
+                ->exists();
+
+            if ($existeBloqueante) {
+                throw ValidationException::withMessages([
+                    'pagamento' =>
+                        'Existe um pagamento em processamento, confirmado ou pendente de reconciliação.',
+                ]);
+            }
+
+            $invoiceId = $this->gerarInvoiceId($compra);
+            $referenceId = $this->gerarReferenceId($invoiceId);
+
+            return TransacaoPagamento::create([
+                'conta_id' => $contaId,
+                'compra_sms_id' => $compra->id,
+                'forma_pagamento' => 'MPESA',
+                'provider' => 'VODACOM',
                 'valor' => $compra->valor_total,
+                'moeda' => $compra->moeda ?? 'MZN',
+                'telefone' => $telefoneLocal,
+                'invoice_id' => $invoiceId,
                 'reference_id' => $referenceId,
-            ],
-        ]);
+                'estado' => 'INICIADA',
+                'request_payload' => [
+                    'invoice_id' => $invoiceId,
+                    'telefone' => '258' . $telefoneLocal,
+                    'valor' => $compra->valor_total,
+                    'reference_id' => $referenceId,
+                ],
+            ]);
+
+        }, 3);
 
         /*
         |--------------------------------------------------------------------------
-        | 5. MARCAR COMO PROCESSANDO
+        | 2. INICIAR COMUNICAÇÃO COM O M-PESA
         |--------------------------------------------------------------------------
         */
         $transacao->update([
             'estado' => 'PROCESSANDO',
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | 6. CHAMAR M-PESA
-        |--------------------------------------------------------------------------
-        */
-
         try {
 
-            $resultado = $this->mpesaService->c2b($invoiceId,$telefoneLocal,(string) $compra->valor_total,$referenceId);
+            $resultado = $this->mpesaService->c2b(
+                $transacao->invoice_id,
+                $telefoneLocal,
+                (string) $transacao->valor,
+                $transacao->reference_id
+            );
+            
 
         } catch (Throwable $e) {
 
-            /*
-             * Segurança adicional.
-             *
-             * Mesmo que MpesaService lance uma exception,
-             * a tentativa não desaparece.
-             */
-            $transacao->update([
-                'estado' => 'FALHADA',
-                'erro_tecnico' => $e->getMessage(),
-                'processada_em' => now(),
-            ]);
-
             report($e);
 
-            return [
+            /*
+            * Não sabemos se o operador recebeu
+            * ou executou a cobrança.
+            */
+            $resultado = [
                 'sucesso' => false,
-                'transacao' => $transacao->fresh(),
-                'message' => 'Não foi possível comunicar com o M-Pesa.',
+                'resultado_confirmado' => false,
+                'codigo' => null,
+                'descricao' => 'Resultado do M-Pesa desconhecido.',
+                'transacao_id' => null,
+                'raw' => null,
+                'erro_tecnico' => $e->getMessage(),
             ];
         }
 
         /*
         |--------------------------------------------------------------------------
-        | 7. ACTUALIZAR A TRANSAÇÃO COM A RESPOSTA
+        | 3. CLASSIFICAR RESULTADO
         |--------------------------------------------------------------------------
         */
         $codigo = $resultado['codigo'] ?? null;
-        $estado = $this->determinarEstadoTransacao($codigo,(bool) ($resultado['sucesso'] ?? false));
 
+        $estado = $this->determinarEstadoTransacao(
+            $resultado['codigo'] ?? null,
+            (bool) ($resultado['sucesso'] ?? false),
+            (bool) ($resultado['resultado_confirmado'] ?? false)
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | 4. REGISTAR RESPOSTA
+        |--------------------------------------------------------------------------
+        */
         $transacao->update([
             'provider_codigo' => $codigo,
             'provider_descricao' => $resultado['descricao'] ?? null,
@@ -155,61 +169,81 @@ class PagamentoSmsService
 
         /*
         |--------------------------------------------------------------------------
-        | 8. SE NÃO HOUVE SUCESSO, TERMINAMOS AQUI
+        | 5. PAGAMENTO NÃO CONFIRMADO
         |--------------------------------------------------------------------------
-        |
-        | NÃO:
-        | - cria pagamento
-        | - altera compra
-        | - credita carteira
         */
         if ($estado !== 'SUCESSO') {
+
+            $podeTentarNovamente = in_array(
+                $estado,
+                ['FALHADA', 'CANCELADA', 'EXPIRADA'],
+                true
+            );
+
+            $mensagem = $podeTentarNovamente
+                ? $this->mpesaService->mensagemCodigo(
+                    $codigo,
+                    $resultado['descricao'] ?? null
+                )
+                : 'O resultado do pagamento ainda não foi confirmado. Aguarde a reconciliação antes de tentar novamente.';
 
             return [
                 'sucesso' => false,
                 'transacao' => $transacao->fresh(),
-                'message' => $this->mpesaService->mensagemCodigo($codigo, $resultado['descricao'] ?? null),
+                'estado_pagamento' => $estado,
+                'pode_tentar_novamente' => $podeTentarNovamente,
+                'message' => $mensagem,
             ];
         }
 
         /*
         |--------------------------------------------------------------------------
-        | 9. CONFIRMAR PAGAMENTO
+        | 6. PAGAMENTO CONFIRMADO PELO M-PESA
         |--------------------------------------------------------------------------
         */
-
         try {
 
-            $pagamento = $this->confirmarPagamento($transacao->id, $userId);
+            $pagamento = $this->confirmarPagamento(
+                $transacao->id,
+                $userId
+            );
 
         } catch (Throwable $e) {
 
-            /*
-             * ATENÇÃO:
-             *
-             * Aqui o M-Pesa já respondeu SUCESSO.
-             *
-             * Portanto NÃO devemos mudar a transação para FALHADA.
-             *
-             * O dinheiro pode ter sido recebido.
-             */
-
             report($e);
 
+            /*
+            * O M-Pesa confirmou o débito.
+            * Nunca repetir a cobrança para corrigir
+            * um erro interno de crédito.
+            */
             return [
                 'sucesso' => false,
                 'transacao' => $transacao->fresh(),
-                'message' => 'O pagamento foi recebido pelo M-Pesa, mas ocorreu um erro interno ao creditar os SMS. Contacte o suporte.',
+                'estado_pagamento' => 'SUCESSO',
+                'pode_tentar_novamente' => false,
+                'requer_reconciliacao' => true,
+                'message' =>
+                    'O M-Pesa confirmou o pagamento, mas ocorreu um erro ao creditar os SMS. Contacte o suporte.',
             ];
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | 7. COMPRA FINALIZADA
+        |--------------------------------------------------------------------------
+        */
         return [
             'sucesso' => true,
             'transacao' => $transacao->fresh(),
             'pagamento' => $pagamento,
-            'message' => 'Pagamento efectuado e créditos SMS adicionados com sucesso.',
+            'estado_pagamento' => 'SUCESSO',
+            'pode_tentar_novamente' => false,
+            'message' =>
+                'Pagamento efectuado e créditos SMS adicionados com sucesso.',
         ];
     }
+
 
 
     /**
@@ -451,37 +485,44 @@ class PagamentoSmsService
     /**
      * Determina o estado interno com base na resposta M-Pesa.
      */
-    private function determinarEstadoTransacao(?string $codigo, bool $sucesso): string {
+    private function determinarEstadoTransacao(
+        ?string $codigo,
+        bool $sucesso,
+        bool $resultadoConfirmado = false
+    ): string {
 
         if ($sucesso && $codigo === 'INS-0') {
             return 'SUCESSO';
         }
 
-        return match ($codigo) {
+        if (!$resultadoConfirmado) {
+            return 'INCERTA';
+        }
 
+        return match ($codigo) {
             'INS-5' => 'CANCELADA',
-            'INS-9' => 'EXPIRADA',
-            default => 'FALHADA',
+            'INS-6' => 'FALHADA',
+            default => 'INCERTA',
         };
     }
 
     /**
      * Gera Invoice ID para a tentativa.
      */
-    private function gerarInvoiceId(CompraSms $compra): string {
-
-        return 'SMS' .$compra->id .now()->format('His');
+    private function gerarInvoiceId(CompraSms $compra): string
+    {
+        return 'S'
+            . $compra->id
+            . now()->format('His')
+            . random_int(100, 999);
     }
 
-    /**
-     * Cada tentativa tem referência diferente.
-     */
-    private function gerarReferenceId(string $invoiceId): string {
-
-        $referencia = $invoiceId .random_int(1000, 9999);
+    private function gerarReferenceId(string $invoiceId): string
+    {
+        $referencia = $invoiceId . random_int(1000, 9999);
 
         if (strlen($referencia) > 20) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'A referência M-Pesa não pode exceder 20 caracteres.'
             );
         }
@@ -494,43 +535,82 @@ class PagamentoSmsService
      *
      * MpesaService adiciona 258.
      */
-    private function normalizarTelefoneLocal(
-        string $telefone
-    ): string {
-
-        $telefone =
-            preg_replace(
-                '/\D+/',
-                '',
-                $telefone
-            );
+    private function normalizarTelefoneLocal(string $telefone): string
+    {
+        $telefone = preg_replace('/\D+/', '', $telefone);
 
         if (
             strlen($telefone) === 12 &&
-            str_starts_with(
-                $telefone,
-                '258'
-            )
+            str_starts_with($telefone, '258')
         ) {
-
-            $telefone =
-                substr(
-                    $telefone,
-                    3
-                );
+            $telefone = substr($telefone, 3);
         }
 
-        if (!preg_match(
-            '/^[0-9]{9}$/',
-            $telefone
-        )) {
-
+        if (!preg_match('/^(84|85)[0-9]{7}$/', $telefone)) {
             throw ValidationException::withMessages([
                 'telefone' =>
-                    'O número de telefone é inválido.',
+                    'Número M-Pesa inválido. Utilize 84XXXXXXX ou 85XXXXXXX.',
             ]);
         }
 
         return $telefone;
+    }
+
+    /**
+     * Verifica se uma compra pode iniciar outra
+     * tentativa de pagamento M-Pesa.
+     */
+    private function validarNovaTentativaMpesa(
+        int $compraId,
+        int $contaId
+    ): void {
+
+        $compra = CompraSms::query()
+            ->where('id', $compraId)
+            ->where('conta_id', $contaId)
+            ->firstOrFail();
+
+        if ($compra->estado !== 'PENDENTE') {
+            throw ValidationException::withMessages([
+                'compra' => 'Esta compra já não permite pagamentos.',
+            ]);
+        }
+
+        $ultimaTransacao = TransacaoPagamento::query()
+            ->where('compra_sms_id', $compraId)
+            ->where('conta_id', $contaId)
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$ultimaTransacao) {
+            return;
+        }
+
+        if (in_array(
+            $ultimaTransacao->estado,
+            [
+                'INICIADA',
+                'PROCESSANDO',
+                'AGUARDANDO_CONFIRMACAO',
+                'SUCESSO',
+            ],
+            true
+        )) {
+            throw ValidationException::withMessages([
+                'pagamento' =>
+                    'Existe um pagamento em processamento ou por confirmar. Aguarde a confirmação antes de tentar novamente.',
+            ]);
+        }
+
+        if (!in_array(
+            $ultimaTransacao->estado,
+            ['FALHADA', 'CANCELADA', 'EXPIRADA'],
+            true
+        )) {
+            throw ValidationException::withMessages([
+                'pagamento' =>
+                    'O estado da última tentativa não permite iniciar outro pagamento.',
+            ]);
+        }
     }
 }

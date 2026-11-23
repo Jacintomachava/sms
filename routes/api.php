@@ -41,4 +41,14 @@ Route::prefix('v1')->middleware('api.key')->group(function () {
     Route::post('/otp/verify', [OtpController::class, 'verify']);
     Route::post('/otp/resend', [OtpController::class, 'resend']);
 
+    /*
+    |--------------------------------------------------------------------------
+    | COMPRA SMS
+    |--------------------------------------------------------------------------
+    */
+    Route::post('/sms/purchases/quote', [CompraSmsController::class, 'quote']);
+    Route::post('/sms/purchases', [CompraSmsController::class, 'store']);
+    Route::post('/sms/purchases/{id}/pay', [CompraSmsController::class, 'pay']);
+    Route::get('/sms/purchases/{id}', [CompraSmsController::class, 'show']);
+
 });

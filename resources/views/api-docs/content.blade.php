@@ -227,10 +227,14 @@
 
                 {{-- OTP --}}
                 @include('api-docs.sections.otp-send')
-
                 @include('api-docs.sections.otp-verify')
-
                 @include('api-docs.sections.otp-resend')
+
+                {{-- COMPRA SMS --}}
+                @include('api-docs.sections.purchase-quote')
+                @include('api-docs.sections.purchase-create')
+                @include('api-docs.sections.purchase-pay')
+                @include('api-docs.sections.purchase-show')
 
             </div>
 
