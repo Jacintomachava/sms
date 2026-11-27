@@ -424,8 +424,8 @@
                         <a href="https://wa.me/258878403247" target="_blank" rel="noopener noreferrer">WhatsApp 878403247</a>.
                     </p>
 
-                    <a class="back-home" href="#">
-                        <i class="fa fa-angle-left"></i> Voltar ao site do colégio
+                    <a class="back-home" href="{{route('home')}}">
+                        <i class="fa fa-angle-left"></i> Voltar a pagina inicial
                     </a>
                 </form>
             </div>

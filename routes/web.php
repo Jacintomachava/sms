@@ -26,14 +26,22 @@ use App\Http\Controllers\FinanceiroController;
 use App\Http\Controllers\OtpConfiguracaoController;
 use App\Http\Controllers\Admin\SenderIdController as AdminSenderIdController;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+
+/*
+|--------------------------------------------------------------------------
+| Páginas públicas - InfoSMS
+|--------------------------------------------------------------------------
+*/
+Route::view('/', 'home')->name('home');
+Route::view('/documentacao', 'documentacao')->name('documentacao');
+
 
 Route::get('/entrar', [AuthController::class, 'index'])->name('formulario');
 Route::get('/registar', [AuthController::class, 'registar'])->name('registar');
 Route::post('/registar', [AuthController::class, 'store'])->name('register.store');
 Route::post('/fazer/register', [AuthController::class, 'login'])->name('login.store');
+
+
 
 Auth::routes();
 

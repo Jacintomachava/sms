@@ -1345,7 +1345,7 @@
                     Já tenho uma conta?
 
 
-                    <a href="{{ route('login') }}">
+                    <a href="{{ route('formulario') }}">
 
                         Entrar
 
