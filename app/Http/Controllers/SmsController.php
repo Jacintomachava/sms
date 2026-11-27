@@ -119,8 +119,8 @@ class SmsController extends Controller
         $sms = Sms::query()
             ->where('conta_id', $contaId)
             ->with('sender')
-            ->latest()
-            ->limit(100)
+            //->latest()
+            //->limit(100)
             ->get();
 
         return view('sms.historico.index', compact('senders','saldoSms','sms'));
