@@ -118,6 +118,7 @@ class SmsController extends Controller
          */
         $sms = Sms::query()
             ->where('conta_id', $contaId)
+            ->orderByDesc('created_at')
             ->with('sender')
             //->latest()
             //->limit(100)
