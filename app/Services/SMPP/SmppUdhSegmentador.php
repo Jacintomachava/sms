@@ -19,8 +19,10 @@ final class SmppUdhSegmentador
         }
 
         // Apenas ASCII seguro já validado em campo; outros caracteres usam UTF-16BE.
-        $ascii = preg_match('/^[\x20-\x7E]+$/D', $texto) === 1
+        $ascii = preg_match('/^[\x20-\x7E\r\n]+$/D', $texto) === 1
             && strpbrk($texto, '@$[]\\^{}|~`') === false;
+
+
         $chars = preg_split('//u', $texto, -1, PREG_SPLIT_NO_EMPTY);
         if ($chars === false) {
             throw new InvalidArgumentException('Texto UTF-8 inválido.');
