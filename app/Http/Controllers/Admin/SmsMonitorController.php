@@ -120,7 +120,8 @@ class SmsMonitorController extends Controller
         $sms = $query
             ->orderByDesc('s.id')
             //->paginate(25)
-            ->withQueryString();
+            //->withQueryString();
+            ->get();
 
         /*
         |--------------------------------------------------------------------------
