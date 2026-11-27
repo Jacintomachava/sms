@@ -275,7 +275,7 @@
                             <thead>
 
                                 <tr>
-                                    <th>ID</th>
+                                    <th>#$this</th>
                                     <th>Conta</th>
                                     <th>Telefone</th>
                                     <th>Mensagem</th>
@@ -317,9 +317,7 @@
                                         {{-- ID --}}
 
                                         <td>
-                                            <strong>
-                                                #{{ $item->id }}
-                                            </strong>
+
                                         </td>
 
 
