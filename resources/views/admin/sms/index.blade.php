@@ -52,7 +52,6 @@
 
                         <span class="badge badge-light-primary">
                             Total encontrado:
-                            {{ number_format($sms->total(), 0, ',', '.') }}
                         </span>
 
                     </div>
