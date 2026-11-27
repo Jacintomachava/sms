@@ -463,14 +463,6 @@
                     </div>
 
 
-                    {{-- PAGINAÇÃO DO LARAVEL --}}
-
-                    <div class="mt-4">
-
-                        {{ $sms->links() }}
-
-                    </div>
-
                 </div>
 
             </div>
