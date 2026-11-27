@@ -83,7 +83,7 @@
                                     </td>
 
                                     <td data-container="body" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-original-title="{{$item->mensagem}}">
-                                        {{ Str::limit($item->mensagem, 20) }}
+                                        {{ Str::limit($item->mensagem, 40) }}
                                     </td>
 
                                     <td>
@@ -111,6 +111,10 @@
                                                 @break
 
                                             @case('FALHADO')
+                                                <span class="badge badge-light-secondary">
+                                                    Enviado
+                                                </span>
+                                                @break
                                             @case('REJEITADO')
                                                 <span class="badge badge-light-danger">
                                                     {{ ucfirst(strtolower($item->estado)) }}
