@@ -275,7 +275,7 @@
                             <thead>
 
                                 <tr>
-                                    <th>#$this</th>
+                                    <th></th>
                                     <th>Conta</th>
                                     <th>Telefone</th>
                                     <th>Mensagem</th>
