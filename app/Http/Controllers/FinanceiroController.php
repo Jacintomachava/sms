@@ -21,7 +21,10 @@ class FinanceiroController extends Controller
         | CONTA
         |--------------------------------------------------------------------------
         */
-        $conta = Conta::query()->where('id', $contaId)->where('estado', 'ACTIVA')->firstOrFail();
+        $conta = Conta::query()
+            ->where('id', $contaId)
+            ->where('estado', 'ACTIVA')
+            ->firstOrFail();
 
         /*
         |--------------------------------------------------------------------------
@@ -33,17 +36,42 @@ class FinanceiroController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | INDICADORES COMUNS PRE / POS
+        | MENSAGENS ACEITES PELA OPERADORA
         |--------------------------------------------------------------------------
         |
-        | SMS enviados = quantidade de mensagens.
-        | Segmentos = quantidade efectivamente consumida/cobrada.
+        | Contabilizar apenas mensagens submetidas com sucesso.
+        |
+        | ENVIADO  = aceite pela operadora.
+        | ENTREGUE = entregue ao destinatário.
+        | FALHADO  = aceite, mas não entregue ao destinatário.
+        |
+        | Excluir mensagens pendentes, incertas e rejeitadas.
         |
         */
-        $querySmsMes = Sms::query()->where('conta_id', $contaId)->whereBetween('created_at', [ $inicioMes, $fimMes,]);
+        $querySmsMes = Sms::query()
+            ->where('conta_id', $contaId)
+            ->whereIn('estado', [
+                'ENVIADO',
+                'ENTREGUE',
+                'FALHADO',
+            ])
+            ->whereNotNull('provider_message_id')
+            ->where('provider_message_id', '<>', '')
+            ->whereNotNull('enviado_em')
+            ->whereBetween('enviado_em', [
+                $inicioMes,
+                $fimMes,
+            ]);
 
+        /*
+        |--------------------------------------------------------------------------
+        | INDICADORES COMUNS PRE / POS
+        |--------------------------------------------------------------------------
+        */
         $smsEnviadosMes = (clone $querySmsMes)->count();
-        $segmentosEnviadosMes = (int) (clone $querySmsMes)->sum('segmentos');
+
+        $segmentosEnviadosMes = (int) (clone $querySmsMes)
+            ->sum('segmentos');
 
         /*
         |--------------------------------------------------------------------------
@@ -115,9 +143,13 @@ class FinanceiroController extends Controller
         */
         $grafico = $this->gerarHistoricoMensal($conta, $contaId);
 
-        return view('financeiro.index', compact('conta','dadosPrePago','dadosPosPago','grafico'));
+        return view('financeiro.index', compact(
+            'conta',
+            'dadosPrePago',
+            'dadosPosPago',
+            'grafico'
+        ));
     }
-
 
     /*
     |--------------------------------------------------------------------------
